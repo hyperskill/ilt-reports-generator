@@ -1,12 +1,22 @@
 import { parse } from 'csv-parse/sync';
 
 export async function parseCSV(file: File): Promise<any[]> {
-  const text = await file.text();
+  let text = await file.text();
+  
+  // Remove comment lines (starting with #) and metadata
+  const lines = text.split('\n');
+  const cleanedLines = lines.filter(line => {
+    const trimmed = line.trim();
+    return trimmed.length > 0 && !trimmed.startsWith('#');
+  });
+  text = cleanedLines.join('\n');
+  
   try {
     const records = parse(text, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
+      relax_column_count: true, // Allow variable column counts
     });
     return records;
   } catch (error) {
