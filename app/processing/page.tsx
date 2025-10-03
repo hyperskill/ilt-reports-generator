@@ -27,7 +27,7 @@ export default function ProcessingPage() {
   const processData = async () => {
     try {
       // Validate files
-      if (!files.grade_book || !files.learners || !files.submissions || !files.activity) {
+      if (!files.grade_book || !files.learners || !files.submissions) {
         throw new Error('Missing required files');
       }
 
@@ -40,7 +40,6 @@ export default function ProcessingPage() {
       const gradeBook = files.grade_book.data;
       const learners = files.learners.data;
       const submissions = files.submissions.data;
-      const activity = files.activity.data;
       const meetings = files.meetings?.data;
 
       // Log exclusions
@@ -67,7 +66,6 @@ export default function ProcessingPage() {
         gradeBook,
         learners,
         submissions,
-        activity,
         meetings,
         excludedUserIds,
         useMeetings: settings.useMeetingsInSegmentation,
@@ -78,20 +76,18 @@ export default function ProcessingPage() {
       // Step 3: Build curves
       setCurrentStep('Build curves');
       setProgress(60);
-      addLog('Building activity curves...');
+      addLog('Building activity curves from submissions...');
       await delay(300);
 
       const { summary: dynamicData, series: dynamicSeries } = processDynamicSegmentation({
         gradeBook,
         learners,
         submissions,
-        activity,
         meetings,
         excludedUserIds,
         includeMeetings: settings.includeMeetingsInActivity,
         alpha: settings.alpha,
         beta: settings.beta,
-        gamma: settings.gamma,
       });
 
       addLog(`Generated curves for ${dynamicData.length} learners`);

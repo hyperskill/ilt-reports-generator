@@ -6,26 +6,22 @@ interface ProcessorInput {
   gradeBook: any[];
   learners: any[];
   submissions: any[];
-  activity: any[];
   meetings?: any[];
   excludedUserIds: string[];
   includeMeetings: boolean;
   alpha?: number;
   beta?: number;
-  gamma?: number;
 }
 
 export function processDynamicSegmentation({
   gradeBook,
   learners,
   submissions,
-  activity,
   meetings,
   excludedUserIds,
   includeMeetings,
   alpha = 1.0,
   beta = 1.5,
-  gamma = 0.02,
 }: ProcessorInput): { summary: DynamicSummaryRow[]; series: DynamicSeriesRow[] } {
   // Normalize excluded IDs: trim, lowercase for case-insensitive matching
   const excluded = new Set(
@@ -56,7 +52,7 @@ export function processDynamicSegmentation({
     maxTotal = Math.max(maxTotal, total);
   }
 
-  // Platform activity
+  // Platform activity from submissions: correct=1.0, incorrect=0.25
   const platform = new Map<string, number>();
   for (const row of submissions) {
     const { id, originalId } = getUserId(row);
@@ -69,23 +65,6 @@ export function processDynamicSegmentation({
     const weight = status === 'correct' ? 1.0 : 0.25;
     const key = `${originalId}|${date}`;
     platform.set(key, (platform.get(key) || 0) + weight);
-  }
-
-  // Activity per day (minutes → points)
-  const activityDaily = new Map<string, number>();
-  for (const row of activity) {
-    const { id, originalId } = getUserId(row);
-    if (!id || excluded.has(id)) continue;
-    const timestamp = getField(row, ['timestamp', 'time', 'date']);
-    const ts = dayjs(timestamp);
-    if (!ts.isValid()) continue;
-    const date = ts.format('YYYY-MM-DD');
-    const minutes = Number(getField(row, ['active_minutes', 'minutes', 'total_minutes'])) || 0;
-    const sessions = Number(getField(row, ['sessions', 'session_count'])) || 0;
-    // Scale: minutes primary, sessions as minor boost
-    const points = gamma * minutes + 0.2 * gamma * sessions;
-    const key = `${originalId}|${date}`;
-    activityDaily.set(key, (activityDaily.get(key) || 0) + points);
   }
 
   // Meetings activity
@@ -118,15 +97,14 @@ export function processDynamicSegmentation({
 
   // Aggregate per-user per-day
   const perUserDates = new Map<string, Set<string>>();
-  const totalsByDay = new Map<string, { plat: number; meet: number; act: number }>();
-  const allKeys = new Set([...platform.keys(), ...meetingsDaily.keys(), ...activityDaily.keys()]);
+  const totalsByDay = new Map<string, { plat: number; meet: number }>();
+  const allKeys = new Set([...platform.keys(), ...meetingsDaily.keys()]);
 
   for (const key of allKeys) {
     const [id, date] = key.split('|');
     const aPlat = alpha * (platform.get(key) || 0);
     const aMeet = beta * (meetingsDaily.get(key) || 0);
-    const aAct = activityDaily.get(key) || 0; // already scaled
-    totalsByDay.set(key, { plat: aPlat, meet: aMeet, act: aAct });
+    totalsByDay.set(key, { plat: aPlat, meet: aMeet });
 
     const dates = perUserDates.get(id) || new Set();
     dates.add(date);
@@ -137,7 +115,7 @@ export function processDynamicSegmentation({
   const seriesRows: DynamicSeriesRow[] = [];
   const summaryRows: DynamicSummaryRow[] = [];
 
-  // Get all unique user IDs from all sources (same as Performance processor)
+  // Get all unique user IDs
   const allUserIds = new Set([
     ...nameById.keys(),
     ...totalById.keys(),
@@ -145,25 +123,21 @@ export function processDynamicSegmentation({
   ]);
 
   for (const id of allUserIds) {
-    // Double-check exclusion here
     const normalizedId = id.toLowerCase();
     if (excluded.has(normalizedId)) continue;
     
     const dateSet = perUserDates.get(id);
     const dates = dateSet ? Array.from(dateSet).sort() : [];
-    // Include users even if they have no activity data (dates.length === 0)
-    // This ensures consistent user counts between Performance and Dynamic modes
 
     if (dates.length === 0) {
-      // No activity data - create a single point for consistency
+      // No activity data - create fallback
       seriesRows.push({
         user_id: id,
-        date_iso: '2024-01-01', // fallback date
+        date_iso: '2024-01-01',
         day_index: 0,
         x_norm: 0,
         activity_platform: 0,
         activity_meetings: 0,
-        activity_minutes: 0,
         activity_total: 0,
         cum_activity: 0,
         y_norm: 0,
@@ -180,6 +154,8 @@ export function processDynamicSegmentation({
         t75: 1,
         frontload_index: -0.5,
         easing_label: 'no-activity',
+        consistency: 0,
+        burstiness: 0,
         total: totalById.get(id) || 0,
         total_pct: maxTotal > 0 ? Number(((totalById.get(id) || 0) / maxTotal * 100).toFixed(1)) : 0,
       });
@@ -190,18 +166,21 @@ export function processDynamicSegmentation({
     const t1 = dayjs(dates[dates.length - 1]);
     const spanDays = Math.max(1, t1.diff(t0, 'day'));
 
+    // Collect activity values for consistency/burstiness
+    const activityValues: number[] = [];
+    
     // Cumulate
-    let cum = 0;
-    const points: { x: number; y: number }[] = [];
     let cumLast = 0;
     for (const date of dates) {
       const key = `${id}|${date}`;
-      const obj = totalsByDay.get(key) || { plat: 0, meet: 0, act: 0 };
-      cumLast += (obj.plat + obj.meet + obj.act);
+      const obj = totalsByDay.get(key) || { plat: 0, meet: 0 };
+      const total = obj.plat + obj.meet;
+      cumLast += total;
+      activityValues.push(total);
     }
 
     if (cumLast <= 0) {
-      // No activity - create a single point for consistency
+      // No activity
       seriesRows.push({
         user_id: id,
         date_iso: dates[0],
@@ -209,7 +188,6 @@ export function processDynamicSegmentation({
         x_norm: 0,
         activity_platform: 0,
         activity_meetings: 0,
-        activity_minutes: 0,
         activity_total: 0,
         cum_activity: 0,
         y_norm: 0,
@@ -226,6 +204,8 @@ export function processDynamicSegmentation({
         t75: 1,
         frontload_index: -0.5,
         easing_label: 'no-activity',
+        consistency: 0,
+        burstiness: 0,
         total: totalById.get(id) || 0,
         total_pct: maxTotal > 0 ? Number(((totalById.get(id) || 0) / maxTotal * 100).toFixed(1)) : 0,
       });
@@ -233,11 +213,12 @@ export function processDynamicSegmentation({
     }
 
     // Build series with normalized coords
-    cum = 0;
+    let cum = 0;
+    const points: { x: number; y: number }[] = [];
     for (const date of dates) {
       const key = `${id}|${date}`;
-      const obj = totalsByDay.get(key) || { plat: 0, meet: 0, act: 0 };
-      const activityTotal = obj.plat + obj.meet + obj.act;
+      const obj = totalsByDay.get(key) || { plat: 0, meet: 0 };
+      const activityTotal = obj.plat + obj.meet;
       cum += activityTotal;
       const dayIndex = dayjs(date).diff(t0, 'day');
       const x = dayIndex / spanDays;
@@ -251,7 +232,6 @@ export function processDynamicSegmentation({
         x_norm: Number(x.toFixed(6)),
         activity_platform: Number(obj.plat.toFixed(6)),
         activity_meetings: Number(obj.meet.toFixed(6)),
-        activity_minutes: Number(obj.act.toFixed(6)),
         activity_total: Number(activityTotal.toFixed(6)),
         cum_activity: Number(cum.toFixed(6)),
         y_norm: Number(y.toFixed(6)),
@@ -271,6 +251,15 @@ export function processDynamicSegmentation({
 
     const label = classifyEasing(p1x, p1y, p2x, p2y, t25, t50, t75, FI);
 
+    // Consistency: #days with activity / span_days
+    const consistency = dates.length / (spanDays + 1);
+
+    // Burstiness: std / mean (winsorize extremes)
+    const meanActivity = activityValues.reduce((a, b) => a + b, 0) / activityValues.length;
+    const variance = activityValues.reduce((sum, val) => sum + Math.pow(val - meanActivity, 2), 0) / activityValues.length;
+    const stdActivity = Math.sqrt(variance);
+    const burstiness = meanActivity > 0 ? stdActivity / meanActivity : 0;
+
     summaryRows.push({
       user_id: id,
       name: nameById.get(id) || 'NA',
@@ -283,6 +272,8 @@ export function processDynamicSegmentation({
       t75: Number(t75.toFixed(4)),
       frontload_index: Number(FI.toFixed(4)),
       easing_label: label,
+      consistency: Number(consistency.toFixed(4)),
+      burstiness: Number(burstiness.toFixed(4)),
       total: totalById.get(id) || 0,
       total_pct: maxTotal > 0 ? Number(((totalById.get(id) || 0) / maxTotal * 100).toFixed(1)) : 0,
     });
@@ -345,4 +336,3 @@ function toBool(value: any): boolean {
   const s = String(value).toLowerCase().trim();
   return ['true', '1', 'yes'].includes(s);
 }
-

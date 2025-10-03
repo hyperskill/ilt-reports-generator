@@ -8,22 +8,23 @@ A comprehensive web application for analyzing student performance and dynamic ac
 
 1. **Performance Segmentation**
    - Static performance profiles based on grades, attempts, persistence, and meeting attendance
+   - Activity-derived metrics (effort, consistency, struggle) computed from submissions
    - Segments learners into categories like "Leader efficient", "Balanced middle", etc.
    - Based on the algorithm in `docs/student-segment.md`
 
 2. **Dynamic/Easing Segmentation**
    - Temporal activity analysis with CSS-like easing patterns
+   - Activity derived from submissions (correct=1.0, incorrect=0.25) + meetings
    - Classifies cumulative behavior curves (linear, ease, ease-in, ease-out, ease-in-out)
-   - Calculates frontload index and Bezier control points
+   - Calculates frontload index, Bezier control points, consistency, and burstiness
    - Based on the algorithm in `docs/easing_activity_algorithm_node.md`
 
 ### Application Flow
 
-1. **Upload** - Upload 5 CSV files:
+1. **Upload** - Upload 3-4 CSV files:
    - `grade_book.csv` (Required): user_id, total
    - `learners.csv` (Required): user_id, first_name, last_name
    - `submissions.csv` (Required): user_id, step_id, status, timestamp
-   - `activity.csv` (Required): user_id, timestamp, active_minutes, sessions (optional)
    - `meetings.csv` (Optional): user_id, name, [dd.mm.yyyy] columns
 
 2. **Review** - Verify column recognition and preview data
@@ -34,6 +35,7 @@ A comprehensive web application for analyzing student performance and dynamic ac
    - Time bucketing (Daily/Weekly)
    - Smoothing (Off/Light/Strong)
    - Meetings usage toggles
+   - Alpha/Beta weights (for activity blending)
 
 5. **Processing** - Automated data processing with progress tracking
 
@@ -103,31 +105,32 @@ npm start
 
 ## Data Processing
 
-### Performance Segmentation Algorithm
+### Performance Segmentation Algorithm (v3)
 
 Implements the logic from `docs/student-segment.md`:
 
 1. **Data normalization** - Standardizes column names
-2. **Core metrics** - Calculates total, submissions, unique_steps
+2. **Core metrics** - Calculates total, submissions, unique_steps, correct_submissions
 3. **Derived metrics** - success_rate, persistence, efficiency
-4. **Activity signals** - effort_index, consistency_index, struggle_index (from activity.csv)
-5. **Meeting processing** - Attendance percentages
-6. **Segmentation** - Rule-based classification with activity-driven rules
+4. **Temporal metrics** - active_days, active_days_ratio (from submission timestamps)
+5. **Activity-derived signals** - effort_index, consistency_index, struggle_index
+   - Effort: z-score normalized (submissions + active_days)
+   - Consistency: active_days / span_days
+   - Struggle: based on high persistence + low success rate
+6. **Meeting processing** - Attendance percentages
+7. **Segmentation** - Rule-based classification with activity-driven rules
 
-### Dynamic/Easing Algorithm
+### Dynamic/Easing Algorithm (v3)
 
 Implements the logic from `docs/easing_activity_algorithm_node.md`:
 
-1. **Daily activity aggregation** - Combines platform + meetings + activity (with α, β, γ scaling)
-2. **Cumulative curve normalization** - Maps to [0,1] × [0,1]
-3. **Bezier proxy estimation** - Via quartiles (t25, t50, t75)
-4. **Frontload index** - FI = 0.5 - t50
-5. **Easing classification** - Matches to CSS easing patterns
-
-**Weighting factors**:
-- `α = 1.0` (platform events)
-- `β = 1.5` (meetings)
-- `γ = 0.02` (activity minutes, ≈1 point per 50 minutes)
+1. **Daily activity from submissions** - Weighted by status (correct=1.0, incorrect=0.25)
+2. **Composite activity** - `α * platform_events + β * meetings` (α=1.0, β=1.5)
+3. **Cumulative curve normalization** - Maps to [0,1] × [0,1]
+4. **Bezier proxy estimation** - Via quartiles (t25, t50, t75)
+5. **Frontload index** - FI = 0.5 - t50
+6. **Easing classification** - Matches to CSS easing patterns
+7. **Auxiliary metrics** - consistency, burstiness from daily activity
 
 ## CSV File Requirements
 
@@ -145,27 +148,13 @@ user_id,first_name,last_name
 456,Jane,Smith
 ```
 
-### submissions.csv
+### submissions.csv (CRITICAL - drives all activity metrics)
 ```csv
 user_id,step_id,status,timestamp
 123,step_1,correct,2024-01-15T10:30:00Z
 123,step_2,incorrect,2024-01-16T14:20:00Z
 ```
-
-### activity.csv (required)
-```csv
-user_id,timestamp,active_minutes,sessions
-123,2024-01-15T10:00:00Z,45,2
-123,2024-01-16T09:30:00Z,60,3
-456,2024-01-15T14:00:00Z,30,1
-```
-**Note**: `active_minutes` (preferred) or `sessions` can be used to measure activity intensity. The algorithm scales these into daily activity points.
-
-**If you don't have activity data**: Use the provided script to generate it from submissions:
-```bash
-node scripts/generate-activity-csv.js path/to/submissions.csv path/to/output-activity.csv
-```
-See [scripts/README.md](scripts/README.md) for details.
+**Note**: Timestamps can be Unix epoch (seconds or milliseconds) or ISO strings.
 
 ### meetings.csv (optional)
 ```csv
@@ -180,23 +169,28 @@ user_id,name,[15.01.2024] Webinar,[22.01.2024] Workshop
 ✅ CSV parsing with flexible column names  
 ✅ User ID exclusion system  
 ✅ Display settings configuration  
-✅ Performance segmentation algorithm  
-✅ Dynamic/easing segmentation algorithm  
+✅ Performance segmentation with activity signals  
+✅ Dynamic/easing segmentation from submissions  
 ✅ Dual-mode results display  
 ✅ Interactive filtering and search  
 ✅ Data visualization with Chart.js  
 ✅ Responsive tables with scrolling  
 
-## Future Enhancements
+## Key Algorithm Changes (v3)
 
-🔲 Explorer view for learner comparison  
-🔲 Export functionality (CSV/PNG)  
-🔲 Student detail drawer/modal  
-🔲 Advanced filtering controls  
-🔲 Meeting timeline visualization  
-🔲 Small multiples for comparison  
-🔲 Undo/redo functionality  
-🔲 Session persistence (localStorage)  
+### What Changed
+- ❌ **NO activity.csv required** - Everything built from submissions
+- ✅ **Activity from submissions**: Uses weighted attempts (correct=1.0, incorrect=0.25)
+- ✅ **Two-source blending**: platform_events + meetings (no separate activity file)
+- ✅ **New metrics**: consistency, burstiness in Dynamic mode
+- ✅ **Enhanced Performance**: effort/consistency/struggle indices from submissions
+
+### Activity Derivation
+```
+Platform Activity per Day = Σ(correct: 1.0, incorrect: 0.25)
+Composite Activity = α * Platform + β * Meetings
+  where α=1.0 (platform weight), β=1.5 (meetings weight)
+```
 
 ## Design Decisions
 
@@ -205,6 +199,7 @@ user_id,name,[15.01.2024] Webinar,[22.01.2024] Workshop
 - **Client-side processing**: All data processing happens in the browser
 - **React Context**: Simple state management without external libraries
 - **TypeScript**: Full type safety throughout the application
+- **No external activity files**: All metrics derived from existing data
 
 ## Key Components
 
@@ -218,8 +213,8 @@ user_id,name,[15.01.2024] Webinar,[22.01.2024] Workshop
 
 This project follows the specifications in:
 - `docs/unified_app_ui_userflow.md` - UX flow
-- `docs/student-segment.md` - Performance algorithm
-- `docs/easing_activity_algorithm_node.md` - Dynamic algorithm
+- `docs/student-segment.md` - Performance algorithm (v3)
+- `docs/easing_activity_algorithm_node.md` - Dynamic algorithm (v3)
 - `docs/RADIX_UI_DOCUMENTATION.md` - UI components
 - `docs/REACT_CHARTJS_DOCUMENTATION.md` - Charts
 
@@ -234,6 +229,7 @@ Private project - All rights reserved
 - Data processing is synchronous (could be moved to Web Workers)
 - Tables show first 100 rows for performance
 - CSV files are parsed entirely into memory
+- Activity metrics are computed on-the-fly from submissions
 
 ## Troubleshooting
 
@@ -241,14 +237,16 @@ Private project - All rights reserved
 - Ensure files are valid CSV format
 - Check that required columns exist
 - File size should be reasonable (< 10MB recommended)
+- Comments (lines starting with #) are automatically filtered
 
 ### Processing fails
-- Verify all required files are uploaded
+- Verify all required files are uploaded (grade_book, learners, submissions)
 - Check CSV format and column names
 - Look at browser console for detailed errors
+- Ensure submissions.csv has valid timestamps
 
 ### Charts not showing
-- Ensure submissions.csv has timestamp column for dynamic mode
+- Ensure submissions.csv has timestamp column
 - Check that data was successfully processed
 - Try refreshing the page
 
@@ -258,4 +256,3 @@ For issues or questions, refer to:
 - `app-creation-log.md` - Detailed implementation notes
 - Documentation files in `/docs`
 - Component source code with inline comments
-

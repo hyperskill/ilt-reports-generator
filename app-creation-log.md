@@ -1,6 +1,77 @@
 # App Creation Log
 
-## 2025-10-03: Activity.csv Integration Update
+## 2025-10-03: Algorithm v3 - No External Activity File Required
+
+### Major Rewrite: Removed activity.csv Requirement
+- **REMOVED activity.csv** - No longer required or supported
+- All activity metrics now derived from `submissions.csv` only
+- Upload flow simplified back to 3 required files (grade_book, learners, submissions) + optional meetings
+- Algorithm v3 spec: builds everything from existing data sources
+
+### Type System Updates
+- Removed `activity?: CSVFile` from `UploadedFiles`
+- Removed `gamma` from `DisplaySettings` (only alpha, beta remain)
+- Updated `PerformanceRow`:
+  - Removed: `active_minutes_total`, `sessions_count`
+  - Added: `active_days`, `correct_submissions` (explicit field)
+  - Kept: `active_days_ratio`, `effort_index`, `consistency_index`, `struggle_index`
+- Updated `DynamicSummaryRow`:
+  - Added: `consistency`, `burstiness`
+  - Kept: all Bezier parameters, frontload_index, easing_label
+- Updated `DynamicSeriesRow`:
+  - Removed: `activity_minutes` (third source)
+  - Kept: `activity_platform`, `activity_meetings` (two sources only)
+
+### Processing Logic - Complete Rewrite
+
+#### Dynamic Processor (v3)
+**Activity Derivation from Submissions**:
+```
+Platform Activity = Σ(correct: 1.0, incorrect: 0.25) per day
+Composite Activity = α * Platform + β * Meetings
+```
+- Weights submissions by status: correct=1.0, incorrect=0.25
+- Two-source blending only: platform + meetings (no third source)
+- Default weights: α=1.0, β=1.5
+- **New metrics**:
+  - `consistency`: #days with activity / span_days
+  - `burstiness`: std(activity) / mean(activity)
+
+#### Performance Processor (v3)
+**Activity Signals from Submissions**:
+- `active_days`: n_distinct(date from timestamps)
+- `active_days_ratio`: active_days / span_days
+- `effort_index`: z-score(submissions) ⊕ z-score(active_days)
+- `consistency_index`: same as active_days_ratio
+- `struggle_index`: computed from persistence + success_rate signals
+
+**Updated Segmentation Rules** (v3 spec):
+1. Leader engaged: total_pct ≥ 80 AND meetings ≥ 70%
+2. Leader efficient: total_pct ≥ 80 AND persistence ≤ 3 AND consistency ≥ 0.5
+3. Balanced + engaged: 30-80% AND meetings ≥ 60% AND consistency ≥ 0.4
+4. Hardworking but struggling: effort ≥ 0.5 AND struggle ≥ 0.6
+5. Low engagement: (total < 30 AND submissions < 20) OR (effort ≤ -0.5 AND consistency < 0.3)
+6. Balanced middle: else
+
+### UI Updates
+- Upload page: removed Activity tile (back to 4 tiles: 3 required + 1 optional)
+- Processing page: updated logs ("Building activity curves from submissions...")
+- Removed validation for activity.csv
+- Updated context: removed gamma from initialSettings
+
+### Algorithm Alignment
+- Full v3 implementation per updated specs
+- `docs/easing_activity_algorithm_node.md` (v3): No external files, submissions-only
+- `docs/student-segment.md` (v3): Activity signals from submissions
+- Zero external dependencies beyond core 3 files
+
+### Documentation Updates
+- README.md: Complete rewrite explaining v3 changes
+- Emphasized: "NO activity.csv required"
+- Added activity derivation formulas
+- Updated CSV requirements section
+
+## 2025-10-03: Activity.csv Integration Update (DEPRECATED - See v3 above)
 
 ### Major Update: Added activity.csv as Required Input
 - **New required file**: `activity.csv` with fields: `user_id`, `timestamp`, `active_minutes`, `sessions` (optional)

@@ -6,7 +6,6 @@ interface ProcessorInput {
   gradeBook: any[];
   learners: any[];
   submissions: any[];
-  activity: any[];
   meetings?: any[];
   excludedUserIds: string[];
   useMeetings: boolean;
@@ -16,7 +15,6 @@ export function processPerformanceSegmentation({
   gradeBook,
   learners,
   submissions,
-  activity,
   meetings,
   excludedUserIds,
   useMeetings,
@@ -52,11 +50,14 @@ export function processPerformanceSegmentation({
     maxTotal = Math.max(maxTotal, total);
   }
 
-  // Process submissions
+  // Process submissions - collect dates and stats
   const submissionStats = new Map<string, {
     submissions: number;
     uniqueSteps: Set<string>;
     correctSubs: number;
+    dates: Set<string>;
+    minDate?: dayjs.Dayjs;
+    maxDate?: dayjs.Dayjs;
   }>();
 
   for (const row of submissions) {
@@ -66,66 +67,44 @@ export function processPerformanceSegmentation({
     const stepId = getStepId(row);
     const status = getStatus(row);
     const isCorrect = status.toLowerCase() === 'correct' ? 1 : 0;
+    
+    const timestamp = getTimestamp(row);
+    const ts = dayjs(timestamp);
+    if (!ts.isValid()) continue;
+    const date = ts.format('YYYY-MM-DD');
 
     const stats = submissionStats.get(originalId) || {
       submissions: 0,
       uniqueSteps: new Set(),
       correctSubs: 0,
+      dates: new Set(),
     };
 
     stats.submissions += 1;
     stats.uniqueSteps.add(stepId);
     stats.correctSubs += isCorrect;
+    stats.dates.add(date);
+    
+    if (!stats.minDate || ts.isBefore(stats.minDate)) stats.minDate = ts;
+    if (!stats.maxDate || ts.isAfter(stats.maxDate)) stats.maxDate = ts;
 
     submissionStats.set(originalId, stats);
   }
 
-  // Process activity data
-  const activityStats = new Map<string, {
-    totalMinutes: number;
-    totalSessions: number;
-    activeDays: Set<string>;
-    minDate?: dayjs.Dayjs;
-    maxDate?: dayjs.Dayjs;
-  }>();
-
-  for (const row of activity) {
-    const { id, originalId } = getUserId(row);
-    if (!id || excluded.has(id)) continue;
-
-    const timestamp = getField(row, ['timestamp', 'time', 'date']);
-    const ts = dayjs(timestamp);
-    if (!ts.isValid()) continue;
-    const date = ts.format('YYYY-MM-DD');
-
-    const minutes = Number(getField(row, ['active_minutes', 'minutes', 'total_minutes'])) || 0;
-    const sessions = Number(getField(row, ['sessions', 'session_count'])) || 0;
-
-    const stats = activityStats.get(originalId) || {
-      totalMinutes: 0,
-      totalSessions: 0,
-      activeDays: new Set(),
-    };
-
-    stats.totalMinutes += minutes;
-    stats.totalSessions += sessions;
-    if (minutes > 0 || sessions > 0) {
-      stats.activeDays.add(date);
-    }
-    if (!stats.minDate || ts.isBefore(stats.minDate)) stats.minDate = ts;
-    if (!stats.maxDate || ts.isAfter(stats.maxDate)) stats.maxDate = ts;
-
-    activityStats.set(originalId, stats);
-  }
-
-  // Calculate activity indices with z-score normalization
-  const minutesValues = Array.from(activityStats.values()).map(s => s.totalMinutes);
-  const sessionsValues = Array.from(activityStats.values()).map(s => s.totalSessions);
+  // Calculate z-scores for effort index
+  const submissionsValues = Array.from(submissionStats.values()).map(s => s.submissions);
+  const activeDaysValues = Array.from(submissionStats.values()).map(s => s.dates.size);
   
-  const minutesMean = mean(minutesValues);
-  const minutesStd = stdDev(minutesValues, minutesMean);
-  const sessionsMean = mean(sessionsValues);
-  const sessionsStd = stdDev(sessionsValues, sessionsMean);
+  const submissionsMean = mean(submissionsValues);
+  const submissionsStd = stdDev(submissionsValues, submissionsMean);
+  const activeDaysMean = mean(activeDaysValues);
+  const activeDaysStd = stdDev(activeDaysValues, activeDaysMean);
+
+  // Collect struggle signals for normalization
+  const persistenceValues = Array.from(submissionStats.values())
+    .map(s => s.uniqueSteps.size > 0 ? s.submissions / s.uniqueSteps.size : 0);
+  const successRateValues = Array.from(submissionStats.values())
+    .map(s => s.submissions > 0 ? s.correctSubs / s.submissions : 0);
 
   // Process meetings
   const meetingStats = new Map<string, { attended: number; total: number }>();
@@ -158,7 +137,6 @@ export function processPerformanceSegmentation({
   ]);
 
   for (const userId of allUserIds) {
-    // Double-check exclusion here
     const normalizedUserId = userId.toLowerCase();
     if (excluded.has(normalizedUserId)) continue;
     
@@ -169,48 +147,58 @@ export function processPerformanceSegmentation({
     const submissions = stats?.submissions || 0;
     const uniqueSteps = stats?.uniqueSteps.size || 0;
     const correctSubs = stats?.correctSubs || 0;
+    const activeDays = stats?.dates.size || 0;
+    
+    // Temporal coverage
+    const spanDays = stats?.minDate && stats?.maxDate 
+      ? Math.max(1, stats.maxDate.diff(stats.minDate, 'day') + 1)
+      : 1;
+    const activeDaysRatio = Number((activeDays / spanDays).toFixed(3));
 
+    // Core KPIs
     const successRate = submissions > 0 ? Number((correctSubs / submissions * 100).toFixed(1)) : 0;
     const persistence = uniqueSteps > 0 ? Number((submissions / uniqueSteps).toFixed(2)) : 0;
     const efficiency = uniqueSteps > 0 ? Number((correctSubs / uniqueSteps).toFixed(2)) : 0;
 
-    // Activity metrics
-    const actData = activityStats.get(userId);
-    const activeMinutesTotal = actData?.totalMinutes || 0;
-    const sessionsCount = actData?.totalSessions || 0;
-    const activeDaysCount = actData?.activeDays.size || 0;
-    const totalDays = actData?.minDate && actData?.maxDate 
-      ? Math.max(1, actData.maxDate.diff(actData.minDate, 'day') + 1)
-      : 1;
-    const activeDaysRatio = Number((activeDaysCount / totalDays).toFixed(3));
+    // Effort index: z-score of submissions ⊕ z-score of active_days
+    const zSubmissions = submissionsStd > 0 ? (submissions - submissionsMean) / submissionsStd : 0;
+    const zActiveDays = activeDaysStd > 0 ? (activeDays - activeDaysMean) / activeDaysStd : 0;
+    const effortIndex = Number(((zSubmissions + zActiveDays) / 2).toFixed(3));
 
-    // Effort index: z-score normalized combination
-    const zMinutes = minutesStd > 0 ? (activeMinutesTotal - minutesMean) / minutesStd : 0;
-    const zSessions = sessionsStd > 0 ? (sessionsCount - sessionsMean) / sessionsStd : 0;
-    const effortIndex = Number(((zMinutes + zSessions) / 2).toFixed(3));
-
-    // Consistency index
+    // Consistency index = active_days_ratio
     const consistencyIndex = activeDaysRatio;
 
-    // Struggle index (simplified - based on low success rate but high persistence)
-    const struggleIndex = successRate < 50 && persistence > 3 
-      ? Number((0.6).toFixed(3)) 
-      : Number((0.3).toFixed(3));
+    // Struggle index: high persistence + low success rate
+    // Normalize: high persistence (>mean) and low success (<50%) → high struggle
+    const persistenceMean = mean(persistenceValues);
+    const successRateMean = mean(successRateValues);
+    
+    let struggleScore = 0;
+    if (persistence > persistenceMean && successRate < 50) {
+      struggleScore = 0.7;
+    } else if (persistence > persistenceMean || successRate < successRateMean) {
+      struggleScore = 0.4;
+    } else {
+      struggleScore = 0.2;
+    }
+    const struggleIndex = Number(struggleScore.toFixed(3));
 
+    // Meetings
     const meetingData = meetingStats.get(userId);
     const meetingsAttended = meetingData?.attended || 0;
     const meetingsAttendedPct = meetingData?.total 
       ? Number((meetingsAttended / meetingData.total * 100).toFixed(1))
       : 0;
 
+    // Segment classification
     const segment = classifySegment({
       totalPct,
       persistence,
+      consistencyIndex,
       submissions,
       meetingsAttendedPct,
       useMeetings,
       effortIndex,
-      activeDaysRatio,
       struggleIndex,
     });
 
@@ -221,18 +209,18 @@ export function processPerformanceSegmentation({
       total_pct: totalPct,
       submissions,
       unique_steps: uniqueSteps,
+      correct_submissions: correctSubs,
       success_rate: successRate,
       persistence,
       efficiency,
-      active_minutes_total: activeMinutesTotal,
-      sessions_count: sessionsCount,
+      active_days: activeDays,
       active_days_ratio: activeDaysRatio,
       effort_index: effortIndex,
       consistency_index: consistencyIndex,
       struggle_index: struggleIndex,
-      simple_segment: segment,
       meetings_attended: meetingsAttended,
       meetings_attended_pct: meetingsAttendedPct,
+      simple_segment: segment,
     });
   }
 
@@ -245,39 +233,46 @@ export function processPerformanceSegmentation({
 function classifySegment({
   totalPct,
   persistence,
+  consistencyIndex,
   submissions,
   meetingsAttendedPct,
   useMeetings,
   effortIndex,
-  activeDaysRatio,
   struggleIndex,
 }: {
   totalPct: number;
   persistence: number;
+  consistencyIndex: number;
   submissions: number;
   meetingsAttendedPct: number;
   useMeetings: boolean;
   effortIndex: number;
-  activeDaysRatio: number;
   struggleIndex: number;
 }): string {
   const leader = totalPct >= 80;
   const low = totalPct < 30;
   const balanced = !leader && !low;
 
-  // Priority rules with activity signals
-  if (useMeetings) {
-    if (leader && meetingsAttendedPct >= 70) return 'Leader engaged';
-    if (leader && persistence <= 3 && activeDaysRatio >= 0.5) return 'Leader efficient';
-    if (balanced && meetingsAttendedPct >= 60 && activeDaysRatio >= 0.4) return 'Balanced + engaged';
-  } else {
-    if (leader && persistence <= 3 && activeDaysRatio >= 0.5) return 'Leader efficient';
+  // Priority rules (from v3 spec)
+  if (useMeetings && leader && meetingsAttendedPct >= 70) {
+    return 'Leader engaged';
   }
-
-  // Activity-driven rules
-  if (totalPct < 80 && effortIndex >= 0.5 && struggleIndex >= 0.6) return 'Hardworking but struggling';
-  if ((low && submissions < 20) || (effortIndex <= -0.5 && activeDaysRatio < 0.3)) return 'Low engagement';
-  if (low && persistence >= 5) return 'Hardworking but struggling';
+  
+  if (leader && persistence <= 3 && consistencyIndex >= 0.5) {
+    return 'Leader efficient';
+  }
+  
+  if (useMeetings && balanced && meetingsAttendedPct >= 60 && consistencyIndex >= 0.4) {
+    return 'Balanced + engaged';
+  }
+  
+  if (totalPct < 80 && effortIndex >= 0.5 && struggleIndex >= 0.6) {
+    return 'Hardworking but struggling';
+  }
+  
+  if ((low && submissions < 20) || (effortIndex <= -0.5 && consistencyIndex < 0.3)) {
+    return 'Low engagement';
+  }
   
   return 'Balanced middle';
 }
@@ -317,15 +312,15 @@ function getStatus(row: any): string {
   return key ? String(row[key]).trim() : '';
 }
 
+function getTimestamp(row: any): string {
+  const key = findColumn(row, ['timestamp', 'time', 'submission_time', 'created_at']);
+  return key ? String(row[key]).trim() : '';
+}
+
 function toBool(value: any): boolean {
   if (value === null || value === undefined) return false;
   const s = String(value).toLowerCase().trim();
   return ['true', '1', 'yes'].includes(s);
-}
-
-function getField(row: any, aliases: string[]): string {
-  const key = findColumn(row, aliases);
-  return key ? String(row[key]).trim() : '';
 }
 
 function mean(values: number[]): number {
@@ -338,4 +333,3 @@ function stdDev(values: number[], meanValue: number): number {
   const variance = values.reduce((sum, v) => sum + Math.pow(v - meanValue, 2), 0) / values.length;
   return Math.sqrt(variance);
 }
-
