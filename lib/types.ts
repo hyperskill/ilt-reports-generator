@@ -11,6 +11,7 @@ export interface UploadedFiles {
   learners?: CSVFile;
   submissions?: CSVFile;
   meetings?: CSVFile;
+  activity?: CSVFile;
 }
 
 export interface DisplaySettings {
@@ -18,6 +19,9 @@ export interface DisplaySettings {
   smoothing: 'off' | 'light' | 'strong';
   includeMeetingsInActivity: boolean;
   useMeetingsInSegmentation: boolean;
+  alpha: number;
+  beta: number;
+  gamma: number;
 }
 
 export interface ProcessingResult {
@@ -37,6 +41,12 @@ export interface PerformanceRow {
   success_rate: number;
   persistence: number;
   efficiency: number;
+  active_minutes_total: number;
+  sessions_count: number;
+  active_days_ratio: number;
+  effort_index: number;
+  consistency_index: number;
+  struggle_index: number;
   simple_segment: string;
   meetings_attended: number;
   meetings_attended_pct: number;
@@ -66,6 +76,7 @@ export interface DynamicSeriesRow {
   x_norm: number;
   activity_platform: number;
   activity_meetings: number;
+  activity_minutes: number;
   activity_total: number;
   cum_activity: number;
   y_norm: number;

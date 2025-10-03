@@ -19,10 +19,11 @@ A comprehensive web application for analyzing student performance and dynamic ac
 
 ### Application Flow
 
-1. **Upload** - Upload 4 CSV files:
+1. **Upload** - Upload 5 CSV files:
    - `grade_book.csv` (Required): user_id, total
    - `learners.csv` (Required): user_id, first_name, last_name
    - `submissions.csv` (Required): user_id, step_id, status, timestamp
+   - `activity.csv` (Required): user_id, timestamp, active_minutes, sessions (optional)
    - `meetings.csv` (Optional): user_id, name, [dd.mm.yyyy] columns
 
 2. **Review** - Verify column recognition and preview data
@@ -109,18 +110,24 @@ Implements the logic from `docs/student-segment.md`:
 1. **Data normalization** - Standardizes column names
 2. **Core metrics** - Calculates total, submissions, unique_steps
 3. **Derived metrics** - success_rate, persistence, efficiency
-4. **Meeting processing** - Attendance percentages
-5. **Segmentation** - Rule-based classification into 7 segments
+4. **Activity signals** - effort_index, consistency_index, struggle_index (from activity.csv)
+5. **Meeting processing** - Attendance percentages
+6. **Segmentation** - Rule-based classification with activity-driven rules
 
 ### Dynamic/Easing Algorithm
 
 Implements the logic from `docs/easing_activity_algorithm_node.md`:
 
-1. **Daily activity aggregation** - Combines platform + meetings
+1. **Daily activity aggregation** - Combines platform + meetings + activity (with α, β, γ scaling)
 2. **Cumulative curve normalization** - Maps to [0,1] × [0,1]
 3. **Bezier proxy estimation** - Via quartiles (t25, t50, t75)
 4. **Frontload index** - FI = 0.5 - t50
 5. **Easing classification** - Matches to CSS easing patterns
+
+**Weighting factors**:
+- `α = 1.0` (platform events)
+- `β = 1.5` (meetings)
+- `γ = 0.02` (activity minutes, ≈1 point per 50 minutes)
 
 ## CSV File Requirements
 
@@ -144,6 +151,15 @@ user_id,step_id,status,timestamp
 123,step_1,correct,2024-01-15T10:30:00Z
 123,step_2,incorrect,2024-01-16T14:20:00Z
 ```
+
+### activity.csv (required)
+```csv
+user_id,timestamp,active_minutes,sessions
+123,2024-01-15T10:00:00Z,45,2
+123,2024-01-16T09:30:00Z,60,3
+456,2024-01-15T14:00:00Z,30,1
+```
+**Note**: `active_minutes` (preferred) or `sessions` can be used to measure activity intensity. The algorithm scales these into daily activity points.
 
 ### meetings.csv (optional)
 ```csv

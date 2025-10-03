@@ -6,22 +6,26 @@ interface ProcessorInput {
   gradeBook: any[];
   learners: any[];
   submissions: any[];
+  activity: any[];
   meetings?: any[];
   excludedUserIds: string[];
   includeMeetings: boolean;
   alpha?: number;
   beta?: number;
+  gamma?: number;
 }
 
 export function processDynamicSegmentation({
   gradeBook,
   learners,
   submissions,
+  activity,
   meetings,
   excludedUserIds,
   includeMeetings,
   alpha = 1.0,
   beta = 1.5,
+  gamma = 0.02,
 }: ProcessorInput): { summary: DynamicSummaryRow[]; series: DynamicSeriesRow[] } {
   // Normalize excluded IDs: trim, lowercase for case-insensitive matching
   const excluded = new Set(
@@ -67,6 +71,23 @@ export function processDynamicSegmentation({
     platform.set(key, (platform.get(key) || 0) + weight);
   }
 
+  // Activity per day (minutes → points)
+  const activityDaily = new Map<string, number>();
+  for (const row of activity) {
+    const { id, originalId } = getUserId(row);
+    if (!id || excluded.has(id)) continue;
+    const timestamp = getField(row, ['timestamp', 'time', 'date']);
+    const ts = dayjs(timestamp);
+    if (!ts.isValid()) continue;
+    const date = ts.format('YYYY-MM-DD');
+    const minutes = Number(getField(row, ['active_minutes', 'minutes', 'total_minutes'])) || 0;
+    const sessions = Number(getField(row, ['sessions', 'session_count'])) || 0;
+    // Scale: minutes primary, sessions as minor boost
+    const points = gamma * minutes + 0.2 * gamma * sessions;
+    const key = `${originalId}|${date}`;
+    activityDaily.set(key, (activityDaily.get(key) || 0) + points);
+  }
+
   // Meetings activity
   const meetingsDaily = new Map<string, number>();
   if (meetings && includeMeetings) {
@@ -97,15 +118,15 @@ export function processDynamicSegmentation({
 
   // Aggregate per-user per-day
   const perUserDates = new Map<string, Set<string>>();
-  const totalsByDay = new Map<string, number>();
-  const allKeys = new Set([...platform.keys(), ...meetingsDaily.keys()]);
+  const totalsByDay = new Map<string, { plat: number; meet: number; act: number }>();
+  const allKeys = new Set([...platform.keys(), ...meetingsDaily.keys(), ...activityDaily.keys()]);
 
   for (const key of allKeys) {
     const [id, date] = key.split('|');
     const aPlat = alpha * (platform.get(key) || 0);
     const aMeet = beta * (meetingsDaily.get(key) || 0);
-    const total = aPlat + aMeet;
-    totalsByDay.set(key, total);
+    const aAct = activityDaily.get(key) || 0; // already scaled
+    totalsByDay.set(key, { plat: aPlat, meet: aMeet, act: aAct });
 
     const dates = perUserDates.get(id) || new Set();
     dates.add(date);
@@ -142,6 +163,7 @@ export function processDynamicSegmentation({
         x_norm: 0,
         activity_platform: 0,
         activity_meetings: 0,
+        activity_minutes: 0,
         activity_total: 0,
         cum_activity: 0,
         y_norm: 0,
@@ -171,12 +193,12 @@ export function processDynamicSegmentation({
     // Cumulate
     let cum = 0;
     const points: { x: number; y: number }[] = [];
+    let cumLast = 0;
     for (const date of dates) {
       const key = `${id}|${date}`;
-      const activity = totalsByDay.get(key) || 0;
-      cum += activity;
+      const obj = totalsByDay.get(key) || { plat: 0, meet: 0, act: 0 };
+      cumLast += (obj.plat + obj.meet + obj.act);
     }
-    const cumLast = cum;
 
     if (cumLast <= 0) {
       // No activity - create a single point for consistency
@@ -187,6 +209,7 @@ export function processDynamicSegmentation({
         x_norm: 0,
         activity_platform: 0,
         activity_meetings: 0,
+        activity_minutes: 0,
         activity_total: 0,
         cum_activity: 0,
         y_norm: 0,
@@ -213,8 +236,9 @@ export function processDynamicSegmentation({
     cum = 0;
     for (const date of dates) {
       const key = `${id}|${date}`;
-      const activity = totalsByDay.get(key) || 0;
-      cum += activity;
+      const obj = totalsByDay.get(key) || { plat: 0, meet: 0, act: 0 };
+      const activityTotal = obj.plat + obj.meet + obj.act;
+      cum += activityTotal;
       const dayIndex = dayjs(date).diff(t0, 'day');
       const x = dayIndex / spanDays;
       const y = cum / cumLast;
@@ -225,9 +249,10 @@ export function processDynamicSegmentation({
         date_iso: date,
         day_index: dayIndex,
         x_norm: Number(x.toFixed(6)),
-        activity_platform: Number((alpha * (platform.get(key) || 0)).toFixed(6)),
-        activity_meetings: Number((beta * (meetingsDaily.get(key) || 0)).toFixed(6)),
-        activity_total: Number(activity.toFixed(6)),
+        activity_platform: Number(obj.plat.toFixed(6)),
+        activity_meetings: Number(obj.meet.toFixed(6)),
+        activity_minutes: Number(obj.act.toFixed(6)),
+        activity_total: Number(activityTotal.toFixed(6)),
         cum_activity: Number(cum.toFixed(6)),
         y_norm: Number(y.toFixed(6)),
       });

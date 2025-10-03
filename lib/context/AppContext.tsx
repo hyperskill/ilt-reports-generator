@@ -19,6 +19,9 @@ const initialSettings: DisplaySettings = {
   smoothing: 'off',
   includeMeetingsInActivity: true,
   useMeetingsInSegmentation: true,
+  alpha: 1.0,
+  beta: 1.5,
+  gamma: 0.02,
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {

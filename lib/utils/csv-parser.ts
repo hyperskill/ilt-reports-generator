@@ -69,6 +69,11 @@ export function getFileValidation(fileName: string): string[][] {
         ['step_id', 'stepid', 'step', 'task_id'],
         ['status', 'result'],
       ];
+    case 'activity':
+      return [
+        ['user_id', 'userid', 'uid', 'user'],
+        ['timestamp', 'time', 'date'],
+      ];
     default:
       return [];
   }

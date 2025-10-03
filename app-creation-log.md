@@ -1,5 +1,70 @@
 # App Creation Log
 
+## 2025-10-03: Activity.csv Integration Update
+
+### Major Update: Added activity.csv as Required Input
+- **New required file**: `activity.csv` with fields: `user_id`, `timestamp`, `active_minutes`, `sessions` (optional)
+- Updated upload flow to include 5 files (was 4)
+- Activity data now drives both performance and dynamic segmentation algorithms
+
+### Type System Updates
+- Added `activity?: CSVFile` to `UploadedFiles` interface
+- Extended `PerformanceRow` with activity-derived metrics:
+  - `active_minutes_total`: Sum of all active minutes
+  - `sessions_count`: Total sessions count
+  - `active_days_ratio`: Consistency metric (active days / total days)
+  - `effort_index`: Z-score normalized effort (combines minutes + sessions)
+  - `consistency_index`: Same as active_days_ratio
+  - `struggle_index`: Derived from low success rate + high persistence
+- Extended `DynamicSeriesRow` with `activity_minutes` field (separate from platform/meetings)
+- Added scaling parameters to `DisplaySettings`: `alpha`, `beta`, `gamma`
+
+### Processing Logic Enhancements
+
+#### Dynamic Processor (`lib/processors/dynamic-processor.ts`)
+- Integrated activity.csv data into daily activity aggregation
+- Implemented three-source blending: `α * platform + β * meetings + γ * activity`
+- Default weights: α=1.0, β=1.5, γ=0.02 (≈1 point per 50 minutes)
+- Activity minutes scaled with gamma factor: `gamma * minutes + 0.2 * gamma * sessions`
+- Series now exports separate components: `activity_platform`, `activity_meetings`, `activity_minutes`
+
+#### Performance Processor (`lib/processors/performance-processor.ts`)
+- Added comprehensive activity data processing
+- Implemented z-score normalization for effort indices
+- Calculate per-user stats: total minutes, sessions, active days, date spans
+- Compute activity-derived indices:
+  - **Effort index**: Normalized combination of minutes + sessions
+  - **Consistency index**: Active days ratio
+  - **Struggle index**: Heuristic based on success rate and persistence
+- Updated segmentation rules to include activity signals:
+  - High effort + struggle → "Hardworking but struggling"
+  - Low effort + low consistency → "Low engagement"
+  - Consistent leaders → "Leader efficient" (requires active_days_ratio >= 0.5)
+
+### CSV Parser Updates
+- Added validation for `activity.csv` file
+- Required columns: `user_id` (aliases: userid, uid, user) and `timestamp` (aliases: time, date)
+- Optional but recommended: `active_minutes`, `sessions`
+
+### UI Updates
+- Upload page now shows 5 tiles (added Activity tile)
+- File description: "Student activity data (user_id, timestamp, active_minutes)"
+- Processing page validates activity.csv presence
+- Settings context includes alpha, beta, gamma with defaults
+
+### Algorithm Alignment
+- Now fully implements v2 specifications from updated docs:
+  - `docs/easing_activity_algorithm_node.md` (v2 with activity.csv)
+  - `docs/student-segment.md` (v2 with activity-derived signals)
+- Maintains backward compatibility with meetings.csv (optional)
+- All three data sources (platform, meetings, activity) properly weighted and combined
+
+### Documentation Updates
+- Updated README.md with activity.csv requirements and examples
+- Added weighting factors documentation (α, β, γ)
+- Updated CSV file requirements section with activity.csv format
+- Documented new performance metrics in algorithm description
+
 ## 2025-10-03: Initial Project Setup
 
 ### Project Structure Created
@@ -19,10 +84,11 @@
 ### Application Structure
 
 #### Core Flow (7 screens)
-1. **Upload** (`/upload`) - File upload for 4 CSV files
+1. **Upload** (`/upload`) - File upload for 5 CSV files
    - grade_book.csv (Required)
    - learners.csv (Required)
    - submissions.csv (Required)
+   - activity.csv (Required)
    - meetings.csv (Optional)
 
 2. **Review** (`/review`) - Column validation and data preview
