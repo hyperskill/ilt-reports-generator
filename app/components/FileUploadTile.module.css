@@ -1,0 +1,25 @@
+.tile {
+  min-height: 200px;
+}
+
+.dropzone {
+  border: 2px dashed var(--gray-a7);
+  border-radius: var(--radius-3);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--gray-a2);
+}
+
+.dropzone:hover {
+  border-color: var(--accent-9);
+  background: var(--accent-a2);
+}
+
+.statusBox {
+  padding: 1rem;
+  border-radius: var(--radius-2);
+  background: var(--gray-a2);
+}
+

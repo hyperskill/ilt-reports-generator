@@ -1,0 +1,44 @@
+.chipContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--gray-a2);
+  border-radius: var(--radius-2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.25rem !important;
+}
+
+.removeButton {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gray-a5);
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.removeButton:hover {
+  background: var(--gray-a8);
+}
+
+.hint {
+  padding: 1rem;
+  background: var(--gray-a2);
+  border-radius: var(--radius-2);
+  text-align: center;
+}
+

@@ -1,0 +1,8 @@
+.tableContainer {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--gray-a5);
+  border-radius: var(--radius-2);
+}
+
