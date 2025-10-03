@@ -161,6 +161,12 @@ user_id,timestamp,active_minutes,sessions
 ```
 **Note**: `active_minutes` (preferred) or `sessions` can be used to measure activity intensity. The algorithm scales these into daily activity points.
 
+**If you don't have activity data**: Use the provided script to generate it from submissions:
+```bash
+node scripts/generate-activity-csv.js path/to/submissions.csv path/to/output-activity.csv
+```
+See [scripts/README.md](scripts/README.md) for details.
+
 ### meetings.csv (optional)
 ```csv
 user_id,name,[15.01.2024] Webinar,[22.01.2024] Workshop
