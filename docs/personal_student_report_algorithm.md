@@ -50,10 +50,9 @@ The report consumes analytics already computed from original tables (`learners.c
 - Topic `label_topic ∈ {Attention, Watch}`. Reasons: `mean_delta_attempts > 0` and/or `mean_delta_first < 0`.
 - `struggle_index ≥ 0.6`.
 - `active_days_ratio < 0.3`.
-- Momentum down: `last7_total < prev7_total` by ≥ 15% (see §4).
-- Easing suggests risk:
-  - `ease-in` with `t25 > 0.4` (late start).
-  - `ease-out` with `t75 < 0.6` **and** momentum down (drop-off).
+- High burstiness: `burstiness > 0.8` (sporadic work pattern).
+- Early dropoff: `ease-out` with `t75 < 0.6` (strong start but activity dropped off).
+- Late start: `ease-in` with `t25 > 0.4` (slow to begin).
 
 **3.3 Meeting context (optional)**
 - If `meetings_attended_pct ≥ 70`: positive note.
@@ -61,14 +60,13 @@ The report consumes analytics already computed from original tables (`learners.c
 
 ---
 
-## 4) Momentum (last 7 vs previous 7)
-From daily series (or reconstruct from submissions if needed):
-- `last7_total = Σ activity_total over last 7 days`
-- `prev7_total = Σ activity_total over days -14..-8`
-- `delta = (last7_total - prev7_total) / max(1, prev7_total)`
-- Classify: **Up** (`delta ≥ +0.15`), **Flat** (|delta| < 0.15), **Down** (`delta ≤ −0.15`).
+## 4) Overall Engagement (replaces momentum analysis)
+Calculate overall engagement level based on entire course period:
+- `avgEngagement = (active_days_ratio + consistency) / 2`
+- Classify: **High** (`avgEngagement ≥ 0.6`), **Medium** (`avgEngagement ≥ 0.3`), **Low** (`avgEngagement < 0.3`)
+- Generate personalized description using student's first name instead of "you/your"
 
-If series is missing: hide the sparkline and momentum sentence.
+This replaces the previous momentum analysis (last 7 vs previous 7 days) to focus on overall program results rather than short-term trends.
 
 ---
 
@@ -86,14 +84,8 @@ Require `steps_attempted ≥ 2` unless there’s no alternative; mark otherwise 
 
 ---
 
-## 6) Next Steps Generator
-Generate up to **3** personalized suggestions, in priority order:
-1. For the #1 focus topic: “Review *{topic_title}* — start with the step that took most attempts / wasn’t solved on first try.”
-2. If momentum **Down**: “Plan two short sessions this week (20–30 min) to regain pace.”
-3. If `meetings_attended_pct < 40` (and meetings exist): “Join the next webinar on *{nearest relevant topic}*.”
-4. Else, reinforce strength: “Maintain steady rhythm: 3 active days this week is a good target.”
-
-All suggestions must be phrased supportive and actionable (no ranks, no shaming).
+## 6) Next Steps Generator (REMOVED)
+**Note**: The Next Steps section has been removed from the student report as it focuses on overall program assessment rather than forward-looking recommendations. The report now emphasizes analysis of completed work rather than future guidance.
 
 ---
 
@@ -136,16 +128,13 @@ Minimal JSON for the learner detail component:
     "Win: Steady weekly rhythm — your consistency is strong.",
     "Focus: Chain Rule needed extra attempts — let’s revisit the first two tasks."
   ],
-  "momentum": { "trend": "Down", "delta": -0.22, "note": "Last 7 days lower than the week before." },
+  "engagement": { "level": "Medium", "description": "Alex has maintained moderate engagement, active on 29 days (85% of the period).", "active_days_ratio": 0.85 },
   "topics": {
     "wins":   [{"title": "Derivatives Basics", "why": "first-pass high"}],
     "focus":  [{"title": "Chain Rule", "why": "extra attempts"}]
   },
   "curve": { "label": "ease-out", "fi": 0.12, "explain": "strong start; keep momentum later" },
-  "next_steps": [
-    "Review 'Chain Rule' — start with the step you didn’t pass on first try.",
-    "Schedule two short 20–30 min sessions this week."
-  ]
+  "next_steps": [] // REMOVED: Next Steps section no longer included
 }
 ```
 
@@ -177,27 +166,21 @@ for each student s:
 
   if S_perf.struggle_index >= 0.6: focus.add("struggle")
   if S_perf.active_days_ratio < 0.3: focus.add("low_consistency")
-
-  if Series exists:
-     delta = last7(Series) vs prev7(Series)
-     if delta <= -0.15: focus.add("momentum_down")
+  if E_sum.burstiness > 0.8: focus.add("high_burstiness")
 
   if E_sum.label == "ease-in" and E_sum.t25 > 0.4: focus.add("late_start")
-  if E_sum.label == "ease-out" and Series.delta_down: focus.add("end_dropoff")
+  if E_sum.label == "ease-out" and E_sum.t75 < 0.6: focus.add("early_dropoff")
 
   // 2) Rank & trim
   wins  = top_k(deduplicate(wins), k=3, priority: topic items > generic KPIs)
   focus = top_k(sort_by_score(focus), k=3)
 
-  // 3) Generate next steps
-  steps = []
-  if focus has topic f1: steps.add( "Review {f1.title}..." )
-  if Series.delta_down: steps.add( "Plan two short sessions..." )
-  if meetings exist and S_perf.meetings_attended_pct < 40: steps.add( "Join next webinar..." )
-  if steps.empty(): steps.add( "Maintain steady rhythm: 3 active days this week." )
+  // 3) Calculate overall engagement (replaces next steps)
+  engagement = calculateEngagement(S_perf, E_sum, studentName)
+  // Note: Next steps generation removed - report focuses on assessment, not recommendations
 
-  // 4) Compose narrative (highlights + curve explanation + next steps)
-  report = {student, highlights, momentum, topics{wins,focus}, curve, next_steps}
+  // 4) Compose narrative (highlights + engagement + curve explanation)
+  report = {student, highlights, engagement, topics{wins,focus}, curve, performance, dynamic, series, topicTable}
 ```
 
 ---
@@ -212,6 +195,8 @@ for each student s:
 ---
 
 ## 12) Copy Guidelines (tone)
+- **Personalization**: Use student's first name instead of "you/your" throughout the report.
 - Start with 1–2 wins before any focus.
-- Use supportive verbs (“review”, “plan”, “try”), avoid negatives.
+- Use supportive verbs ("review", "plan", "try"), avoid negatives.
 - Keep sentences to ~12–16 words; one idea per bullet.
+- Focus on completed work analysis rather than forward-looking recommendations.

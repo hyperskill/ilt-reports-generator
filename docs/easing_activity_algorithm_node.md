@@ -94,11 +94,15 @@ consistency, burstiness,
 total, total_pct            # optional, from grade_book if available
 ```
 
+**Note**: This matches the `DynamicSummaryRow` interface in the application exactly.
+
 **B) Per‑user daily series (CSV)**
 ```
 user_id, date_iso, day_index, x_norm,
 activity_platform, activity_meetings, activity_total,   # per source + sum
 cum_activity, y_norm
 ```
+
+**Note**: This matches the `DynamicSeriesRow` interface in the application exactly.
 
 > These two tables are sufficient to render the mode’s overview table, the per‑student curve view, and cohort overlays — **without** any extra input files.

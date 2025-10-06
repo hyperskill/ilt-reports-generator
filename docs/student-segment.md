@@ -120,11 +120,16 @@ meetings_attended, meetings_attended_pct,            # if meetings exist
 simple_segment
 ```
 
+**Note**: This matches the `PerformanceRow` interface in the application exactly.
+
 **B) Topic difficulty table (per student, for details & heatmaps)**
 ```
-user_id, name, topic_title, steps_attempted,
+topic_title, steps_attempted,
 attempts_per_step, student_first_pass_rate,
-mean_delta_attempts, mean_delta_first, topic_score, label_topic
+mean_delta_attempts, mean_delta_first, topic_score, label_topic,
+lesson_id, first_step_id, unit_id, course_id    # for Cogniterra links (optional)
 ```
+
+**Note**: This matches the `StudentTopic` interface used in personalized student reports.
 
 These outputs drive the **Results table**, **Student detail**, and the **topic heatmap** — **without** creating or uploading any new input tables.
