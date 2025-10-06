@@ -23,6 +23,16 @@ export function UserNav({ user, profile }: UserNavProps) {
     router.refresh();
   };
 
+  const handleRefreshSession = async () => {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error('Error refreshing session:', error);
+    } else {
+      console.log('Session refreshed successfully');
+      router.refresh();
+    }
+  };
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
@@ -39,6 +49,13 @@ export function UserNav({ user, profile }: UserNavProps) {
         </DropdownMenu.Item>
         <DropdownMenu.Item onClick={() => router.push('/dashboard')}>
           Dashboard
+        </DropdownMenu.Item>
+        <DropdownMenu.Item onClick={() => router.push('/debug-auth')}>
+          🔍 Check Auth Status
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item onClick={handleRefreshSession}>
+          🔄 Refresh Permissions
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red" onClick={handleLogout}>

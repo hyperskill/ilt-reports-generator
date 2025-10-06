@@ -87,6 +87,13 @@ export default async function DashboardPage() {
                 You can view completed reports but cannot create new ones. 
                 Contact an administrator if you need elevated permissions.
               </Text>
+              <Text size="2" color="gray" mt="2">
+                If your permissions were just updated, try{' '}
+                <Link href="/debug-auth" style={{ color: 'var(--accent-11)' }}>
+                  checking your auth status
+                </Link>
+                {' '}or logout and login again.
+              </Text>
             </Flex>
           </Card>
         )}
