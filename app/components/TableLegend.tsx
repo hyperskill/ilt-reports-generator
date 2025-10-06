@@ -16,7 +16,6 @@ export function TableLegend({ mode }: LegendProps) {
           <Accordion.Item value="legend">
             <Accordion.Trigger className={styles.accordionTrigger}>
               <Heading size="3">📊 What the table columns mean</Heading>
-              <span className={styles.chevron}>▼</span>
             </Accordion.Trigger>
             <Accordion.Content className={styles.accordionContent}>
               <Box pt="3">
@@ -154,7 +153,6 @@ export function TableLegend({ mode }: LegendProps) {
         <Accordion.Item value="legend">
           <Accordion.Trigger className={styles.accordionTrigger}>
             <Heading size="3">📈 What the activity chart shows</Heading>
-            <span className={styles.chevron}>▼</span>
           </Accordion.Trigger>
           <Accordion.Content className={styles.accordionContent}>
             <Box pt="3">
