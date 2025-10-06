@@ -196,11 +196,10 @@ export default function ProcessingPage() {
       setShowSaveDialog(false);
       
       console.log('Report saved successfully! ID:', data.report.id);
-      console.log('Redirecting to dashboard...');
+      console.log('Redirecting to report...');
       
-      // Redirect to dashboard with refresh
-      router.push('/dashboard');
-      router.refresh();
+      // Redirect to saved report
+      router.push(`/reports/${data.report.id}`);
     } catch (error: any) {
       alert(`Failed to save report: ${error.message}`);
     } finally {
