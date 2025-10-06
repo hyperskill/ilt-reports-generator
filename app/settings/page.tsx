@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Text, Card, Heading, RadioGroup, Switch } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { DisplaySettings } from '@/lib/types';
 
@@ -24,7 +24,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppLayout
+    <AppLayoutWithAuth
       title="Display Settings"
       subtitle="Configure how your data will be analyzed and displayed."
     >
@@ -168,7 +168,7 @@ export default function SettingsPage() {
           Build results
         </Button>
       </Flex>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

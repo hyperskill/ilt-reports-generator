@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Heading, Text, Card } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { FileUploadTile } from '@/app/components/FileUploadTile';
 import { useAppContext } from '@/lib/context/AppContext';
 import { parseCSV, validateRequiredColumns, getFileValidation } from '@/lib/utils/csv-parser';
@@ -112,7 +112,7 @@ export default function UploadPage() {
   };
 
   return (
-    <AppLayout
+    <AppLayoutWithAuth
       title="Get Started"
       subtitle="Upload your CSV files to begin analyzing student performance and activity patterns."
     >
@@ -166,7 +166,7 @@ export default function UploadPage() {
           Continue
         </Button>
       </Flex>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

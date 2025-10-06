@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Heading, Text, Card, Badge, Table } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { findColumn } from '@/lib/utils/csv-parser';
 import styles from './review.module.css';
@@ -54,7 +54,7 @@ export default function ReviewPage() {
   };
 
   return (
-    <AppLayout
+    <AppLayoutWithAuth
       title="Review & Confirm"
       subtitle="Verify that we've correctly identified your data columns."
     >
@@ -140,7 +140,7 @@ export default function ReviewPage() {
           Looks good
         </Button>
       </Flex>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

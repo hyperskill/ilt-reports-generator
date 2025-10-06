@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Box, Card, Flex, Heading, Text, Button } from '@radix-ui/themes';
+import { UserNav } from '@/app/components/UserNav';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
@@ -28,11 +29,7 @@ export default async function DashboardPage() {
             <Heading size="8">Dashboard</Heading>
             <Text size="3" color="gray">Welcome back, {profile?.full_name || user.email}</Text>
           </Box>
-          <Flex gap="3">
-            <Text size="2" color="gray">
-              Role: <Text weight="bold">{profile?.role}</Text>
-            </Text>
-          </Flex>
+          <UserNav user={user} profile={profile} />
         </Flex>
 
         <Flex gap="4" wrap="wrap">
@@ -97,4 +94,3 @@ export default async function DashboardPage() {
     </Box>
   );
 }
-

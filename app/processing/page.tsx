@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Text, Heading, Progress, Badge } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { processPerformanceSegmentation } from '@/lib/processors/performance-processor';
 import { processDynamicSegmentation } from '@/lib/processors/dynamic-processor';
@@ -134,7 +134,7 @@ export default function ProcessingPage() {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
-    <AppLayout
+    <AppLayoutWithAuth
       title="Crunching your data…"
       subtitle="Processing your files and computing segments."
     >
@@ -197,7 +197,7 @@ export default function ProcessingPage() {
           )}
         </Flex>
       </Card>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

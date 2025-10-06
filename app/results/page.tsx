@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Card, Flex, Heading, Text, Tabs } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { PerformanceResults } from '@/app/components/PerformanceResults';
 import { DynamicResults } from '@/app/components/DynamicResults';
@@ -12,16 +12,16 @@ export default function ResultsPage() {
 
   if (!results) {
     return (
-      <AppLayout title="Results">
+      <AppLayoutWithAuth title="Results">
         <Card>
           <Text>No results available. Please process your data first.</Text>
         </Card>
-      </AppLayout>
+      </AppLayoutWithAuth>
     );
   }
 
   return (
-    <AppLayout>
+    <AppLayoutWithAuth>
       <Box mb="5">
         <Heading size="8" mb="2">Analysis Results</Heading>
         <Text size="3" color="gray">
@@ -59,7 +59,7 @@ export default function ResultsPage() {
           </Tabs.Content>
         </Box>
       </Tabs.Root>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

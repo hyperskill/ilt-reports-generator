@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Text, Card, TextField, Badge } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import styles from './exclusions.module.css';
 
@@ -35,7 +35,7 @@ export default function ExclusionsPage() {
   };
 
   return (
-    <AppLayout
+    <AppLayoutWithAuth
       title="Exclude IDs"
       subtitle="Optionally exclude specific user IDs from analysis."
     >
@@ -115,7 +115,7 @@ export default function ExclusionsPage() {
           </Button>
         </Flex>
       </Flex>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 

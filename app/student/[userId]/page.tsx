@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator } from '@radix-ui/themes';
-import { AppLayout } from '@/app/components/AppLayout';
+import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
 import { EasingChart } from '@/app/components/EasingChart';
@@ -33,14 +33,14 @@ export default function StudentDetailPage({ params }: PageProps) {
 
   if (!report) {
     return (
-      <AppLayout title="Student Report">
+      <AppLayoutWithAuth title="Student Report">
         <Card>
           <Text>Student not found or data not available.</Text>
           <Button mt="3" onClick={() => router.push('/results')}>
             Back to Results
           </Button>
         </Card>
-      </AppLayout>
+      </AppLayoutWithAuth>
     );
   }
 
@@ -71,7 +71,7 @@ export default function StudentDetailPage({ params }: PageProps) {
   };
 
   return (
-    <AppLayout>
+    <AppLayoutWithAuth>
       <Box className={styles.container}>
         {/* Header */}
         <Card>
@@ -428,7 +428,7 @@ export default function StudentDetailPage({ params }: PageProps) {
           </Card>
         )}
       </Box>
-    </AppLayout>
+    </AppLayoutWithAuth>
   );
 }
 
