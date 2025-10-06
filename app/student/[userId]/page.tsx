@@ -363,9 +363,9 @@ export default function StudentDetailPage({ params }: PageProps) {
                     return (
                       <Table.Row key={idx}>
                         <Table.Cell>
-                          {topic.lesson_id && topic.unit_id ? (
+                          {topic.lesson_id ? (
                             <a 
-                              href={`https://cogniterra.org/lesson/${topic.lesson_id}/step/1?unit=${topic.unit_id}`}
+                              href={`https://cogniterra.org/lesson/${topic.lesson_id}/step/1`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ 
