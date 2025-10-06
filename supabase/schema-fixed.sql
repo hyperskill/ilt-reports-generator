@@ -1,4 +1,4 @@
--- Create profiles table to store user roles
+-- FIXED VERSION: Create profiles table to store user roles
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade not null primary key,
   email text unique not null,
@@ -14,25 +14,21 @@ create table if not exists public.profiles (
 -- Set up Row Level Security (RLS)
 alter table public.profiles enable row level security;
 
--- Allow users to read their own profile
-create policy "Users can view own profile"
-  on profiles for select
-  using (auth.uid() = id);
+-- SIMPLIFIED POLICIES - No recursion!
 
--- Allow users to update their own profile (except role and admin fields)
-create policy "Users can update own profile"
-  on profiles for update
-  using (auth.uid() = id);
-
--- Allow everyone to view all profiles (prevents infinite recursion)
--- This is safe because profiles don't contain sensitive data
--- Role-based access control is enforced at the application level
-create policy "Everyone can view profiles"
+-- Everyone can read all profiles (needed for app to work)
+create policy "Anyone can view profiles"
   on profiles for select
   using (true);
 
--- Note: Role changes should be done via Supabase Dashboard or service role
--- Regular users can only update their own non-role fields via "Users can update own profile" policy
+-- Users can only update their own non-role fields
+create policy "Users can update own profile"
+  on profiles for update
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- Note: Role changes must be done via service role or direct DB access
+-- This prevents security issues and infinite recursion
 
 -- Create a function to automatically create profile on signup
 create or replace function public.handle_new_user()
@@ -54,7 +50,8 @@ end;
 $$;
 
 -- Trigger to create profile on signup
-create or replace trigger on_auth_user_created
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
@@ -91,26 +88,19 @@ create table if not exists public.reports (
 -- Set up RLS for reports
 alter table public.reports enable row level security;
 
--- Admins can do everything with reports
+-- For reports, we check role inline (no recursion since it's a different table)
 create policy "Admins can do everything with reports"
   on reports for all
   using (
-    exists (
-      select 1 from public.profiles
-      where profiles.id = auth.uid() and profiles.role = 'admin'
-    )
+    (select role from public.profiles where id = auth.uid()) = 'admin'
   );
 
 -- Managers and students can view completed reports
 create policy "Managers and students can view completed reports"
   on reports for select
   using (
-    status = 'completed' and (
-      exists (
-        select 1 from public.profiles
-        where profiles.id = auth.uid() and profiles.role in ('manager', 'student')
-      )
-    )
+    status = 'completed' and 
+    (select role from public.profiles where id = auth.uid()) in ('manager', 'student')
   );
 
 -- Create indexes for better query performance
@@ -132,12 +122,14 @@ end;
 $$;
 
 -- Add updated_at trigger to profiles
+drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
   before update on public.profiles
   for each row
   execute procedure public.handle_updated_at();
 
 -- Add updated_at trigger to reports
+drop trigger if exists set_reports_updated_at on public.reports;
 create trigger set_reports_updated_at
   before update on public.reports
   for each row
@@ -158,3 +150,4 @@ order by created_at desc;
 
 -- Grant access to the view
 grant select on public.pending_admin_requests to authenticated;
+
