@@ -93,10 +93,10 @@ export interface StudentTopic {
   label_topic: 'Comfortable' | 'Watch' | 'Attention';
 }
 
-export interface StudentMomentum {
-  trend: 'Up' | 'Flat' | 'Down' | 'Unknown';
-  delta: number;
-  note: string;
+export interface StudentEngagement {
+  level: 'High' | 'Medium' | 'Low';
+  description: string;
+  active_days_ratio: number;
 }
 
 export interface StudentHighlight {
@@ -113,7 +113,7 @@ export interface StudentReport {
     easing: string;
   };
   highlights: StudentHighlight[];
-  momentum: StudentMomentum;
+  engagement: StudentEngagement;
   topics: {
     wins: Array<{ title: string; why: string }>;
     focus: Array<{ title: string; why: string; evidence?: string }>;

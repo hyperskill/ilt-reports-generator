@@ -1,7 +1,7 @@
 ---
 alwaysApply: true
 ---
-0. Don't commit if I not ask
+0. Ask human before performing any git commands
 1. Use Next.js as a main framework
 2. Use Radix UI for design. Here is doc docs/RADIX_UI_DOCUMENTATION.md
 3. Use React Charts to draw charts. Here is doc docs/REACT_CHARTJS_DOCUMENTATION.md

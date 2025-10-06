@@ -63,10 +63,10 @@ export default function StudentDetailPage({ params }: PageProps) {
     }
   };
 
-  const getMomentumColor = (trend: string): any => {
-    if (trend === 'Up') return 'green';
-    if (trend === 'Down') return 'red';
-    return 'gray';
+  const getEngagementColor = (level: string): any => {
+    if (level === 'High') return 'green';
+    if (level === 'Low') return 'red';
+    return 'blue';
   };
 
   return (
@@ -131,27 +131,25 @@ export default function StudentDetailPage({ params }: PageProps) {
           </Flex>
         </Card>
 
-        {/* Momentum */}
-        {report.momentum.trend !== 'Unknown' && (
-          <Card>
-            <Flex align="center" gap="3">
-              <Box style={{ fontSize: '2rem' }}>
-                {report.momentum.trend === 'Up' && '📈'}
-                {report.momentum.trend === 'Down' && '📉'}
-                {report.momentum.trend === 'Flat' && '➡️'}
-              </Box>
-              <Box style={{ flex: 1 }}>
-                <Flex align="center" gap="2" mb="1">
-                  <Text size="4" weight="bold">Recent Activity</Text>
-                  <Badge color={getMomentumColor(report.momentum.trend)} size="1">
-                    {report.momentum.trend}
-                  </Badge>
-                </Flex>
-                <Text size="2" color="gray">{report.momentum.note}</Text>
-              </Box>
-            </Flex>
-          </Card>
-        )}
+        {/* Overall Engagement */}
+        <Card>
+          <Flex align="center" gap="3">
+            <Box style={{ fontSize: '2rem' }}>
+              {report.engagement.level === 'High' && '🔥'}
+              {report.engagement.level === 'Medium' && '📊'}
+              {report.engagement.level === 'Low' && '💤'}
+            </Box>
+            <Box style={{ flex: 1 }}>
+              <Flex align="center" gap="2" mb="1">
+                <Text size="4" weight="bold">Overall Engagement</Text>
+                <Badge color={getEngagementColor(report.engagement.level)} size="1">
+                  {report.engagement.level}
+                </Badge>
+              </Flex>
+              <Text size="2" color="gray">{report.engagement.description}</Text>
+            </Box>
+          </Flex>
+        </Card>
 
         {/* Activity Curve */}
         <Card>

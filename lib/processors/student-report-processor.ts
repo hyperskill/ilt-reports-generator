@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { 
   StudentReport, 
   StudentTopic, 
-  StudentMomentum, 
+  StudentEngagement, 
   StudentHighlight,
   PerformanceRow,
   DynamicSummaryRow,
@@ -40,10 +40,10 @@ export function generateStudentReport({
 
   // Extract signals
   const wins = extractWins(perfRow, dynRow, topicTable);
-  const focus = extractFocus(perfRow, dynRow, topicTable, series);
+  const focus = extractFocus(perfRow, dynRow, topicTable);
 
-  // Calculate momentum
-  const momentum = calculateMomentum(series);
+  // Calculate overall engagement
+  const engagement = calculateEngagement(perfRow, dynRow);
 
   // Generate highlights
   const highlights = generateHighlights(wins, focus);
@@ -53,7 +53,7 @@ export function generateStudentReport({
   const topFocus = selectTopFocusTopics(topicTable.filter(t => t.label_topic === 'Attention' || t.label_topic === 'Watch'), 3);
 
   // Generate next steps
-  const nextSteps = generateNextSteps(perfRow, dynRow, topFocus, momentum);
+  const nextSteps = generateNextSteps(perfRow, dynRow, topFocus, engagement);
 
   // Curve explanation
   const curveExplanation = getCurveExplanation(dynRow.easing_label);
@@ -66,7 +66,7 @@ export function generateStudentReport({
       easing: dynRow.easing_label,
     },
     highlights,
-    momentum,
+    engagement,
     topics: {
       wins: topWins.map(t => ({ 
         title: t.topic_title, 
@@ -253,8 +253,7 @@ function extractWins(
 function extractFocus(
   perf: PerformanceRow,
   dyn: DynamicSummaryRow,
-  topics: StudentTopic[],
-  series: DynamicSeriesRow[]
+  topics: StudentTopic[]
 ): Array<{ type: string; score: number; detail?: string }> {
   const focus: Array<{ type: string; score: number; detail?: string }> = [];
 
@@ -269,63 +268,56 @@ function extractFocus(
     focus.push({ type: 'struggle', score: perf.struggle_index * 100 });
   }
 
-  // Low consistency
+  // Low overall consistency (based on entire period, not just last week)
   if (perf.active_days_ratio < 0.3) {
     focus.push({ type: 'low_consistency', score: (1 - perf.active_days_ratio) * 100 });
   }
 
-  // Momentum down (calculated separately)
-  const momentum = calculateMomentum(series);
-  if (momentum.trend === 'Down') {
-    focus.push({ type: 'momentum_down', score: Math.abs(momentum.delta) * 100 });
+  // High burstiness pattern (working in sporadic bursts across entire period)
+  if (dyn.burstiness > 0.8) {
+    focus.push({ type: 'high_burstiness', score: dyn.burstiness * 100 });
   }
 
-  // Easing risk patterns
+  // Easing risk patterns (overall work distribution)
   if (dyn.easing_label === 'ease-in' && dyn.t25 > 0.4) {
     focus.push({ type: 'late_start', score: dyn.t25 * 100 });
   }
 
-  if (dyn.easing_label === 'ease-out' && dyn.t75 < 0.6 && momentum.trend === 'Down') {
-    focus.push({ type: 'end_dropoff', score: (1 - dyn.t75) * 100 });
+  // Early dropoff pattern (completed most work early then stopped)
+  if (dyn.easing_label === 'ease-out' && dyn.t75 < 0.6) {
+    focus.push({ type: 'early_dropoff', score: (1 - dyn.t75) * 100 });
   }
 
   return focus;
 }
 
-function calculateMomentum(series: DynamicSeriesRow[]): StudentMomentum {
-  if (series.length < 14) {
-    return {
-      trend: 'Unknown',
-      delta: 0,
-      note: 'Not enough data to calculate momentum (need at least 14 days).',
-    };
+function calculateEngagement(
+  perf: PerformanceRow,
+  dyn: DynamicSummaryRow
+): StudentEngagement {
+  const activeDaysRatio = perf.active_days_ratio;
+  const consistency = dyn.consistency;
+  const avgEngagement = (activeDaysRatio + consistency) / 2;
+
+  let level: 'High' | 'Medium' | 'Low';
+  let description: string;
+
+  if (avgEngagement >= 0.6) {
+    level = 'High';
+    description = `You've been highly engaged throughout the course, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
+  } else if (avgEngagement >= 0.3) {
+    level = 'Medium';
+    description = `You've maintained moderate engagement, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
+  } else {
+    level = 'Low';
+    description = `Your overall engagement shows room for improvement — you were active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
   }
 
-  // Sort by date
-  const sorted = [...series].sort((a, b) => a.date_iso.localeCompare(b.date_iso));
-
-  // Last 7 days
-  const last7 = sorted.slice(-7);
-  const last7Total = last7.reduce((sum, row) => sum + row.activity_total, 0);
-
-  // Previous 7 days (days -14 to -8)
-  const prev7 = sorted.slice(-14, -7);
-  const prev7Total = prev7.reduce((sum, row) => sum + row.activity_total, 0);
-
-  const delta = prev7Total > 0 ? (last7Total - prev7Total) / prev7Total : 0;
-
-  let trend: 'Up' | 'Flat' | 'Down' = 'Flat';
-  let note = 'Activity level is similar to the previous week.';
-
-  if (delta >= 0.15) {
-    trend = 'Up';
-    note = `Activity increased by ${Math.round(delta * 100)}% compared to the previous week.`;
-  } else if (delta <= -0.15) {
-    trend = 'Down';
-    note = `Activity decreased by ${Math.round(Math.abs(delta) * 100)}% compared to the previous week.`;
-  }
-
-  return { trend, delta, note };
+  return {
+    level,
+    description,
+    active_days_ratio: activeDaysRatio,
+  };
 }
 
 function generateHighlights(
@@ -340,13 +332,13 @@ function generateHighlights(
     let text = '';
     switch (win.type) {
       case 'achievement':
-        text = `Strong performance — your score is well above average.`;
+        text = `Strong overall performance — your score is well above average.`;
         break;
       case 'consistency':
-        text = `Steady weekly rhythm — your consistency is strong.`;
+        text = `Steady engagement throughout — your consistency is strong.`;
         break;
       case 'steady':
-        text = `Balanced work pattern — you maintain even pace throughout.`;
+        text = `Balanced work pattern — you maintain even pace across the course.`;
         break;
       case 'early_progress':
         text = `Great start — you frontloaded your efforts effectively.`;
@@ -364,22 +356,22 @@ function generateHighlights(
     let text = '';
     switch (item.type) {
       case 'topic_focus':
-        text = `"${item.detail}" needed extra attempts — let's revisit the key concepts.`;
+        text = `"${item.detail}" needed extra attempts — revisiting key concepts may help.`;
         break;
       case 'struggle':
-        text = `Some topics required many retries — review fundamentals may help.`;
+        text = `Some topics required many retries — reviewing fundamentals could strengthen understanding.`;
         break;
       case 'low_consistency':
-        text = `Fewer active days recently — try short daily sessions to build momentum.`;
+        text = `Overall engagement could be more regular — try establishing a consistent study schedule.`;
         break;
-      case 'momentum_down':
-        text = `Activity dipped this week — plan two 20-30 min sessions to regain pace.`;
+      case 'high_burstiness':
+        text = `Work pattern shows sporadic bursts — more regular sessions could improve retention.`;
         break;
       case 'late_start':
-        text = `Slow start pattern detected — consider beginning each week with a quick task.`;
+        text = `Slow start pattern — beginning new material earlier could help build understanding.`;
         break;
-      case 'end_dropoff':
-        text = `Strong start but activity dropped later — keep momentum in the second half.`;
+      case 'early_dropoff':
+        text = `Strong start but activity dropped off — maintaining pace throughout is beneficial.`;
         break;
     }
     if (text) highlights.push({ type: 'focus', text, reason: item.type });
@@ -423,7 +415,7 @@ function generateNextSteps(
   perf: PerformanceRow,
   dyn: DynamicSummaryRow,
   focusTopics: StudentTopic[],
-  momentum: StudentMomentum
+  engagement: StudentEngagement
 ): string[] {
   const steps: string[] = [];
 
@@ -433,31 +425,40 @@ function generateNextSteps(
     steps.push(`Review "${topic.topic_title}" — start with the steps that took most attempts or weren't solved on first try.`);
   }
 
-  // 2. Momentum down
-  if (momentum.trend === 'Down') {
-    steps.push(`Plan two short sessions this week (20–30 min) to regain pace.`);
+  // 2. Low overall engagement
+  if (engagement.level === 'Low') {
+    steps.push(`Establish a regular study schedule — consistent short sessions are more effective than long sporadic ones.`);
   }
 
-  // 3. Meeting attendance
+  // 3. High burstiness pattern
+  if (dyn.burstiness > 0.8) {
+    steps.push(`Work on creating a more regular study rhythm — daily or every-other-day sessions help with retention.`);
+  }
+
+  // 4. Meeting attendance
   if (perf.meetings_attended_pct < 40 && perf.meetings_attended_pct > 0) {
-    steps.push(`Join the next webinar to connect with peers and clarify concepts.`);
+    steps.push(`Consider attending more webinars — they're valuable for connecting with peers and clarifying concepts.`);
   }
 
-  // 4. Reinforce strength or general advice
+  // 5. Reinforce strength or general advice
   if (steps.length === 0) {
-    if (dyn.consistency >= 0.5) {
-      steps.push(`Maintain steady rhythm: aim for 3 active days this week.`);
+    if (perf.success_rate >= 80) {
+      steps.push(`Excellent work! Continue challenging yourself with advanced topics.`);
+    } else if (dyn.consistency >= 0.5) {
+      steps.push(`Your consistent approach is working well — keep maintaining that rhythm.`);
     } else {
-      steps.push(`Try shorter, more frequent study sessions to build consistency.`);
+      steps.push(`Try establishing a more regular study pattern to improve retention and understanding.`);
     }
   }
 
   // Add one more if needed
   if (steps.length === 1) {
     if (perf.success_rate < 70) {
-      steps.push(`Focus on understanding concepts before moving to new topics.`);
+      steps.push(`Focus on understanding core concepts before moving to new topics — quality over speed.`);
+    } else if (perf.persistence > 3) {
+      steps.push(`You show great persistence — make sure to review successful strategies that work for you.`);
     } else {
-      steps.push(`Keep challenging yourself with new material.`);
+      steps.push(`Keep up the good progress and don't hesitate to ask for help when needed.`);
     }
   }
 
