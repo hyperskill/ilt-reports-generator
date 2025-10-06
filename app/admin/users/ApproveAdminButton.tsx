@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@radix-ui/themes';
 
 interface ApproveAdminButtonProps {
@@ -13,27 +12,33 @@ interface ApproveAdminButtonProps {
 export function ApproveAdminButton({ userId, currentAdminId }: ApproveAdminButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleApprove = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      const response = await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
           role: 'admin',
-          requested_admin: false,
-          admin_approved_at: new Date().toISOString(),
-          admin_approved_by: currentAdminId,
-        })
-        .eq('id', userId);
+          requestedAdmin: false,
+        }),
+      });
 
-      if (error) throw error;
+      const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to approve admin');
+      }
+
+      console.log('Admin approved successfully:', data);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving admin:', error);
-      alert('Failed to approve admin request');
+      alert(`Failed to approve admin request: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -50,4 +55,3 @@ export function ApproveAdminButton({ userId, currentAdminId }: ApproveAdminButto
     </Button>
   );
 }
-

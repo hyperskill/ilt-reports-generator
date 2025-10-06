@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState } from 'use';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button, DropdownMenu } from '@radix-ui/themes';
 
 interface ChangeRoleButtonProps {
@@ -14,33 +13,35 @@ interface ChangeRoleButtonProps {
 export function ChangeRoleButton({ userId, currentRole, currentAdminId }: ChangeRoleButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleRoleChange = async (newRole: 'admin' | 'manager' | 'student') => {
     if (newRole === currentRole) return;
 
     setLoading(true);
     try {
-      const updateData: any = { role: newRole };
+      const response = await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          role: newRole,
+          requestedAdmin: false,
+        }),
+      });
 
-      // If promoting to admin, mark as approved
-      if (newRole === 'admin') {
-        updateData.admin_approved_at = new Date().toISOString();
-        updateData.admin_approved_by = currentAdminId;
-        updateData.requested_admin = false;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to change role');
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId);
-
-      if (error) throw error;
-
+      console.log('Role changed successfully:', data);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing role:', error);
-      alert('Failed to change user role');
+      alert(`Failed to change user role: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -76,4 +77,3 @@ export function ChangeRoleButton({ userId, currentRole, currentAdminId }: Change
     </DropdownMenu.Root>
   );
 }
-
