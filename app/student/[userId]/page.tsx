@@ -350,7 +350,6 @@ export default function StudentDetailPage({ params }: PageProps) {
                   <Table.Row>
                     <Table.ColumnHeaderCell>Topic</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Label</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Steps</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Attempts/Step</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>First-Pass Rate</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Score</Table.ColumnHeaderCell>
@@ -386,7 +385,6 @@ export default function StudentDetailPage({ params }: PageProps) {
                         <Table.Cell>
                           <Badge color={labelColor} size="1">{topic.label_topic}</Badge>
                         </Table.Cell>
-                        <Table.Cell><Text size="2">{topic.steps_attempted}</Text></Table.Cell>
                         <Table.Cell>
                           <Text size="2" color={topic.mean_delta_attempts > 0 ? 'orange' : 'green'}>
                             {topic.attempts_per_step.toFixed(1)}
@@ -416,21 +414,44 @@ export default function StudentDetailPage({ params }: PageProps) {
             </Box>
 
             <Box mt="3" p="3" style={{ backgroundColor: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
-              <Text size="2" weight="bold" mb="1">Legend:</Text>
-              <Flex direction="column" gap="1">
-                <Text size="2">
-                  <Badge color="green" size="1">Comfortable</Badge> — Topics you're handling well
-                </Text>
-                <Text size="2">
-                  <Badge color="orange" size="1">Watch</Badge> — Topics needing some attention
-                </Text>
-                <Text size="2">
-                  <Badge color="red" size="1">Attention</Badge> — Topics requiring focused review
-                </Text>
+              <Text as="div" size="2" weight="bold" mb="2">What this table shows:</Text>
+              <Flex direction="column" gap="2">
+                <Box>
+                  <Text as="div" size="2" weight="medium" mb="1">📌 Label</Text>
+                  <Text as="div" size="2" color="gray" mb="1">
+                    <Badge color="green" size="1">Comfortable</Badge> — Going well, no issues
+                  </Text>
+                  <Text as="div" size="2" color="gray" mb="1">
+                    <Badge color="orange" size="1">Watch</Badge> — Worth reviewing
+                  </Text>
+                  <Text as="div" size="2" color="gray">
+                    <Badge color="red" size="1">Attention</Badge> — Needs extra practice
+                  </Text>
+                </Box>
+                
+                <Box>
+                  <Text as="div" size="2" weight="medium" mb="1">🔄 Attempts/Step</Text>
+                  <Text as="div" size="2" color="gray">
+                    How many tries it took to solve problems on average. Lower is usually better. 
+                    Numbers in <Text as="span" color="gray" style={{ fontStyle: 'italic' }}>(parentheses)</Text> show if this is more (+) or fewer (−) tries than other students.
+                  </Text>
+                </Box>
+                
+                <Box>
+                  <Text as="div" size="2" weight="medium" mb="1">✅ First-Pass Rate</Text>
+                  <Text as="div" size="2" color="gray">
+                    Percentage of problems solved correctly on the first try. Higher means better understanding. 
+                    Numbers in <Text as="span" color="gray" style={{ fontStyle: 'italic' }}>(parentheses)</Text> compare to other students.
+                  </Text>
+                </Box>
+                
+                <Box>
+                  <Text as="div" size="2" weight="medium" mb="1">📊 Score</Text>
+                  <Text as="div" size="2" color="gray">
+                    Overall difficulty rating for this topic. Higher scores mean the topic was more challenging and might need review.
+                  </Text>
+                </Box>
               </Flex>
-              <Text size="2" mt="2" style={{ fontStyle: 'italic' }}>
-                Numbers in parentheses show difference from course average (+ means above average, - means below average).
-              </Text>
             </Box>
           </Card>
         )}
