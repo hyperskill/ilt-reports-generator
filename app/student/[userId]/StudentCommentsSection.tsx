@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Flex, Heading, Text, Button, TextArea, Box } from '@radix-ui/themes';
+import { useAppContext } from '@/lib/context/AppContext';
 
 interface StudentCommentsSectionProps {
   reportId: string | null;
@@ -10,6 +11,7 @@ interface StudentCommentsSectionProps {
 }
 
 export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCommentsSectionProps) {
+  const { studentComments, setStudentComment } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -21,8 +23,17 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
   useEffect(() => {
     if (reportId) {
       loadComments();
+    } else {
+      // Load from context if no reportId (current session)
+      const contextComment = studentComments?.[userId];
+      if (contextComment) {
+        setProgramExpert(contextComment.comment_program_expert || '');
+        setTeachingAssistants(contextComment.comment_teaching_assistants || '');
+        setLearningSupport(contextComment.comment_learning_support || '');
+        setComments(contextComment);
+      }
     }
-  }, [reportId, userId]);
+  }, [reportId, userId, studentComments]);
 
   const loadComments = async () => {
     if (!reportId) return;
@@ -47,28 +58,39 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
   };
 
   const handleSave = async () => {
-    if (!reportId) return;
-
     setSaving(true);
     try {
-      const response = await fetch('/api/student-comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reportId,
+      if (reportId) {
+        // Save to database if reportId exists
+        const response = await fetch('/api/student-comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reportId,
+            userId,
+            comment_program_expert: programExpert,
+            comment_teaching_assistants: teachingAssistants,
+            comment_learning_support: learningSupport,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save comments');
+        }
+
+        const data = await response.json();
+        setComments(data.comments);
+      } else {
+        // Save to context if no reportId (current session)
+        const newComment = {
           userId,
-          comment_program_expert: programExpert,
-          comment_teaching_assistants: teachingAssistants,
-          comment_learning_support: learningSupport,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save comments');
+          comment_program_expert: programExpert || undefined,
+          comment_teaching_assistants: teachingAssistants || undefined,
+          comment_learning_support: learningSupport || undefined,
+        };
+        setStudentComment(userId, newComment);
+        setComments(newComment);
       }
-
-      const data = await response.json();
-      setComments(data.comments);
       setIsEditing(false);
     } catch (error: any) {
       alert(`Failed to save comments: ${error.message}`);
@@ -89,11 +111,6 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
     }
     setIsEditing(false);
   };
-
-  // Don't show if no reportId (viewing from current results)
-  if (!reportId) {
-    return null;
-  }
 
   // Don't show if not admin and no comments exist
   if (!isAdmin && !comments) {

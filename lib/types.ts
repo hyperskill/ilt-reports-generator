@@ -141,6 +141,13 @@ export interface StudentReport {
 }
 
 // App State
+export interface StudentComment {
+  userId: string;
+  comment_program_expert?: string;
+  comment_teaching_assistants?: string;
+  comment_learning_support?: string;
+}
+
 export interface AppState {
   files: UploadedFiles;
   excludedUserIds: string[];
@@ -148,4 +155,5 @@ export interface AppState {
   results?: ProcessingResult;
   currentMode: 'performance' | 'dynamic';
   currentReportId?: string | null;
+  studentComments?: Record<string, StudentComment>;
 }

@@ -10,7 +10,7 @@ import { processDynamicSegmentation } from '@/lib/processors/dynamic-processor';
 
 export default function ProcessingPage() {
   const router = useRouter();
-  const { files, excludedUserIds, settings, setResults, setCurrentReportId } = useAppContext();
+  const { files, excludedUserIds, settings, setResults, setCurrentReportId, studentComments } = useAppContext();
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [log, setLog] = useState<string[]>([]);
@@ -168,6 +168,7 @@ export default function ProcessingPage() {
           dynamicSeries: processedResults.dynamicSeries,
           settings,
           excludedUserIds,
+          studentComments: studentComments || {},
           fileMetadata: {
             gradeBook: files.grade_book?.name,
             learners: files.learners?.name,

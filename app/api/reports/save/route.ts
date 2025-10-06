@@ -32,7 +32,8 @@ export async function POST(request: Request) {
       dynamicSeries,
       settings,
       excludedUserIds,
-      fileMetadata 
+      fileMetadata,
+      studentComments 
     } = body;
 
     if (!title || !performanceData || !dynamicData) {
@@ -64,6 +65,27 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Save student comments if provided
+    if (studentComments && Object.keys(studentComments).length > 0) {
+      const commentsToInsert = Object.values(studentComments).map((comment: any) => ({
+        report_id: report.id,
+        user_id: comment.userId,
+        comment_program_expert: comment.comment_program_expert || null,
+        comment_teaching_assistants: comment.comment_teaching_assistants || null,
+        comment_learning_support: comment.comment_learning_support || null,
+        updated_by: user.id,
+      }));
+
+      const { error: commentsError } = await supabase
+        .from('student_comments')
+        .insert(commentsToInsert);
+
+      if (commentsError) {
+        console.error('Failed to save student comments:', commentsError);
+        // Don't fail the entire request, just log the error
+      }
     }
 
     return NextResponse.json({ success: true, report });

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { AppState, UploadedFiles, DisplaySettings, ProcessingResult } from '@/lib/types';
+import { AppState, UploadedFiles, DisplaySettings, ProcessingResult, StudentComment } from '@/lib/types';
 
 interface AppContextType extends AppState {
   setFiles: (files: UploadedFiles) => void;
@@ -10,6 +10,7 @@ interface AppContextType extends AppState {
   setResults: (results: ProcessingResult) => void;
   setCurrentMode: (mode: 'performance' | 'dynamic') => void;
   setCurrentReportId: (id: string | null) => void;
+  setStudentComment: (userId: string, comment: StudentComment) => void;
   resetSession: () => void;
 }
 
@@ -31,6 +32,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [results, setResults] = useState<ProcessingResult | undefined>();
   const [currentMode, setCurrentMode] = useState<'performance' | 'dynamic'>('performance');
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
+  const [studentComments, setStudentComments] = useState<Record<string, StudentComment>>({});
+
+  const setStudentComment = (userId: string, comment: StudentComment) => {
+    setStudentComments(prev => ({
+      ...prev,
+      [userId]: comment
+    }));
+  };
 
   const resetSession = () => {
     setFiles({});
@@ -39,6 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setResults(undefined);
     setCurrentMode('performance');
     setCurrentReportId(null);
+    setStudentComments({});
   };
 
   return (
@@ -50,12 +60,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         results,
         currentMode,
         currentReportId,
+        studentComments,
         setFiles,
         setExcludedUserIds,
         setSettings,
         setResults,
         setCurrentMode,
         setCurrentReportId,
+        setStudentComment,
         resetSession,
       }}
     >
