@@ -101,21 +101,37 @@ export function generateStudentReport({
 function generateTopicTable(userId: string, submissions: any[], structure: any[] | undefined, excludedUserIds: string[]): StudentTopic[] {
   const excluded = new Set(excludedUserIds.map(id => String(id).trim().toLowerCase()));
   
-  // Build structure map: step_id -> {lesson_id, unit_id, course_id}
-  const structureMap = new Map<string, { lesson_id: number; unit_id: number; course_id: number }>();
+  // Build structure map: step_id -> {lesson_id, unit_id, course_id, step_position}
+  const structureMap = new Map<string, { lesson_id: number; unit_id: number; course_id: number; step_position: number }>();
+  // Also build lesson map: lesson_id -> first_step_id
+  const lessonFirstStep = new Map<number, { step_id: number; unit_id: number; course_id: number; step_position: number }>();
+  
   if (structure && structure.length > 0) {
     for (const row of structure) {
       const stepId = String(row.step_id || row.stepid || row.step || '').trim();
       const lessonId = Number(row.lesson_id || row.lessonid || 0);
       const moduleId = Number(row.module_id || row.moduleid || 0);
       const courseId = Number(row.course_id || row.courseid || 0);
+      const stepPosition = Number(row.step_position || row.stepposition || 999);
       
       if (stepId && lessonId) {
         structureMap.set(stepId, {
           lesson_id: lessonId,
           unit_id: moduleId,
           course_id: courseId,
+          step_position: stepPosition,
         });
+        
+        // Track first step of each lesson (min step_position)
+        const existing = lessonFirstStep.get(lessonId);
+        if (!existing || stepPosition < existing.step_position) {
+          lessonFirstStep.set(lessonId, {
+            step_id: Number(stepId),
+            unit_id: moduleId,
+            course_id: courseId,
+            step_position: stepPosition,
+          });
+        }
       }
     }
   }
@@ -163,10 +179,7 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
     totalAttempts: number;
     firstPassCount: number;
     correctCount: number;
-    firstStepId?: string;
-    lessonId?: number;
-    unitId?: number;
-    courseId?: number;
+    lessonsInTopic: Set<number>;
   }>();
 
   for (const [stepId, stats] of stepStats.entries()) {
@@ -176,16 +189,12 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
     const topicKey = `Topic ${topicIndex + 1}`;
 
     if (!topics.has(topicKey)) {
-      const structInfo = structureMap.get(stepId);
       topics.set(topicKey, {
         steps: [],
         totalAttempts: 0,
         firstPassCount: 0,
         correctCount: 0,
-        firstStepId: stepId,
-        lessonId: structInfo?.lesson_id,
-        unitId: structInfo?.unit_id,
-        courseId: structInfo?.course_id,
+        lessonsInTopic: new Set(),
       });
     }
 
@@ -194,6 +203,12 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
     topic.totalAttempts += stats.attempts;
     if (stats.firstAttemptCorrect) topic.firstPassCount += 1;
     if (stats.anyCorrect) topic.correctCount += 1;
+    
+    // Track lessons in this topic
+    const structInfo = structureMap.get(stepId);
+    if (structInfo?.lesson_id) {
+      topic.lessonsInTopic.add(structInfo.lesson_id);
+    }
   }
 
   // Calculate overall stats for comparison (course average)
@@ -229,6 +244,26 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
       label = 'Watch';
     }
 
+    // Find the first lesson in this topic and get its first step
+    let lessonId: number | undefined;
+    let firstStepId: number | undefined;
+    let unitId: number | undefined;
+    let courseId: number | undefined;
+    
+    if (data.lessonsInTopic.size > 0) {
+      // Get the smallest lesson_id (first lesson in sequence)
+      const sortedLessons = Array.from(data.lessonsInTopic).sort((a, b) => a - b);
+      const firstLesson = sortedLessons[0];
+      const firstStepInfo = lessonFirstStep.get(firstLesson);
+      
+      if (firstStepInfo) {
+        lessonId = firstLesson;
+        firstStepId = firstStepInfo.step_id;
+        unitId = firstStepInfo.unit_id;
+        courseId = firstStepInfo.course_id;
+      }
+    }
+
     result.push({
       topic_title: topicTitle,
       steps_attempted: stepsAttempted,
@@ -238,10 +273,10 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
       mean_delta_first: Number(deltaFirst.toFixed(2)),
       topic_score: Number(topicScore.toFixed(2)),
       label_topic: label,
-      lesson_id: data.lessonId,
-      first_step_id: data.firstStepId ? Number(data.firstStepId) : undefined,
-      unit_id: data.unitId,
-      course_id: data.courseId,
+      lesson_id: lessonId,
+      first_step_id: firstStepId,
+      unit_id: unitId,
+      course_id: courseId,
     });
   }
 
