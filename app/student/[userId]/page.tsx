@@ -87,24 +87,24 @@ export default function StudentDetailPage({ params }: PageProps) {
 
           <Grid columns="4" gap="3">
             <Box>
-              <Text size="2" color="gray" mb="1">Segment</Text>
+              <Text as="div" size="2" color="gray" mb="1">Segment</Text>
               <Badge color={getSegmentColor(report.student.segment)} size="2">
                 {report.student.segment}
               </Badge>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Activity Pattern</Text>
+              <Text as="div" size="2" color="gray" mb="1">Activity Pattern</Text>
               <Badge color={getEasingColor(report.student.easing)} size="2">
                 {report.student.easing}
               </Badge>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Score</Text>
-              <Text size="5" weight="bold">{report.performance.total_pct}%</Text>
+              <Text as="div" size="2" color="gray" mb="1">Score</Text>
+              <Text as="div" size="5" weight="bold">{report.performance.total_pct}%</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Success Rate</Text>
-              <Text size="5" weight="bold">{report.performance.success_rate}%</Text>
+              <Text as="div" size="2" color="gray" mb="1">Success Rate</Text>
+              <Text as="div" size="5" weight="bold">{report.performance.success_rate}%</Text>
             </Box>
           </Grid>
         </Card>
@@ -161,27 +161,27 @@ export default function StudentDetailPage({ params }: PageProps) {
 
           <Grid columns="4" gap="3" mb="4">
             <Box>
-              <Text size="2" color="gray" mb="1">Frontload Index</Text>
-              <Text size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'} mb="1">
+              <Text as="div" size="2" color="gray" mb="1">Frontload Index</Text>
+              <Text as="div" size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'} mb="1">
                 {report.curve.fi.toFixed(3)}
               </Text>
-              <Text size="1" color="gray">
+              <Text as="div" size="1" color="gray">
                 {report.curve.fi > 0 ? 'Early loading' : report.curve.fi < 0 ? 'Late loading' : 'Balanced'}
               </Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Consistency</Text>
-              <Text size="4" weight="bold" mb="1">{(report.curve.consistency * 100).toFixed(0)}%</Text>
-              <Text size="1" color="gray">Active days / total days</Text>
+              <Text as="div" size="2" color="gray" mb="1">Consistency</Text>
+              <Text as="div" size="4" weight="bold" mb="1">{(report.curve.consistency * 100).toFixed(0)}%</Text>
+              <Text as="div" size="1" color="gray">Active days / total days</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Burstiness</Text>
-              <Text size="4" weight="bold" mb="1">{report.curve.burstiness.toFixed(2)}</Text>
-              <Text size="1" color="gray">{report.curve.burstiness > 0.6 ? 'Bursty' : 'Steady'}</Text>
+              <Text as="div" size="2" color="gray" mb="1">Burstiness</Text>
+              <Text as="div" size="4" weight="bold" mb="1">{report.curve.burstiness.toFixed(2)}</Text>
+              <Text as="div" size="1" color="gray">{report.curve.burstiness > 0.6 ? 'Bursty' : 'Steady'}</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Progress Points</Text>
-              <Text size="2">
+              <Text as="div" size="2" color="gray" mb="1">Progress Points</Text>
+              <Text as="div" size="2">
                 25%: {(report.curve.t25 * 100).toFixed(0)}%<br/>
                 50%: {(report.curve.t50 * 100).toFixed(0)}%<br/>
                 75%: {(report.curve.t75 * 100).toFixed(0)}%
@@ -288,34 +288,34 @@ export default function StudentDetailPage({ params }: PageProps) {
           <Heading size="3" mb="2">Performance Metrics</Heading>
           <Grid columns="3" gap="3" mb="4">
             <Box>
-              <Text size="2" color="gray" mb="1">Submissions</Text>
-              <Text size="4" weight="bold">{report.performance.submissions}</Text>
+              <Text as="div" size="2" color="gray" mb="1">Submissions</Text>
+              <Text as="div" size="4" weight="bold">{report.performance.submissions}</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Unique Steps</Text>
-              <Text size="4" weight="bold">{report.performance.unique_steps}</Text>
+              <Text as="div" size="2" color="gray" mb="1">Unique Steps</Text>
+              <Text as="div" size="4" weight="bold">{report.performance.unique_steps}</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Persistence</Text>
-              <Text size="4" weight="bold" mb="1">{report.performance.persistence.toFixed(2)}</Text>
-              <Text size="1" color="gray">Attempts per step</Text>
+              <Text as="div" size="2" color="gray" mb="1">Persistence</Text>
+              <Text as="div" size="4" weight="bold" mb="1">{report.performance.persistence.toFixed(2)}</Text>
+              <Text as="div" size="1" color="gray">Attempts per step</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Efficiency</Text>
-              <Text size="4" weight="bold" mb="1">{report.performance.efficiency.toFixed(2)}</Text>
-              <Text size="1" color="gray">Correct per step</Text>
+              <Text as="div" size="2" color="gray" mb="1">Efficiency</Text>
+              <Text as="div" size="4" weight="bold" mb="1">{report.performance.efficiency.toFixed(2)}</Text>
+              <Text as="div" size="1" color="gray">Correct per step</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Active Days</Text>
-              <Text size="4" weight="bold" mb="1">{report.performance.active_days}</Text>
-              <Text size="1" color="gray">{(report.performance.active_days_ratio * 100).toFixed(0)}% of period</Text>
+              <Text as="div" size="2" color="gray" mb="1">Active Days</Text>
+              <Text as="div" size="4" weight="bold" mb="1">{report.performance.active_days}</Text>
+              <Text as="div" size="1" color="gray">{(report.performance.active_days_ratio * 100).toFixed(0)}% of period</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray" mb="1">Effort Index</Text>
-              <Text size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'} mb="1">
+              <Text as="div" size="2" color="gray" mb="1">Effort Index</Text>
+              <Text as="div" size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'} mb="1">
                 {report.performance.effort_index.toFixed(2)}
               </Text>
-              <Text size="1" color="gray">vs. course average</Text>
+              <Text as="div" size="1" color="gray">vs. course average</Text>
             </Box>
           </Grid>
 
@@ -325,12 +325,12 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="3" mb="2">Meeting Attendance</Heading>
               <Grid columns="2" gap="3">
                 <Box>
-                  <Text size="2" color="gray" mb="1">Meetings Attended</Text>
-                  <Text size="4" weight="bold">{report.performance.meetings_attended}</Text>
+                  <Text as="div" size="2" color="gray" mb="1">Meetings Attended</Text>
+                  <Text as="div" size="4" weight="bold">{report.performance.meetings_attended}</Text>
                 </Box>
                 <Box>
-                  <Text size="2" color="gray" mb="1">Attendance Rate</Text>
-                  <Text size="4" weight="bold">{report.performance.meetings_attended_pct}%</Text>
+                  <Text as="div" size="2" color="gray" mb="1">Attendance Rate</Text>
+                  <Text as="div" size="4" weight="bold">{report.performance.meetings_attended_pct}%</Text>
                 </Box>
               </Grid>
             </>
