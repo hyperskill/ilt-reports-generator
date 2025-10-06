@@ -1,5 +1,58 @@
 # App Creation Log
 
+## 2025-10-06: Refactor - Overall Engagement vs Weekly Momentum
+
+### Breaking Change: Removed Weekly Momentum Calculation
+**Rationale**: Student reports are for evaluating overall course results, not recent trends. Weekly momentum (last 7 vs previous 7 days) is not relevant for summative assessment at course completion.
+
+### Changes
+**Type System**:
+- Replaced `StudentMomentum` with `StudentEngagement`
+- `StudentEngagement` includes: level (High/Medium/Low), description, active_days_ratio
+
+**Processor Logic** (`student-report-processor.ts`):
+- Removed `calculateMomentum()` function
+- Added `calculateEngagement()` function based on entire course period
+- Engagement = average of (active_days_ratio + consistency from dynamic analysis)
+- High: ≥60%, Medium: 30-60%, Low: <30%
+
+**Signal Extraction**:
+- Removed momentum-based focus signals: `momentum_down`, `end_dropoff` (with momentum condition)
+- Added overall pattern signals: `high_burstiness` (>0.8), `early_dropoff` (without momentum)
+- Updated `extractFocus()` to remove `series` parameter (no longer needed)
+
+**Highlights Generation**:
+- Updated text to emphasize overall course patterns
+- "Overall engagement" instead of "recent activity"
+- "Throughout the course" instead of "this week"
+- "Pattern shows" instead of "activity dipped"
+
+**Next Steps Generation**:
+- Removed momentum-based suggestions ("Plan two short sessions this week")
+- Added engagement-based suggestions ("Establish regular study schedule")
+- Added burstiness-based suggestions ("Create more regular study rhythm")
+- Suggestions now focus on overall habits, not weekly fixes
+
+**UI Changes** (`app/student/[userId]/page.tsx`):
+- Replaced "Recent Activity" card with "Overall Engagement" card
+- Emoji indicators: 🔥 High, 📊 Medium, 💤 Low (was 📈📉➡️)
+- Description shows total active days across full period
+- Removed `getMomentumColor()`, added `getEngagementColor()`
+
+### Benefits
+1. **More relevant**: Summative assessment vs formative feedback
+2. **Clearer insights**: Overall learning patterns vs weekly fluctuations
+3. **Better actionable advice**: Long-term habits vs short-term fixes
+4. **Consistent purpose**: Report evaluates course completion, not ongoing progress
+
+### Algorithm Alignment
+Modified from Personal Student Report Algorithm v1:
+- Kept: §3 (Wins & Focus), §5 (Topic selection), §6 (Next steps structure), §7 (Curve explanation)
+- Removed: §4 (Momentum last 7 vs previous 7)
+- Added: Overall engagement calculation (active days ratio + consistency)
+
+---
+
 ## 2025-10-06: Personalized Student Report Feature
 
 ### Major Feature: Individual Student Detail Pages
