@@ -129,26 +129,26 @@ export default function UploadPage() {
       <Box mt="6">
         <Card>
           <Flex direction="column" gap="3">
-            <Heading size="4">Что покажет анализ?</Heading>
+            <Heading size="4">What will the analysis show?</Heading>
             <Box>
-              <Text weight="bold" size="3">📊 Performance Segmentation (Анализ успеваемости)</Text>
+              <Text weight="bold" size="3">📊 Performance Segmentation</Text>
               <Text size="2" color="gray" as="p" mt="1">
-                Создаёт профиль каждого студента: оценки, количество попыток, регулярность занятий, посещаемость встреч.
-                Автоматически распределяет студентов по группам: "Лидеры", "Средний уровень", "Нужна поддержка" и др.
+                Creates a profile for each student: grades, number of attempts, study regularity, meeting attendance.
+                Automatically groups students into categories: "Leaders", "Balanced", "Need Support", etc.
               </Text>
             </Box>
             <Box>
-              <Text weight="bold" size="3">📈 Dynamic/Easing (Анализ активности во времени)</Text>
+              <Text weight="bold" size="3">📈 Dynamic/Easing (Activity Over Time)</Text>
               <Text size="2" color="gray" as="p" mt="1">
-                Показывает, как студент работал на протяжении курса: был активен в начале или в конце, работал равномерно или рывками.
-                Определяет тип активности (ранний старт, поздний старт, равномерная работа).
+                Shows how the student worked throughout the course: active early or late, worked evenly or in bursts.
+                Determines activity type (early start, late start, steady work).
               </Text>
             </Box>
             <Box mt="2" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
-              <Text size="2" weight="bold" mb="1">💡 Важно:</Text>
+              <Text size="2" weight="bold" mb="1">💡 Important:</Text>
               <Text size="2">
-                Вся активность автоматически высчитывается из ваших попыток (submissions.csv). 
-                Дополнительные файлы с активностью НЕ нужны!
+                All activity is automatically calculated from your submissions (submissions.csv). 
+                No additional activity files needed!
               </Text>
             </Box>
           </Flex>

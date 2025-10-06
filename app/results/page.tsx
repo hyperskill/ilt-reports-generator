@@ -23,12 +23,12 @@ export default function ResultsPage() {
   return (
     <AppLayout>
       <Box mb="5">
-        <Heading size="8" mb="2">Результаты анализа</Heading>
+        <Heading size="8" mb="2">Analysis Results</Heading>
         <Text size="3" color="gray">
-          Переключайтесь между анализом успеваемости и анализом активности во времени.
+          Switch between performance analysis and activity over time analysis.
         </Text>
         <Text size="2" color="gray" mt="1">
-          💡 Все метрики автоматически рассчитаны из ваших данных о попытках студентов
+          💡 All metrics are automatically calculated from your student submission data
         </Text>
       </Box>
 
@@ -36,12 +36,12 @@ export default function ResultsPage() {
         <Tabs.List>
           <Tabs.Trigger value="performance">
             <Flex align="center" gap="2">
-              📊 Анализ успеваемости
+              📊 Performance Analysis
             </Flex>
           </Tabs.Trigger>
           <Tabs.Trigger value="dynamic">
             <Flex align="center" gap="2">
-              📈 Анализ активности
+              📈 Activity Analysis
             </Flex>
           </Tabs.Trigger>
         </Tabs.List>
