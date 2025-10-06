@@ -31,10 +31,11 @@ The Student Personal Report feature provides comprehensive, actionable insights 
 
 **Note**: Highlights always start with wins before showing focus areas.
 
-### 3. Recent Activity Momentum
-- **Trend indicator**: 📈 Up, 📉 Down, or ➡️ Flat
-- **Explanation**: Compares last 7 days vs previous 7 days
-- **Only shown** if student has ≥14 days of data
+### 3. Overall Engagement Level
+- **Level indicator**: 🔥 High, 📊 Medium, or 💤 Low
+- **Explanation**: Based on activity throughout the entire course period
+- **Calculation**: Combines active days ratio and consistency across full timeline
+- **Shows**: Total active days and percentage of the learning period
 
 ### 4. Activity Over Time Curve
 - **Frontload Index**: Positive = early effort, Negative = late effort
@@ -62,13 +63,14 @@ The Student Personal Report feature provides comprehensive, actionable insights 
 - May include "low evidence" note if < 2 steps attempted
 
 ### 6. Suggested Next Steps (2-3 items)
-Prioritized, actionable suggestions:
+Prioritized, actionable suggestions based on overall course performance:
 1. **Topic-specific**: Review focus topic, starting with difficult steps
-2. **Momentum-building**: Plan short sessions if activity decreased
-3. **Engagement**: Join webinars if attendance is low
-4. **Maintenance**: Keep steady rhythm (if already doing well)
+2. **Engagement-building**: Establish regular study schedule if overall engagement is low
+3. **Pattern improvement**: Work on consistency if study pattern is too sporadic (high burstiness)
+4. **Meeting attendance**: Join webinars if attendance is low
+5. **Maintenance**: Keep rhythm or challenge yourself (if doing well)
 
-**Language**: Supportive and actionable ("review", "plan", "try"), never blaming.
+**Language**: Supportive and actionable ("review", "establish", "work on"), never blaming.
 
 ### 7. Detailed Statistics
 
@@ -125,11 +127,11 @@ Automatically detected when:
 Automatically detected when:
 - Topics labeled Watch or Attention
 - Struggle index ≥ 0.6
-- Active days ratio < 30%
-- Momentum down ≥ 15%
-- Easing patterns suggest risk:
-  - ease-in with t25 > 0.4 (late start)
-  - ease-out with t75 < 0.6 and momentum down (dropoff)
+- Overall active days ratio < 30% (across entire course)
+- High burstiness > 0.8 (sporadic work pattern)
+- Easing patterns suggest suboptimal work distribution:
+  - ease-in with t25 > 0.4 (late start overall)
+  - ease-out with t75 < 0.6 (early dropoff, didn't maintain pace)
 
 ## Edge Cases & Graceful Degradation
 
@@ -139,19 +141,19 @@ Automatically detected when:
 - Segmentation still works without meetings
 
 ### Sparse Submission Data
-- Curve and momentum hidden if < 14 days
+- Engagement level may show as Low
 - Generic encouragement message shown
-- Focus on available signals
+- Focus on available signals from entire period
 
 ### No Topic Structure
 - Synthetic topics still generated from steps
 - Fallback to "Topic X" naming
 - All logic remains functional
 
-### Short Time Span (≤7 days)
-- Momentum calculation skipped
-- "Getting started" nudge used instead
-- Focus on immediate next steps
+### Short Time Span
+- Engagement calculation still works (uses percentage, not absolute days)
+- All metrics based on available data period
+- Focus on overall patterns, not time-based trends
 
 ## Best Practices
 
@@ -206,21 +208,23 @@ Automatically detected when:
 - Check submissions.csv for that user_id
 - Ensure step_id column is present
 
-### Momentum Shows "Unknown"
-- Requires ≥14 days of submission data
-- Check date range in submissions
-- Verify timestamps are valid
+### Engagement Shows "Low" 
+- Based on overall active days across entire period
+- Check if student has sufficient submission activity
+- Verify date range spans reasonable learning period
 
 ### No Meetings Section
 - meetings.csv was not uploaded or is empty
 - This is normal and expected if meetings data unavailable
 
 ## Algorithm Reference
-Based on: **Personal Student Report Algorithm v1**
-- Signal extraction: §3 (Wins & Focus candidates)
-- Momentum: §4 (Last 7 vs previous 7)
+Based on: **Personal Student Report Algorithm v1** (Modified)
+- Signal extraction: §3 (Wins & Focus candidates) - adapted for overall period
+- Engagement: Overall active days ratio + consistency (entire course)
 - Topic selection: §5 (Top 3 per list)
-- Next steps: §6 (Priority order)
+- Next steps: §6 (Priority order) - based on overall patterns, not weekly trends
 - Curve explanation: §7 (Easing patterns)
 - Copy guidelines: §12 (Tone & structure)
+
+**Key Modification**: Removed short-term momentum (§4) in favor of overall engagement analysis, as reports are intended for summative assessment of course completion, not formative weekly feedback.
 
