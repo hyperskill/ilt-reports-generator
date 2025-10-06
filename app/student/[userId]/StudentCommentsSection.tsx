@@ -133,8 +133,10 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
               }}
             >
               <Text as="div" size="2" color="blue" style={{ lineHeight: '1.6' }}>
-                💡 <strong>Feedback Guidance:</strong> Provide personalized feedback focusing on this student's individual progress, 
-                strengths, areas for improvement, and specific recommendations for their learning journey.
+                💡 <strong>Feedback Guidance:</strong> Focus on <strong>personal observations</strong> about this student's activity and engagement. 
+                Comment on their <strong>project work</strong> and its <strong>practical value</strong>. 
+                Highlight the student's <strong>talents and abilities</strong> you've noticed. 
+                Identify specific <strong>growth opportunities</strong> that could benefit their development.
               </Text>
             </Box>
 
@@ -145,7 +147,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
               <TextArea
                 value={programExpert}
                 onChange={(e) => setProgramExpert(e.target.value)}
-                placeholder="Share personalized insights about this student's progress, technical skills, project outcomes, and growth opportunities..."
+                placeholder="Comment on student's project work quality and practical applicability. Note observed talents, technical abilities, and specific growth opportunities in their domain..."
                 rows={4}
               />
             </Box>
@@ -157,7 +159,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
               <TextArea
                 value={teachingAssistants}
                 onChange={(e) => setTeachingAssistants(e.target.value)}
-                placeholder="Describe this student's engagement, learning approach, collaboration skills, and areas needing attention..."
+                placeholder="Share personal observations about student's activity patterns, engagement level, learning approach, and collaboration. Highlight strengths and areas for development..."
                 rows={4}
               />
             </Box>
@@ -169,7 +171,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
               <TextArea
                 value={learningSupport}
                 onChange={(e) => setLearningSupport(e.target.value)}
-                placeholder="Note this student's well-being, motivation levels, support needs, and personal development opportunities..."
+                placeholder="Describe student's personal qualities, motivation, resilience, and soft skills. Suggest growth opportunities for their overall development..."
                 rows={4}
               />
             </Box>
