@@ -215,8 +215,8 @@ export default function StudentDetailPage({ params }: PageProps) {
                       borderRadius: 'var(--radius-2)',
                     }}
                   >
-                    <Text size="3" weight="bold" mb="1">{topic.title}</Text>
-                    <Text size="2" color="gray">{topic.why}</Text>
+                    <Text as="div" size="3" weight="bold" mb="1">{topic.title}</Text>
+                    <Text as="div" size="2" color="gray">{topic.why}</Text>
                   </Box>
                 ))}
               </Flex>
@@ -239,10 +239,10 @@ export default function StudentDetailPage({ params }: PageProps) {
                       borderRadius: 'var(--radius-2)',
                     }}
                   >
-                    <Text size="3" weight="bold" mb="1">{topic.title}</Text>
-                    <Text size="2" color="gray">{topic.why}</Text>
+                    <Text as="div" size="3" weight="bold" mb="1">{topic.title}</Text>
+                    <Text as="div" size="2" color="gray">{topic.why}</Text>
                     {topic.evidence && (
-                      <Text size="1" color="gray" mt="1" style={{ fontStyle: 'italic' }}>
+                      <Text as="div" size="1" color="gray" mt="1" style={{ fontStyle: 'italic' }}>
                         Note: {topic.evidence}
                       </Text>
                     )}
