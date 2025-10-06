@@ -34,19 +34,35 @@ export default async function DashboardPage() {
 
         <Flex gap="4" wrap="wrap">
           {isAdmin && (
-            <Card style={{ flex: '1', minWidth: '300px' }}>
-              <Flex direction="column" gap="3">
-                <Heading size="5">📊 Create Report</Heading>
-                <Text size="2" color="gray">
-                  Upload data files and generate performance analysis reports for your cohort.
-                </Text>
-                <Link href="/upload">
-                  <Button size="3" style={{ width: '100%' }}>
-                    Create New Report
-                  </Button>
-                </Link>
-              </Flex>
-            </Card>
+            <>
+              <Card style={{ flex: '1', minWidth: '300px' }}>
+                <Flex direction="column" gap="3">
+                  <Heading size="5">📊 Create Report</Heading>
+                  <Text size="2" color="gray">
+                    Upload data files and generate performance analysis reports for your cohort.
+                  </Text>
+                  <Link href="/upload">
+                    <Button size="3" style={{ width: '100%' }}>
+                      Create New Report
+                    </Button>
+                  </Link>
+                </Flex>
+              </Card>
+
+              <Card style={{ flex: '1', minWidth: '300px' }}>
+                <Flex direction="column" gap="3">
+                  <Heading size="5">👥 Manage Users</Heading>
+                  <Text size="2" color="gray">
+                    Approve admin requests and manage user roles and permissions.
+                  </Text>
+                  <Link href="/admin/users">
+                    <Button size="3" style={{ width: '100%' }} color="orange">
+                      User Management
+                    </Button>
+                  </Link>
+                </Flex>
+              </Card>
+            </>
           )}
 
           <Card style={{ flex: '1', minWidth: '300px' }}>
@@ -86,13 +102,6 @@ export default async function DashboardPage() {
                 Your account has <Text weight="bold">{profile?.role}</Text> access. 
                 You can view completed reports but cannot create new ones. 
                 Contact an administrator if you need elevated permissions.
-              </Text>
-              <Text size="2" color="gray" mt="2">
-                If your permissions were just updated, try{' '}
-                <Link href="/debug-auth" style={{ color: 'var(--accent-11)' }}>
-                  checking your auth status
-                </Link>
-                {' '}or logout and login again.
               </Text>
             </Flex>
           </Card>

@@ -50,13 +50,6 @@ export function UserNav({ user, profile }: UserNavProps) {
         <DropdownMenu.Item onClick={() => router.push('/dashboard')}>
           Dashboard
         </DropdownMenu.Item>
-        <DropdownMenu.Item onClick={() => router.push('/debug-auth')}>
-          🔍 Check Auth Status
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item onClick={handleRefreshSession}>
-          🔄 Refresh Permissions
-        </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red" onClick={handleLogout}>
           Logout
