@@ -6,3 +6,24 @@
   border-radius: var(--radius-2);
 }
 
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+  background-color: var(--gray-a2);
+}
+
+.clickableName {
+  color: var(--accent-11);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.clickableName:hover {
+  text-decoration-color: var(--accent-11);
+}
+

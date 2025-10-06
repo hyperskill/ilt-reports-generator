@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { PerformanceRow } from '@/lib/types';
 import { TableLegend } from './TableLegend';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function PerformanceResults({ data }: Props) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSegments, setSelectedSegments] = useState<Set<string>>(new Set());
 
@@ -199,9 +201,18 @@ export function PerformanceResults({ data }: Props) {
             </Table.Header>
             <Table.Body>
               {filteredData.slice(0, 100).map(row => (
-                <Table.Row key={row.user_id}>
+                <Table.Row key={row.user_id} className={styles.clickableRow}>
                   <Table.Cell><Text size="2">{row.user_id}</Text></Table.Cell>
-                  <Table.Cell><Text size="2" weight="bold">{row.name}</Text></Table.Cell>
+                  <Table.Cell>
+                    <Text 
+                      size="2" 
+                      weight="bold"
+                      className={styles.clickableName}
+                      onClick={() => router.push(`/student/${row.user_id}`)}
+                    >
+                      {row.name}
+                    </Text>
+                  </Table.Cell>
                   <Table.Cell><Text size="2">{row.total_pct}%</Text></Table.Cell>
                   <Table.Cell><Text size="2">{row.submissions}</Text></Table.Cell>
                   <Table.Cell><Text size="2">{row.success_rate}%</Text></Table.Cell>

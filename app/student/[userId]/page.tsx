@@ -1,0 +1,423 @@
+'use client';
+
+import { use, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator } from '@radix-ui/themes';
+import { AppLayout } from '@/app/components/AppLayout';
+import { useAppContext } from '@/lib/context/AppContext';
+import { generateStudentReport } from '@/lib/processors/student-report-processor';
+import { EasingChart } from '@/app/components/EasingChart';
+import styles from './student.module.css';
+
+interface PageProps {
+  params: Promise<{ userId: string }>;
+}
+
+export default function StudentDetailPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const router = useRouter();
+  const { results, files } = useAppContext();
+
+  const report = useMemo(() => {
+    if (!results || !files.submissions) return null;
+
+    return generateStudentReport({
+      userId: resolvedParams.userId,
+      performanceData: results.performanceData,
+      dynamicData: results.dynamicData,
+      dynamicSeries: results.dynamicSeries,
+      submissions: files.submissions.data,
+      excludedUserIds: [],
+    });
+  }, [resolvedParams.userId, results, files.submissions]);
+
+  if (!report) {
+    return (
+      <AppLayout title="Student Report">
+        <Card>
+          <Text>Student not found or data not available.</Text>
+          <Button mt="3" onClick={() => router.push('/results')}>
+            Back to Results
+          </Button>
+        </Card>
+      </AppLayout>
+    );
+  }
+
+  const getSegmentColor = (segment: string): any => {
+    if (segment.includes('Leader')) return 'green';
+    if (segment.includes('Low engagement')) return 'red';
+    if (segment.includes('Hardworking')) return 'orange';
+    if (segment.includes('engaged')) return 'blue';
+    return 'gray';
+  };
+
+  const getEasingColor = (easing: string): any => {
+    switch (easing) {
+      case 'linear': return 'gray';
+      case 'ease': return 'blue';
+      case 'ease-in': return 'orange';
+      case 'ease-out': return 'green';
+      case 'ease-in-out': return 'purple';
+      case 'no-activity': return 'red';
+      default: return 'gray';
+    }
+  };
+
+  const getMomentumColor = (trend: string): any => {
+    if (trend === 'Up') return 'green';
+    if (trend === 'Down') return 'red';
+    return 'gray';
+  };
+
+  return (
+    <AppLayout>
+      <Box className={styles.container}>
+        {/* Header */}
+        <Card>
+          <Flex justify="between" align="start" mb="3">
+            <Box>
+              <Heading size="7" mb="2">{report.student.name}</Heading>
+              <Text size="2" color="gray">User ID: {report.student.user_id}</Text>
+            </Box>
+            <Button variant="soft" onClick={() => router.push('/results')}>
+              ← Back to Results
+            </Button>
+          </Flex>
+
+          <Grid columns="4" gap="3">
+            <Box>
+              <Text size="2" color="gray" mb="1">Segment</Text>
+              <Badge color={getSegmentColor(report.student.segment)} size="2">
+                {report.student.segment}
+              </Badge>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Activity Pattern</Text>
+              <Badge color={getEasingColor(report.student.easing)} size="2">
+                {report.student.easing}
+              </Badge>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Score</Text>
+              <Text size="5" weight="bold">{report.performance.total_pct}%</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Success Rate</Text>
+              <Text size="5" weight="bold">{report.performance.success_rate}%</Text>
+            </Box>
+          </Grid>
+        </Card>
+
+        {/* Highlights */}
+        <Card>
+          <Heading size="5" mb="3">📋 Your Progress Highlights</Heading>
+          <Flex direction="column" gap="2">
+            {report.highlights.map((highlight, idx) => (
+              <Box 
+                key={idx}
+                p="3"
+                style={{
+                  backgroundColor: highlight.type === 'win' ? 'var(--green-a2)' : 'var(--orange-a2)',
+                  borderRadius: 'var(--radius-2)',
+                  borderLeft: `3px solid ${highlight.type === 'win' ? 'var(--green-9)' : 'var(--orange-9)'}`,
+                }}
+              >
+                <Text size="3">
+                  {highlight.type === 'win' ? '✅ ' : '🎯 '}
+                  {highlight.text}
+                </Text>
+              </Box>
+            ))}
+          </Flex>
+        </Card>
+
+        {/* Momentum */}
+        {report.momentum.trend !== 'Unknown' && (
+          <Card>
+            <Flex align="center" gap="3">
+              <Box style={{ fontSize: '2rem' }}>
+                {report.momentum.trend === 'Up' && '📈'}
+                {report.momentum.trend === 'Down' && '📉'}
+                {report.momentum.trend === 'Flat' && '➡️'}
+              </Box>
+              <Box style={{ flex: 1 }}>
+                <Flex align="center" gap="2" mb="1">
+                  <Text size="4" weight="bold">Recent Activity</Text>
+                  <Badge color={getMomentumColor(report.momentum.trend)} size="1">
+                    {report.momentum.trend}
+                  </Badge>
+                </Flex>
+                <Text size="2" color="gray">{report.momentum.note}</Text>
+              </Box>
+            </Flex>
+          </Card>
+        )}
+
+        {/* Activity Curve */}
+        <Card>
+          <Heading size="5" mb="3">📈 Your Activity Over Time</Heading>
+          <Text size="2" color="gray" mb="3">
+            {report.curve.explain}
+          </Text>
+
+          <Grid columns="4" gap="3" mb="4">
+            <Box>
+              <Text size="2" color="gray" mb="1">Frontload Index</Text>
+              <Text size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'}>
+                {report.curve.fi.toFixed(3)}
+              </Text>
+              <Text size="1" color="gray">
+                {report.curve.fi > 0 ? 'Early loading' : report.curve.fi < 0 ? 'Late loading' : 'Balanced'}
+              </Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Consistency</Text>
+              <Text size="4" weight="bold">{(report.curve.consistency * 100).toFixed(0)}%</Text>
+              <Text size="1" color="gray">Active days / total days</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Burstiness</Text>
+              <Text size="4" weight="bold">{report.curve.burstiness.toFixed(2)}</Text>
+              <Text size="1" color="gray">{report.curve.burstiness > 0.6 ? 'Bursty' : 'Steady'}</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray" mb="1">Progress Points</Text>
+              <Text size="2">
+                25%: {(report.curve.t25 * 100).toFixed(0)}%<br/>
+                50%: {(report.curve.t50 * 100).toFixed(0)}%<br/>
+                75%: {(report.curve.t75 * 100).toFixed(0)}%
+              </Text>
+            </Box>
+          </Grid>
+
+          {report.series.length > 0 && (
+            <EasingChart 
+              series={report.series}
+              userData={report.dynamic}
+            />
+          )}
+        </Card>
+
+        {/* Topics */}
+        <Grid columns="2" gap="4">
+          {/* Going Well */}
+          {report.topics.wins.length > 0 && (
+            <Card>
+              <Heading size="4" mb="3" style={{ color: 'var(--green-11)' }}>
+                ✨ Going Well
+              </Heading>
+              <Flex direction="column" gap="2">
+                {report.topics.wins.map((topic, idx) => (
+                  <Box 
+                    key={idx}
+                    p="3"
+                    style={{
+                      backgroundColor: 'var(--green-a2)',
+                      borderRadius: 'var(--radius-2)',
+                    }}
+                  >
+                    <Text size="3" weight="bold" mb="1">{topic.title}</Text>
+                    <Text size="2" color="gray">{topic.why}</Text>
+                  </Box>
+                ))}
+              </Flex>
+            </Card>
+          )}
+
+          {/* Needs Attention */}
+          {report.topics.focus.length > 0 && (
+            <Card>
+              <Heading size="4" mb="3" style={{ color: 'var(--orange-11)' }}>
+                🎯 Focus Areas
+              </Heading>
+              <Flex direction="column" gap="2">
+                {report.topics.focus.map((topic, idx) => (
+                  <Box 
+                    key={idx}
+                    p="3"
+                    style={{
+                      backgroundColor: 'var(--orange-a2)',
+                      borderRadius: 'var(--radius-2)',
+                    }}
+                  >
+                    <Text size="3" weight="bold" mb="1">{topic.title}</Text>
+                    <Text size="2" color="gray">{topic.why}</Text>
+                    {topic.evidence && (
+                      <Text size="1" color="gray" mt="1" style={{ fontStyle: 'italic' }}>
+                        Note: {topic.evidence}
+                      </Text>
+                    )}
+                  </Box>
+                ))}
+              </Flex>
+            </Card>
+          )}
+        </Grid>
+
+        {/* Next Steps */}
+        <Card>
+          <Heading size="5" mb="3">🚀 Suggested Next Steps</Heading>
+          <Flex direction="column" gap="2">
+            {report.next_steps.map((step, idx) => (
+              <Flex key={idx} gap="3" align="start">
+                <Box 
+                  style={{
+                    minWidth: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-9)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                  }}
+                >
+                  {idx + 1}
+                </Box>
+                <Text size="3" style={{ flex: 1 }}>{step}</Text>
+              </Flex>
+            ))}
+          </Flex>
+        </Card>
+
+        {/* Detailed Stats */}
+        <Card>
+          <Heading size="5" mb="3">📊 Detailed Statistics</Heading>
+          
+          <Heading size="3" mb="2">Performance Metrics</Heading>
+          <Grid columns="3" gap="3" mb="4">
+            <Box>
+              <Text size="2" color="gray">Submissions</Text>
+              <Text size="4" weight="bold">{report.performance.submissions}</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray">Unique Steps</Text>
+              <Text size="4" weight="bold">{report.performance.unique_steps}</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray">Persistence</Text>
+              <Text size="4" weight="bold">{report.performance.persistence.toFixed(2)}</Text>
+              <Text size="1" color="gray">Attempts per step</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray">Efficiency</Text>
+              <Text size="4" weight="bold">{report.performance.efficiency.toFixed(2)}</Text>
+              <Text size="1" color="gray">Correct per step</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray">Active Days</Text>
+              <Text size="4" weight="bold">{report.performance.active_days}</Text>
+              <Text size="1" color="gray">{(report.performance.active_days_ratio * 100).toFixed(0)}% of period</Text>
+            </Box>
+            <Box>
+              <Text size="2" color="gray">Effort Index</Text>
+              <Text size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'}>
+                {report.performance.effort_index.toFixed(2)}
+              </Text>
+              <Text size="1" color="gray">vs. course average</Text>
+            </Box>
+          </Grid>
+
+          {report.performance.meetings_attended > 0 && (
+            <>
+              <Separator size="4" mb="3" />
+              <Heading size="3" mb="2">Meeting Attendance</Heading>
+              <Grid columns="2" gap="3">
+                <Box>
+                  <Text size="2" color="gray">Meetings Attended</Text>
+                  <Text size="4" weight="bold">{report.performance.meetings_attended}</Text>
+                </Box>
+                <Box>
+                  <Text size="2" color="gray">Attendance Rate</Text>
+                  <Text size="4" weight="bold">{report.performance.meetings_attended_pct}%</Text>
+                </Box>
+              </Grid>
+            </>
+          )}
+        </Card>
+
+        {/* Topic Analysis Table */}
+        {report.topicTable.length > 0 && (
+          <Card>
+            <Heading size="5" mb="3">📚 Topic Analysis</Heading>
+            <Text size="2" color="gray" mb="3">
+              This table shows how you performed on different topics compared to course averages.
+            </Text>
+            <Box style={{ overflowX: 'auto' }}>
+              <Table.Root size="2" variant="surface">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Topic</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Label</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Steps</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Attempts/Step</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>First-Pass Rate</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Score</Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {report.topicTable.map((topic, idx) => {
+                    const labelColor = topic.label_topic === 'Comfortable' ? 'green' : 
+                                      topic.label_topic === 'Watch' ? 'orange' : 'red';
+                    return (
+                      <Table.Row key={idx}>
+                        <Table.Cell><Text size="2" weight="bold">{topic.topic_title}</Text></Table.Cell>
+                        <Table.Cell>
+                          <Badge color={labelColor} size="1">{topic.label_topic}</Badge>
+                        </Table.Cell>
+                        <Table.Cell><Text size="2">{topic.steps_attempted}</Text></Table.Cell>
+                        <Table.Cell>
+                          <Text size="2" color={topic.mean_delta_attempts > 0 ? 'orange' : 'green'}>
+                            {topic.attempts_per_step.toFixed(1)}
+                            {topic.mean_delta_attempts !== 0 && (
+                              <Text as="span" size="1">
+                                {' '}({topic.mean_delta_attempts > 0 ? '+' : ''}{topic.mean_delta_attempts.toFixed(1)})
+                              </Text>
+                            )}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text size="2" color={topic.student_first_pass_rate >= 0.7 ? 'green' : 'orange'}>
+                            {(topic.student_first_pass_rate * 100).toFixed(0)}%
+                            {topic.mean_delta_first !== 0 && (
+                              <Text as="span" size="1">
+                                {' '}({topic.mean_delta_first > 0 ? '+' : ''}{(topic.mean_delta_first * 100).toFixed(0)}%)
+                              </Text>
+                            )}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell><Text size="2">{topic.topic_score.toFixed(2)}</Text></Table.Cell>
+                      </Table.Row>
+                    );
+                  })}
+                </Table.Body>
+              </Table.Root>
+            </Box>
+
+            <Box mt="3" p="3" style={{ backgroundColor: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+              <Text size="2" weight="bold" mb="1">Legend:</Text>
+              <Flex direction="column" gap="1">
+                <Text size="2">
+                  <Badge color="green" size="1">Comfortable</Badge> — Topics you're handling well
+                </Text>
+                <Text size="2">
+                  <Badge color="orange" size="1">Watch</Badge> — Topics needing some attention
+                </Text>
+                <Text size="2">
+                  <Badge color="red" size="1">Attention</Badge> — Topics requiring focused review
+                </Text>
+              </Flex>
+              <Text size="2" mt="2" style={{ fontStyle: 'italic' }}>
+                Numbers in parentheses show difference from course average (+ means above average, - means below average).
+              </Text>
+            </Box>
+          </Card>
+        )}
+      </Box>
+    </AppLayout>
+  );
+}
+

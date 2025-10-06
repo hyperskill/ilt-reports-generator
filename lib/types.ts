@@ -81,6 +81,60 @@ export interface DynamicSeriesRow {
   y_norm: number;
 }
 
+// Personal Student Report
+export interface StudentTopic {
+  topic_title: string;
+  steps_attempted: number;
+  attempts_per_step: number;
+  student_first_pass_rate: number;
+  mean_delta_attempts: number;
+  mean_delta_first: number;
+  topic_score: number;
+  label_topic: 'Comfortable' | 'Watch' | 'Attention';
+}
+
+export interface StudentMomentum {
+  trend: 'Up' | 'Flat' | 'Down' | 'Unknown';
+  delta: number;
+  note: string;
+}
+
+export interface StudentHighlight {
+  type: 'win' | 'focus';
+  text: string;
+  reason?: string;
+}
+
+export interface StudentReport {
+  student: {
+    user_id: string;
+    name: string;
+    segment: string;
+    easing: string;
+  };
+  highlights: StudentHighlight[];
+  momentum: StudentMomentum;
+  topics: {
+    wins: Array<{ title: string; why: string }>;
+    focus: Array<{ title: string; why: string; evidence?: string }>;
+  };
+  curve: {
+    label: string;
+    fi: number;
+    explain: string;
+    consistency: number;
+    burstiness: number;
+    t25: number;
+    t50: number;
+    t75: number;
+  };
+  next_steps: string[];
+  performance: PerformanceRow;
+  dynamic: DynamicSummaryRow;
+  series: DynamicSeriesRow[];
+  topicTable: StudentTopic[];
+}
+
 // App State
 export interface AppState {
   files: UploadedFiles;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
 import { EasingChart } from './EasingChart';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function DynamicResults({ summary, series }: Props) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEasings, setSelectedEasings] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -276,9 +278,18 @@ export function DynamicResults({ summary, series }: Props) {
             </Table.Header>
             <Table.Body>
               {filteredData.slice(0, 100).map(row => (
-                <Table.Row key={row.user_id}>
+                <Table.Row key={row.user_id} className={styles.clickableRow}>
                   <Table.Cell><Text size="2">{row.user_id}</Text></Table.Cell>
-                  <Table.Cell><Text size="2" weight="bold">{row.name}</Text></Table.Cell>
+                  <Table.Cell>
+                    <Text 
+                      size="2" 
+                      weight="bold"
+                      className={styles.clickableName}
+                      onClick={() => router.push(`/student/${row.user_id}`)}
+                    >
+                      {row.name}
+                    </Text>
+                  </Table.Cell>
                   <Table.Cell>
                     <Badge color={getEasingColor(row.easing_label)} size="1">
                       {row.easing_label}

@@ -1,5 +1,142 @@
 # App Creation Log
 
+## 2025-10-06: Personalized Student Report Feature
+
+### Major Feature: Individual Student Detail Pages
+- Implemented comprehensive student detail pages accessible via clickable names in results tables
+- Based on **Personal Student Report Algorithm v1** specification
+- Full integration with existing Performance v3 and Dynamic/Easing v3 pipelines
+
+### New Type Definitions
+Added to `lib/types.ts`:
+- `StudentTopic`: Topic-level analysis with labels (Comfortable/Watch/Attention)
+- `StudentMomentum`: Weekly momentum tracking (Up/Flat/Down/Unknown)
+- `StudentHighlight`: Wins and focus areas for student
+- `StudentReport`: Complete personal report structure with all signals
+
+### New Processor: student-report-processor.ts
+**Core Functions**:
+1. `generateStudentReport()`: Main entry point, orchestrates all signal extraction
+2. `generateTopicTable()`: Synthesizes topics from step-level submissions data
+3. `extractWins()`: Identifies positive signals (achievement, consistency, steady work, early progress)
+4. `extractFocus()`: Identifies attention areas (struggling topics, low consistency, momentum down, easing risks)
+5. `calculateMomentum()`: Computes last 7 days vs previous 7 days trend
+6. `generateHighlights()`: Creates 3-5 plain-English bullets (wins first, then focus)
+7. `generateNextSteps()`: Produces 2-3 actionable suggestions prioritized by impact
+
+**Topic Analysis**:
+- Groups steps into synthetic topics (every 10 steps = 1 topic)
+- Calculates per-topic metrics: attempts/step, first-pass rate, deltas from course average
+- Assigns labels: Comfortable (doing well) / Watch (needs attention) / Attention (requires review)
+- Computes topic_score for prioritization (higher = more attention needed)
+
+**Signal Extraction Logic**:
+- **Wins** (candidates):
+  - High score (≥80%) or success rate (≥85%)
+  - Strong consistency (≥0.5)
+  - Low burstiness (≤0.6) - steady work pattern
+  - Positive frontload index (≥0.10) - early progress
+  - Comfortable topics with high first-pass rate (≥0.7)
+  
+- **Focus** (candidates):
+  - Topics labeled Watch/Attention
+  - High struggle index (≥0.6)
+  - Low active days ratio (<0.3)
+  - Momentum down (≥15% decrease)
+  - Easing risks: ease-in with late start (t25 > 0.4), ease-out with dropoff (t75 < 0.6)
+
+**Momentum Calculation**:
+- Requires ≥14 days of data
+- Compares last 7 days total activity vs previous 7 days
+- Delta ≥ +15% = Up, ≤ -15% = Down, else Flat
+
+**Next Steps Generator**:
+Priority order:
+1. Focus on #1 attention topic (if exists)
+2. Plan short sessions if momentum down
+3. Join webinar if attendance < 40%
+4. Maintain rhythm / build consistency (fallback)
+
+### New Route: /student/[userId]/page.tsx
+**Student Detail Page Components**:
+1. **Header Card**: Name, user ID, segment badge, easing badge, key scores
+2. **Highlights Section**: 3-5 actionable bullets with visual distinction (wins in green, focus in orange)
+3. **Momentum Card**: Recent activity trend with emoji indicator and explanation
+4. **Activity Curve Card**: 
+   - Frontload index, consistency, burstiness metrics
+   - Progress quartiles (t25/t50/t75)
+   - Interactive EasingChart visualization
+   - Plain-English curve explanation
+5. **Topics Grid**: 
+   - "Going Well" (green) - comfortable topics
+   - "Focus Areas" (orange) - topics needing attention
+6. **Next Steps Card**: Numbered action items (1-3 suggestions)
+7. **Detailed Statistics**: Full performance metrics, meeting attendance
+8. **Topic Analysis Table**: Complete breakdown with labels, deltas from average, evidence quality
+
+**UI/UX Features**:
+- All terms include hover tooltips and legend explanations
+- Color-coded badges for quick visual scanning
+- Delta indicators show +/- from course average
+- Evidence quality warnings for low-data topics
+- Responsive grid layouts
+- Smooth animations on load
+
+### Updated Result Tables
+**PerformanceResults.tsx**:
+- Added clickable student names (underline on hover)
+- Names link to `/student/[userId]` detail page
+- Row hover effect for better UX
+
+**DynamicResults.tsx**:
+- Added clickable student names (underline on hover)
+- Names link to `/student/[userId]` detail page
+- Retained "View curve" button for inline expansion
+
+### Styling
+**New CSS Module**: `app/student/[userId]/student.module.css`
+- Fade-in animations for cards
+- Responsive container with max-width
+- Smooth transitions
+
+**Updated**: `PerformanceResults.module.css`, `DynamicResults.module.css`
+- `.clickableRow`: hover effect on table rows
+- `.clickableName`: styled clickable names with accent color and underline animation
+
+### Algorithm Alignment
+Fully implements **Personal Student Report Algorithm v1**:
+- ✅ Student-first language (plain English, no heavy statistics)
+- ✅ Personal signal selection (top wins + focus items)
+- ✅ Graceful degradation (handles missing meetings, short data spans)
+- ✅ Transparent conclusions (all signals tied to specific metrics)
+- ✅ Tone guidelines: supportive, actionable, wins before focus
+- ✅ Edge cases: sparse data, no titles, conflicting signals
+
+### Copy & Messaging
+All student-facing text follows algorithm guidelines:
+- Sentences limited to ~12-16 words
+- One idea per bullet
+- Supportive verbs ("review", "plan", "try") instead of negatives
+- "Compared with the course" phrasing (no precise ranks)
+- Wins presented first, focus paired with next steps
+
+### Integration
+- Seamlessly integrates with existing v3 pipelines
+- No changes to data processing or upload flow
+- Reuses existing chart components (EasingChart)
+- Leverages AppContext for data access
+- Zero impact on existing functionality
+
+### English-Only Interface
+- All UI text, legends, tooltips in English
+- Metric names use standard terminology
+- Explanations accessible to non-technical users
+- Consistent with overall app localization
+
+---
+
+# App Creation Log
+
 ## 2025-10-03: Algorithm v3 - No External Activity File Required
 
 ### Major Rewrite: Removed activity.csv Requirement
