@@ -162,7 +162,7 @@ export default function StudentDetailPage({ params }: PageProps) {
           <Grid columns="4" gap="3" mb="4">
             <Box>
               <Text size="2" color="gray" mb="1">Frontload Index</Text>
-              <Text size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'}>
+              <Text size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'} mb="1">
                 {report.curve.fi.toFixed(3)}
               </Text>
               <Text size="1" color="gray">
@@ -171,12 +171,12 @@ export default function StudentDetailPage({ params }: PageProps) {
             </Box>
             <Box>
               <Text size="2" color="gray" mb="1">Consistency</Text>
-              <Text size="4" weight="bold">{(report.curve.consistency * 100).toFixed(0)}%</Text>
+              <Text size="4" weight="bold" mb="1">{(report.curve.consistency * 100).toFixed(0)}%</Text>
               <Text size="1" color="gray">Active days / total days</Text>
             </Box>
             <Box>
               <Text size="2" color="gray" mb="1">Burstiness</Text>
-              <Text size="4" weight="bold">{report.curve.burstiness.toFixed(2)}</Text>
+              <Text size="4" weight="bold" mb="1">{report.curve.burstiness.toFixed(2)}</Text>
               <Text size="1" color="gray">{report.curve.burstiness > 0.6 ? 'Bursty' : 'Steady'}</Text>
             </Box>
             <Box>
@@ -288,31 +288,31 @@ export default function StudentDetailPage({ params }: PageProps) {
           <Heading size="3" mb="2">Performance Metrics</Heading>
           <Grid columns="3" gap="3" mb="4">
             <Box>
-              <Text size="2" color="gray">Submissions</Text>
+              <Text size="2" color="gray" mb="1">Submissions</Text>
               <Text size="4" weight="bold">{report.performance.submissions}</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray">Unique Steps</Text>
+              <Text size="2" color="gray" mb="1">Unique Steps</Text>
               <Text size="4" weight="bold">{report.performance.unique_steps}</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray">Persistence</Text>
-              <Text size="4" weight="bold">{report.performance.persistence.toFixed(2)}</Text>
+              <Text size="2" color="gray" mb="1">Persistence</Text>
+              <Text size="4" weight="bold" mb="1">{report.performance.persistence.toFixed(2)}</Text>
               <Text size="1" color="gray">Attempts per step</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray">Efficiency</Text>
-              <Text size="4" weight="bold">{report.performance.efficiency.toFixed(2)}</Text>
+              <Text size="2" color="gray" mb="1">Efficiency</Text>
+              <Text size="4" weight="bold" mb="1">{report.performance.efficiency.toFixed(2)}</Text>
               <Text size="1" color="gray">Correct per step</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray">Active Days</Text>
-              <Text size="4" weight="bold">{report.performance.active_days}</Text>
+              <Text size="2" color="gray" mb="1">Active Days</Text>
+              <Text size="4" weight="bold" mb="1">{report.performance.active_days}</Text>
               <Text size="1" color="gray">{(report.performance.active_days_ratio * 100).toFixed(0)}% of period</Text>
             </Box>
             <Box>
-              <Text size="2" color="gray">Effort Index</Text>
-              <Text size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'}>
+              <Text size="2" color="gray" mb="1">Effort Index</Text>
+              <Text size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'} mb="1">
                 {report.performance.effort_index.toFixed(2)}
               </Text>
               <Text size="1" color="gray">vs. course average</Text>
@@ -325,11 +325,11 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="3" mb="2">Meeting Attendance</Heading>
               <Grid columns="2" gap="3">
                 <Box>
-                  <Text size="2" color="gray">Meetings Attended</Text>
+                  <Text size="2" color="gray" mb="1">Meetings Attended</Text>
                   <Text size="4" weight="bold">{report.performance.meetings_attended}</Text>
                 </Box>
                 <Box>
-                  <Text size="2" color="gray">Attendance Rate</Text>
+                  <Text size="2" color="gray" mb="1">Attendance Rate</Text>
                   <Text size="4" weight="bold">{report.performance.meetings_attended_pct}%</Text>
                 </Box>
               </Grid>
