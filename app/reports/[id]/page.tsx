@@ -6,16 +6,33 @@ import { Box, Heading, Text, Tabs, Card, Flex, Badge } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { PerformanceResults } from '@/app/components/PerformanceResults';
 import { DynamicResults } from '@/app/components/DynamicResults';
+import { CommentsSection } from './CommentsSection';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ReportDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
+    checkUserRole();
     fetchReport();
   }, [params.id]);
+
+  const checkUserRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      setIsAdmin(profile?.role === 'admin');
+    }
+  };
 
   const fetchReport = async () => {
     try {
@@ -72,6 +89,20 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
             Created: {new Date(report.created_at).toLocaleString()}
           </Text>
         </Flex>
+      </Box>
+
+      {/* Comments Section */}
+      <Box mb="5">
+        <CommentsSection
+          reportId={params.id}
+          isAdmin={isAdmin}
+          initialComments={{
+            comment_program_expert: report.comment_program_expert,
+            comment_teaching_assistants: report.comment_teaching_assistants,
+            comment_learning_support: report.comment_learning_support,
+          }}
+          onUpdate={fetchReport}
+        />
       </Box>
 
       <Tabs.Root defaultValue="performance">
