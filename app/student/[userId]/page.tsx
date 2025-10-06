@@ -253,34 +253,6 @@ export default function StudentDetailPage({ params }: PageProps) {
           )}
         </Grid>
 
-        {/* Next Steps */}
-        <Card>
-          <Heading size="5" mb="3">🚀 Suggested Next Steps</Heading>
-          <Flex direction="column" gap="2">
-            {report.next_steps.map((step, idx) => (
-              <Flex key={idx} gap="3" align="start">
-                <Box 
-                  style={{
-                    minWidth: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--accent-9)',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                  }}
-                >
-                  {idx + 1}
-                </Box>
-                <Text size="3" style={{ flex: 1 }}>{step}</Text>
-              </Flex>
-            ))}
-          </Flex>
-        </Card>
-
         {/* Detailed Stats */}
         <Card>
           <Heading size="5" mb="3">📊 Detailed Statistics</Heading>
