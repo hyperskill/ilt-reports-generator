@@ -44,6 +44,15 @@ export async function POST(request: Request) {
 
     console.log('Updating user:', userId, 'with data:', updateData);
 
+    // First, check if the user exists
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    console.log('User before update:', existingUser);
+
     const { data, error } = await supabase
       .from('profiles')
       .update(updateData)
@@ -54,7 +63,12 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Database error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ 
+        error: error.message, 
+        details: error,
+        userId,
+        updateData 
+      }, { status: 500 });
     }
 
     // Even if data is empty, the update might have succeeded
