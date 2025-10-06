@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Card, Flex, Text, Heading, Progress, Badge } from '@radix-ui/themes';
+import { Box, Card, Flex, Text, Heading, Progress, Badge, Button, TextField, TextArea, Dialog } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { processPerformanceSegmentation } from '@/lib/processors/performance-processor';
@@ -15,6 +15,11 @@ export default function ProcessingPage() {
   const [currentStep, setCurrentStep] = useState('');
   const [log, setLog] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [reportTitle, setReportTitle] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [processedResults, setProcessedResults] = useState<any>(null);
 
   useEffect(() => {
     processData();
@@ -117,14 +122,25 @@ export default function ProcessingPage() {
       setProgress(100);
       addLog('Analysis complete!');
 
-      setResults({
+      const results = {
         performanceData,
         dynamicData,
         dynamicSeries,
-      });
+      };
 
+      setResults(results);
+      setProcessedResults(results);
+
+      // Generate default title
+      const date = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      setReportTitle(`Report - ${date}`);
+      
       await delay(500);
-      router.push('/results');
+      setShowSaveDialog(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Processing failed');
       addLog(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -132,6 +148,55 @@ export default function ProcessingPage() {
   };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const handleSaveReport = async () => {
+    if (!reportTitle.trim()) {
+      alert('Please enter a report title');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/reports/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: reportTitle,
+          description: reportDescription,
+          performanceData: processedResults.performanceData,
+          dynamicData: processedResults.dynamicData,
+          dynamicSeries: processedResults.dynamicSeries,
+          settings,
+          excludedUserIds,
+          fileMetadata: {
+            gradeBook: files.grade_book?.name,
+            learners: files.learners?.name,
+            submissions: files.submissions?.name,
+            meetings: files.meetings?.name,
+            structure: files.structure?.name,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save report');
+      }
+
+      setShowSaveDialog(false);
+      router.push('/results');
+    } catch (error: any) {
+      alert(`Failed to save report: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSkipSave = () => {
+    setShowSaveDialog(false);
+    router.push('/results');
+  };
 
   return (
     <AppLayoutWithAuth
@@ -197,6 +262,51 @@ export default function ProcessingPage() {
           )}
         </Flex>
       </Card>
+
+      <Dialog.Root open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <Dialog.Content style={{ maxWidth: 450 }}>
+          <Dialog.Title>Save Report</Dialog.Title>
+          <Dialog.Description size="2" mb="4">
+            Save this report to access it later from the Reports page.
+          </Dialog.Description>
+
+          <Flex direction="column" gap="3">
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                Report Title *
+              </Text>
+              <TextField.Root
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                placeholder="Enter report title"
+              />
+            </label>
+
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                Description (optional)
+              </Text>
+              <TextArea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="Add notes about this report..."
+                rows={3}
+              />
+            </label>
+          </Flex>
+
+          <Flex gap="3" mt="4" justify="end">
+            <Dialog.Close>
+              <Button variant="soft" color="gray" onClick={handleSkipSave}>
+                Skip & View Results
+              </Button>
+            </Dialog.Close>
+            <Button onClick={handleSaveReport} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Report'}
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
     </AppLayoutWithAuth>
   );
 }

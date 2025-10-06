@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Box, Card, Flex, Heading, Text, Button } from '@radix-ui/themes';
+import { Box, Card, Flex, Heading, Text, Button, Table, Badge } from '@radix-ui/themes';
 import { UserNav } from '@/app/components/UserNav';
 import Link from 'next/link';
 
@@ -20,6 +20,14 @@ export default async function DashboardPage() {
     .single();
 
   const isAdmin = profile?.role === 'admin';
+
+  // Fetch recent reports
+  const { data: recentReports } = await supabase
+    .from('reports')
+    .select('id, title, description, created_at, created_by')
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   return (
     <Box p="6">
@@ -103,6 +111,63 @@ export default async function DashboardPage() {
                 You can view completed reports but cannot create new ones. 
                 Contact an administrator if you need elevated permissions.
               </Text>
+            </Flex>
+          </Card>
+        )}
+
+        {/* Recent Reports */}
+        {recentReports && recentReports.length > 0 && (
+          <Card>
+            <Flex direction="column" gap="4">
+              <Flex justify="between" align="center">
+                <Heading size="5">Recent Reports</Heading>
+                <Link href="/reports">
+                  <Button variant="soft" size="2">
+                    View All
+                  </Button>
+                </Link>
+              </Flex>
+
+              <Table.Root variant="surface">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {recentReports.map((report) => (
+                    <Table.Row key={report.id}>
+                      <Table.Cell>
+                        <Text weight="bold">{report.title}</Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {report.description || '—'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {new Date(report.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Link href={`/reports/${report.id}`}>
+                          <Button size="1" variant="soft">
+                            View
+                          </Button>
+                        </Link>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
             </Flex>
           </Card>
         )}
