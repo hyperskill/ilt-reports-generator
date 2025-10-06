@@ -44,8 +44,11 @@ export function generateStudentReport({
   const wins = extractWins(perfRow, dynRow, topicTable);
   const focus = extractFocus(perfRow, dynRow, topicTable);
 
+  // Get student first name
+  const studentName = perfRow.name.split(' ')[0] || perfRow.name;
+
   // Calculate overall engagement
-  const engagement = calculateEngagement(perfRow, dynRow);
+  const engagement = calculateEngagement(perfRow, dynRow, studentName);
 
   // Generate highlights
   const highlights = generateHighlights(wins, focus);
@@ -55,7 +58,7 @@ export function generateStudentReport({
   const topFocus = selectTopFocusTopics(topicTable.filter(t => t.label_topic === 'Attention' || t.label_topic === 'Watch'), 3);
 
   // Generate next steps
-  const nextSteps = generateNextSteps(perfRow, dynRow, topFocus, engagement);
+  const nextSteps = generateNextSteps(perfRow, dynRow, topFocus, engagement, studentName);
 
   // Curve explanation
   const curveExplanation = getCurveExplanation(dynRow.easing_label);
@@ -347,7 +350,8 @@ function extractFocus(
 
 function calculateEngagement(
   perf: PerformanceRow,
-  dyn: DynamicSummaryRow
+  dyn: DynamicSummaryRow,
+  studentName: string
 ): StudentEngagement {
   const activeDaysRatio = perf.active_days_ratio;
   const consistency = dyn.consistency;
@@ -358,13 +362,13 @@ function calculateEngagement(
 
   if (avgEngagement >= 0.6) {
     level = 'High';
-    description = `You've been highly engaged throughout the course, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
+    description = `${studentName} has been highly engaged throughout the course, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
   } else if (avgEngagement >= 0.3) {
     level = 'Medium';
-    description = `You've maintained moderate engagement, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
+    description = `${studentName} has maintained moderate engagement, active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
   } else {
     level = 'Low';
-    description = `Your overall engagement shows room for improvement — you were active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
+    description = `${studentName}'s overall engagement shows room for improvement — active on ${perf.active_days} days (${Math.round(activeDaysRatio * 100)}% of the period).`;
   }
 
   return {
@@ -386,16 +390,16 @@ function generateHighlights(
     let text = '';
     switch (win.type) {
       case 'achievement':
-        text = `Strong overall performance — your score is well above average.`;
+        text = `Strong overall performance — score is well above average.`;
         break;
       case 'consistency':
-        text = `Steady engagement throughout — your consistency is strong.`;
+        text = `Steady engagement throughout — consistency is strong.`;
         break;
       case 'steady':
-        text = `Balanced work pattern — you maintain even pace across the course.`;
+        text = `Balanced work pattern — maintaining even pace across the course.`;
         break;
       case 'early_progress':
-        text = `Great start — you frontloaded your efforts effectively.`;
+        text = `Great start — efforts were frontloaded effectively.`;
         break;
       case 'topic_win':
         text = `High first-pass success rate on comfortable topics.`;
@@ -416,7 +420,7 @@ function generateHighlights(
         text = `Some topics required many retries — reviewing fundamentals could strengthen understanding.`;
         break;
       case 'low_consistency':
-        text = `Overall engagement could be more regular — try establishing a consistent study schedule.`;
+        text = `Overall engagement could be more regular — establishing a consistent study schedule would help.`;
         break;
       case 'high_burstiness':
         text = `Work pattern shows sporadic bursts — more regular sessions could improve retention.`;
@@ -435,7 +439,7 @@ function generateHighlights(
   if (highlights.length === 0 || highlights[0].type !== 'win') {
     highlights.unshift({ 
       type: 'win', 
-      text: 'You are making progress — keep up the good work!' 
+      text: 'Making progress — keep up the good work!' 
     });
   }
 
@@ -469,7 +473,8 @@ function generateNextSteps(
   perf: PerformanceRow,
   dyn: DynamicSummaryRow,
   focusTopics: StudentTopic[],
-  engagement: StudentEngagement
+  engagement: StudentEngagement,
+  studentName: string
 ): string[] {
   const steps: string[] = [];
 
@@ -497,9 +502,9 @@ function generateNextSteps(
   // 5. Reinforce strength or general advice
   if (steps.length === 0) {
     if (perf.success_rate >= 80) {
-      steps.push(`Excellent work! Continue challenging yourself with advanced topics.`);
+      steps.push(`${studentName} is doing excellent work! Continue challenging with advanced topics.`);
     } else if (dyn.consistency >= 0.5) {
-      steps.push(`Your consistent approach is working well — keep maintaining that rhythm.`);
+      steps.push(`${studentName}'s consistent approach is working well — keep maintaining that rhythm.`);
     } else {
       steps.push(`Try establishing a more regular study pattern to improve retention and understanding.`);
     }
@@ -510,7 +515,7 @@ function generateNextSteps(
     if (perf.success_rate < 70) {
       steps.push(`Focus on understanding core concepts before moving to new topics — quality over speed.`);
     } else if (perf.persistence > 3) {
-      steps.push(`You show great persistence — make sure to review successful strategies that work for you.`);
+      steps.push(`${studentName} shows great persistence — make sure to review successful strategies.`);
     } else {
       steps.push(`Keep up the good progress and don't hesitate to ask for help when needed.`);
     }
@@ -526,7 +531,7 @@ function getCurveExplanation(easingLabel: string): string {
     case 'ease':
       return 'Gradual, smooth progress overall';
     case 'ease-in':
-      return 'You ramp up later; consider an early start each week';
+      return 'Ramping up later; consider an early start each week';
     case 'ease-out':
       return 'Strong start; keep momentum in the second half';
     case 'ease-in-out':
