@@ -30,8 +30,6 @@ export default async function ReportsPage() {
     .eq('status', 'completed')
     .order('created_at', { ascending: false });
 
-  console.log('Reports fetch result:', { reports, reportsError });
-
   return (
     <Box p="6">
       <Flex direction="column" gap="6" style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -42,12 +40,6 @@ export default async function ReportsPage() {
           </Box>
           <UserNav user={user} profile={profile} />
         </Flex>
-
-        {reportsError && (
-          <Card style={{ background: 'var(--red-a3)' }}>
-            <Text color="red">Error loading reports: {reportsError.message}</Text>
-          </Card>
-        )}
 
         {reports && reports.length > 0 ? (
           <Card>
