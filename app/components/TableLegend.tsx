@@ -1,7 +1,8 @@
 'use client';
 
 import { Box, Card, Heading, Text, Table } from '@radix-ui/themes';
-import { Accordion } from 'radix-ui';
+import * as Accordion from '@radix-ui/react-accordion';
+import styles from './TableLegend.module.css';
 
 interface LegendProps {
   mode: 'performance' | 'dynamic';
@@ -13,11 +14,12 @@ export function TableLegend({ mode }: LegendProps) {
       <Card>
         <Accordion.Root type="single" collapsible>
           <Accordion.Item value="legend">
-            <Accordion.Trigger>
+            <Accordion.Trigger className={styles.accordionTrigger}>
               <Heading size="3">📊 What the table columns mean</Heading>
+              <span className={styles.chevron}>▼</span>
             </Accordion.Trigger>
-            <Accordion.Content>
-              <Box>
+            <Accordion.Content className={styles.accordionContent}>
+              <Box pt="3">
                 <Text size="2" weight="bold" mb="3">In plain language:</Text>
                 <Table.Root size="1" variant="surface">
                   <Table.Header>
@@ -150,11 +152,12 @@ export function TableLegend({ mode }: LegendProps) {
     <Card>
       <Accordion.Root type="single" collapsible>
         <Accordion.Item value="legend">
-          <Accordion.Trigger>
+          <Accordion.Trigger className={styles.accordionTrigger}>
             <Heading size="3">📈 What the activity chart shows</Heading>
+            <span className={styles.chevron}>▼</span>
           </Accordion.Trigger>
-          <Accordion.Content>
-            <Box>
+          <Accordion.Content className={styles.accordionContent}>
+            <Box pt="3">
               <Text size="2" weight="bold" mb="3">In plain language:</Text>
               <Table.Root size="1" variant="surface">
                 <Table.Header>
