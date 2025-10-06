@@ -37,8 +37,7 @@ export function ChangeRoleButton({ userId, currentRole, currentAdminId }: Change
         throw new Error(data.error || 'Failed to change role');
       }
 
-      console.log('Role changed successfully:', data);
-      router.refresh();
+      window.location.reload();
     } catch (error: any) {
       console.error('Error changing role:', error);
       alert(`Failed to change user role: ${error.message}`);
