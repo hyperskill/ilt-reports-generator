@@ -18,6 +18,9 @@ export default function ProcessingPage() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [reportTitle, setReportTitle] = useState('');
   const [reportDescription, setReportDescription] = useState('');
+  const [commentProgramExpert, setCommentProgramExpert] = useState('');
+  const [commentTeachingAssistants, setCommentTeachingAssistants] = useState('');
+  const [commentLearningSupport, setCommentLearningSupport] = useState('');
   const [saving, setSaving] = useState(false);
   const [processedResults, setProcessedResults] = useState<any>(null);
 
@@ -163,6 +166,9 @@ export default function ProcessingPage() {
         body: JSON.stringify({
           title: reportTitle,
           description: reportDescription,
+          commentProgramExpert: commentProgramExpert,
+          commentTeachingAssistants: commentTeachingAssistants,
+          commentLearningSupport: commentLearningSupport,
           performanceData: processedResults.performanceData,
           dynamicData: processedResults.dynamicData,
           dynamicSeries: processedResults.dynamicSeries,
@@ -291,6 +297,46 @@ export default function ProcessingPage() {
                 onChange={(e) => setReportDescription(e.target.value)}
                 placeholder="Add notes about this report..."
                 rows={3}
+              />
+            </label>
+
+            <Text as="div" size="3" weight="bold" mt="2">
+              Team Comments (optional)
+            </Text>
+
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                💼 Comment from Program Expert
+              </Text>
+              <TextArea
+                value={commentProgramExpert}
+                onChange={(e) => setCommentProgramExpert(e.target.value)}
+                placeholder="Add program expert's comment about team activity..."
+                rows={2}
+              />
+            </label>
+
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                👨‍🏫 Comment from Teaching Assistants
+              </Text>
+              <TextArea
+                value={commentTeachingAssistants}
+                onChange={(e) => setCommentTeachingAssistants(e.target.value)}
+                placeholder="Add teaching assistants' comment..."
+                rows={2}
+              />
+            </label>
+
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                🎓 Comment from Learning Support
+              </Text>
+              <TextArea
+                value={commentLearningSupport}
+                onChange={(e) => setCommentLearningSupport(e.target.value)}
+                placeholder="Add learning support comment..."
+                rows={2}
               />
             </label>
           </Flex>

@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     const { 
       title, 
       description,
+      commentProgramExpert,
+      commentTeachingAssistants,
+      commentLearningSupport,
       performanceData, 
       dynamicData, 
       dynamicSeries,
@@ -45,6 +48,9 @@ export async function POST(request: Request) {
       .insert({
         title,
         description: description || null,
+        comment_program_expert: commentProgramExpert || null,
+        comment_teaching_assistants: commentTeachingAssistants || null,
+        comment_learning_support: commentLearningSupport || null,
         created_by: user.id,
         performance_data: performanceData,
         dynamic_data: dynamicData,
