@@ -69,6 +69,8 @@ export async function POST(request: Request) {
 
     // Save student comments if provided
     if (studentComments && Object.keys(studentComments).length > 0) {
+      console.log('Saving student comments:', JSON.stringify(studentComments, null, 2));
+      
       const commentsToInsert = Object.values(studentComments).map((comment: any) => ({
         report_id: report.id,
         user_id: comment.userId,
@@ -78,14 +80,21 @@ export async function POST(request: Request) {
         updated_by: user.id,
       }));
 
-      const { error: commentsError } = await supabase
+      console.log('Comments to insert:', JSON.stringify(commentsToInsert, null, 2));
+
+      const { data: insertedComments, error: commentsError } = await supabase
         .from('student_comments')
-        .insert(commentsToInsert);
+        .insert(commentsToInsert)
+        .select();
 
       if (commentsError) {
         console.error('Failed to save student comments:', commentsError);
-        // Don't fail the entire request, just log the error
+        console.error('Error details:', JSON.stringify(commentsError, null, 2));
+      } else {
+        console.log('Successfully saved comments:', insertedComments);
       }
+    } else {
+      console.log('No student comments to save');
     }
 
     return NextResponse.json({ success: true, report });

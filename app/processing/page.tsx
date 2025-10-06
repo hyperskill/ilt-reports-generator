@@ -155,6 +155,8 @@ export default function ProcessingPage() {
       return;
     }
 
+    console.log('Student comments to save:', studentComments);
+
     setSaving(true);
     try {
       const response = await fetch('/api/reports/save', {
