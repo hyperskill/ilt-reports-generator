@@ -7,6 +7,7 @@ import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
 import { EasingChart } from '@/app/components/EasingChart';
+import { StudentCommentsSection } from './StudentCommentsSection';
 import { createClient } from '@/lib/supabase/client';
 import styles from './student.module.css';
 
@@ -21,12 +22,29 @@ export default function StudentDetailPage({ params }: PageProps) {
   const { results, files } = useAppContext();
   const [savedReportData, setSavedReportData] = useState<any>(null);
   const [loading, setLoading] = useState(!!reportId);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    checkAdminStatus();
     if (reportId) {
       loadReportData(reportId);
     }
   }, [reportId]);
+
+  const checkAdminStatus = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      setIsAdmin(profile?.role === 'admin');
+    }
+  };
 
   const loadReportData = async (id: string) => {
     try {
@@ -478,6 +496,13 @@ export default function StudentDetailPage({ params }: PageProps) {
             </Box>
           </Card>
         )}
+
+        {/* Student Comments Section */}
+        <StudentCommentsSection
+          reportId={reportId}
+          userId={params.userId}
+          isAdmin={isAdmin}
+        />
       </Box>
     </AppLayoutWithAuth>
   );

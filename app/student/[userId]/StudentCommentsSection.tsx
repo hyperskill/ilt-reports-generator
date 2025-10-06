@@ -1,0 +1,232 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, Flex, Heading, Text, Button, TextArea, Box } from '@radix-ui/themes';
+
+interface StudentCommentsSectionProps {
+  reportId: string | null;
+  userId: string;
+  isAdmin: boolean;
+}
+
+export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCommentsSectionProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [comments, setComments] = useState<any>(null);
+  const [programExpert, setProgramExpert] = useState('');
+  const [teachingAssistants, setTeachingAssistants] = useState('');
+  const [learningSupport, setLearningSupport] = useState('');
+
+  useEffect(() => {
+    if (reportId) {
+      loadComments();
+    }
+  }, [reportId, userId]);
+
+  const loadComments = async () => {
+    if (!reportId) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/student-comments?reportId=${reportId}&userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments);
+        if (data.comments) {
+          setProgramExpert(data.comments.comment_program_expert || '');
+          setTeachingAssistants(data.comments.comment_teaching_assistants || '');
+          setLearningSupport(data.comments.comment_learning_support || '');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!reportId) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/student-comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportId,
+          userId,
+          comment_program_expert: programExpert,
+          comment_teaching_assistants: teachingAssistants,
+          comment_learning_support: learningSupport,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save comments');
+      }
+
+      const data = await response.json();
+      setComments(data.comments);
+      setIsEditing(false);
+    } catch (error: any) {
+      alert(`Failed to save comments: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (comments) {
+      setProgramExpert(comments.comment_program_expert || '');
+      setTeachingAssistants(comments.comment_teaching_assistants || '');
+      setLearningSupport(comments.comment_learning_support || '');
+    } else {
+      setProgramExpert('');
+      setTeachingAssistants('');
+      setLearningSupport('');
+    }
+    setIsEditing(false);
+  };
+
+  // Don't show if no reportId (viewing from current results)
+  if (!reportId) {
+    return null;
+  }
+
+  // Don't show if not admin and no comments exist
+  if (!isAdmin && !comments) {
+    return null;
+  }
+
+  const hasAnyComment = comments?.comment_program_expert || comments?.comment_teaching_assistants || comments?.comment_learning_support;
+
+  if (loading) {
+    return (
+      <Card mt="4">
+        <Text size="2" color="gray">Loading comments...</Text>
+      </Card>
+    );
+  }
+
+  return (
+    <Card mt="4">
+      <Flex direction="column" gap="4">
+        <Flex justify="between" align="center">
+          <Heading size="5">Individual Feedback</Heading>
+          {isAdmin && !isEditing && (
+            <Button onClick={() => setIsEditing(true)} variant="soft">
+              {hasAnyComment ? 'Edit Feedback' : 'Add Feedback'}
+            </Button>
+          )}
+        </Flex>
+
+        {isEditing ? (
+          <>
+            <Box 
+              p="3" 
+              style={{ 
+                background: 'var(--blue-a2)', 
+                borderRadius: 'var(--radius-3)',
+                border: '1px solid var(--blue-a4)'
+              }}
+            >
+              <Text as="div" size="2" color="blue" style={{ lineHeight: '1.6' }}>
+                💡 <strong>Feedback Guidance:</strong> Provide personalized feedback focusing on this student's individual progress, 
+                strengths, areas for improvement, and specific recommendations for their learning journey.
+              </Text>
+            </Box>
+
+            <Box>
+              <Text as="div" size="2" weight="bold" mb="2">
+                💼 Feedback from Program Expert
+              </Text>
+              <TextArea
+                value={programExpert}
+                onChange={(e) => setProgramExpert(e.target.value)}
+                placeholder="Share personalized insights about this student's progress, technical skills, project outcomes, and growth opportunities..."
+                rows={4}
+              />
+            </Box>
+
+            <Box>
+              <Text as="div" size="2" weight="bold" mb="2">
+                👨‍🏫 Feedback from Teaching Assistants
+              </Text>
+              <TextArea
+                value={teachingAssistants}
+                onChange={(e) => setTeachingAssistants(e.target.value)}
+                placeholder="Describe this student's engagement, learning approach, collaboration skills, and areas needing attention..."
+                rows={4}
+              />
+            </Box>
+
+            <Box>
+              <Text as="div" size="2" weight="bold" mb="2">
+                🎓 Feedback from Learning Support
+              </Text>
+              <TextArea
+                value={learningSupport}
+                onChange={(e) => setLearningSupport(e.target.value)}
+                placeholder="Note this student's well-being, motivation levels, support needs, and personal development opportunities..."
+                rows={4}
+              />
+            </Box>
+
+            <Flex gap="2" justify="end">
+              <Button variant="soft" color="gray" onClick={handleCancel} disabled={saving}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Feedback'}
+              </Button>
+            </Flex>
+          </>
+        ) : (
+          <>
+            {!hasAnyComment ? (
+              <Text size="2" color="gray">No feedback available yet.</Text>
+            ) : (
+              <>
+                {comments?.comment_program_expert && (
+                  <Box>
+                    <Text as="div" size="2" weight="bold" mb="1">
+                      💼 Program Expert
+                    </Text>
+                    <Text as="div" size="2" color="gray" style={{ whiteSpace: 'pre-wrap' }}>
+                      {comments.comment_program_expert}
+                    </Text>
+                  </Box>
+                )}
+
+                {comments?.comment_teaching_assistants && (
+                  <Box>
+                    <Text as="div" size="2" weight="bold" mb="1">
+                      👨‍🏫 Teaching Assistants
+                    </Text>
+                    <Text as="div" size="2" color="gray" style={{ whiteSpace: 'pre-wrap' }}>
+                      {comments.comment_teaching_assistants}
+                    </Text>
+                  </Box>
+                )}
+
+                {comments?.comment_learning_support && (
+                  <Box>
+                    <Text as="div" size="2" weight="bold" mb="1">
+                      🎓 Learning Support
+                    </Text>
+                    <Text as="div" size="2" color="gray" style={{ whiteSpace: 'pre-wrap' }}>
+                      {comments.comment_learning_support}
+                    </Text>
+                  </Box>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Flex>
+    </Card>
+  );
+}
+
