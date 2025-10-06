@@ -1,5 +1,115 @@
 # App Creation Log
 
+## 2025-10-06: LLM-Generated Reports Feature
+
+### New Feature: AI-Powered Manager and Student Reports
+**Purpose**: Enable admins to generate comprehensive, AI-summarized reports for managers and individual students using LiteLLM (GPT-4 via Hyperskill internal proxy).
+
+### Changes
+
+**Database Schema** (`supabase/add-llm-reports.sql`):
+- Created `manager_reports` table:
+  - Links to base `reports` table (one-to-one)
+  - Stores `generated_content` (original AI output) and `edited_content` (admin edits)
+  - `is_published` flag for visibility control
+  - Unique constraint: one manager report per base report
+- Created `student_reports` table:
+  - Links to base `reports` table (one-to-many)
+  - Stores per-student AI-generated content and edits
+  - `is_published` flag for student visibility
+  - Unique constraint: one student report per (report_id, user_id)
+- RLS policies:
+  - Students can view their own published reports
+  - Managers can view all published reports
+  - Admins can manage all reports (CRUD)
+
+**API Routes**:
+- `POST /api/llm/generate-manager-report`:
+  - Accepts `reportId`
+  - Fetches team data (performance, dynamics, comments)
+  - Sends to GPT-4 with comprehensive system prompt
+  - Stores result in `manager_reports` table
+  - Returns generated content
+- `POST /api/llm/generate-student-report`:
+  - Accepts `reportId` and `userId`
+  - Fetches student-specific data (performance, dynamics, feedback)
+  - Sends to GPT-4 with personalized system prompt
+  - Stores result in `student_reports` table
+  - Returns generated content
+
+**UI Components**:
+- `LLMReportButtons.tsx`:
+  - Displays on report detail page (`/reports/[id]`)
+  - Two buttons: "Generate Manager Report" and "Generate Student Reports"
+  - Admin-only visibility
+  - Provides navigation to edit pages
+- Manager report edit page (`/reports/[id]/manager-report/page.tsx`):
+  - 5 editable sections (Executive Summary, Group Dynamics, Learning Outcomes, Expert Observations, Opportunities)
+  - Save and Publish controls
+  - Regenerate option
+- Student reports management page (`/reports/[id]/student-reports/page.tsx`):
+  - Lists all students with generation status
+  - Batch "Generate All" option
+  - Individual generate/edit buttons
+  - Shows published/draft/edited status
+- Student report edit page (`/reports/[id]/student-reports/[userId]/page.tsx`):
+  - 6 editable sections (Learning Journey, Strengths, Skills Development, Instructor Feedback, Growth Opportunities, Next Steps)
+  - Save and Publish controls
+  - Regenerate option
+
+**Integration**:
+- Updated `app/reports/[id]/page.tsx`:
+  - Added `LLMReportButtons` component below tabs
+  - Buttons appear for admins only
+- Updated `app/student/[userId]/page.tsx`:
+  - Added link to AI report editor for admins
+  - Appears when viewing student from saved report
+  - "📝 Edit AI Report" button at top of page
+
+**Prompts**:
+- Manager report prompt:
+  - Act as Learning Experience Designer
+  - Friendly, professional tone
+  - 5 sections: Executive Summary, Group Dynamics, Learning Outcomes, Expert Observations, Opportunities
+  - Explains technical metrics in simple terms
+  - JSON output format
+- Student report prompt:
+  - Act as Learning Coach
+  - Warm, encouraging tone
+  - Speaks directly to student using their name
+  - 6 sections: Learning Journey, Strengths, Skills Development, Instructor Feedback, Growth, Next Steps
+  - Constructive and motivating
+  - JSON output format
+
+**Dependencies**:
+- Added `openai` package (v4.77.0) to `package.json`
+- Updated `env.example` with `LITELLM_API_KEY` and `LITELLM_BASE_URL`
+- Configured to use Hyperskill internal LiteLLM proxy instead of direct OpenAI access
+
+**Documentation**:
+- Created `docs/llm-reports-feature.md`:
+  - Feature overview
+  - Workflow descriptions
+  - Database schema details
+  - API endpoints
+  - Security & permissions
+  - Cost considerations
+  - Usage tips
+
+### Benefits
+1. **Saves Time**: Auto-generates comprehensive reports from raw data
+2. **Consistency**: Standardized format across all reports
+3. **Accessibility**: Translates technical metrics into plain language
+4. **Personalization**: Tailored content for managers vs students
+5. **Flexibility**: Admins can edit before publishing
+6. **Control**: Draft/publish workflow prevents premature sharing
+
+### Security
+- Admin-only generation (enforced in API routes)
+- RLS policies for published content visibility
+- Separate tables for manager vs student reports
+- Explicit publish action required
+
 ## 2025-10-06: Refactor - Overall Engagement vs Weekly Momentum
 
 ### Breaking Change: Removed Weekly Momentum Calculation

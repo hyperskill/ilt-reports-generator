@@ -47,7 +47,7 @@ A comprehensive web application for analyzing student performance and dynamic ac
 
 ### Personalized Student Reports
 
-**New Feature**: Individual student detail pages with comprehensive, actionable insights.
+**Feature**: Individual student detail pages with comprehensive, actionable insights.
 
 **Access**: Click on any student's name in the results tables (both Performance and Dynamic tabs).
 
@@ -59,7 +59,7 @@ A comprehensive web application for analyzing student performance and dynamic ac
 - 🎯 **Focus Areas**: Topics needing attention with specific reasons
 - 🚀 **Next Steps**: 2-3 prioritized, actionable suggestions
 - 📚 **Topic Analysis Table**: Detailed breakdown with deltas from course average
-  - **NEW**: Clickable topic links to Cogniterra (when structure.csv is uploaded)
+  - **Clickable topic links** to Cogniterra (when structure.csv is uploaded)
 - 📊 **Full Statistics**: All performance metrics in one view
 
 **Algorithm**: Based on Personal Student Report Algorithm v1 (see `docs/personal_student_report_algorithm.md`)
@@ -67,6 +67,35 @@ A comprehensive web application for analyzing student performance and dynamic ac
 **Language**: Student-friendly, supportive, actionable - no heavy statistics or rankings
 
 **Learn More**: See `docs/student-report-feature-guide.md` for complete documentation
+
+### AI-Generated Reports (NEW!)
+
+**Feature**: Automatically generate comprehensive, human-friendly reports for managers and students using LiteLLM (GPT-4 via Hyperskill proxy).
+
+**Manager Reports**:
+- 📊 Executive summary of cohort performance
+- 👥 Group dynamics and engagement analysis
+- 🎓 Learning outcomes and project evaluation
+- 💬 Expert observations synthesis
+- 🎯 Opportunities and recommendations
+
+**Student Reports**:
+- 🌟 Personalized learning journey overview
+- 💪 Strengths and achievements
+- 📈 Skills development analysis
+- 👨‍🏫 Instructor feedback
+- 🚀 Growth opportunities and next steps
+
+**Key Benefits**:
+- ⚡ Auto-generates from raw data in seconds
+- ✏️ Fully editable before publishing
+- 🔒 Draft/publish workflow for quality control
+- 🎯 Tailored language for different audiences
+- 💰 Cost-effective (~$0.01-$0.05 per report)
+
+**Setup**: See `docs/LLM_SETUP.md` for quick start guide
+
+**Full Documentation**: See `docs/llm-reports-feature.md` for complete details
 
 ## Getting Started
 

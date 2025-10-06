@@ -33,7 +33,9 @@ export async function POST(request: Request) {
       settings,
       excludedUserIds,
       fileMetadata,
-      studentComments 
+      studentComments,
+      submissions,
+      structure
     } = body;
 
     if (!title || !performanceData || !dynamicData) {
@@ -52,6 +54,8 @@ export async function POST(request: Request) {
         dynamic_series: dynamicSeries || null,
         settings: settings || null,
         excluded_user_ids: excludedUserIds || [],
+        submissions_data: submissions || null,
+        structure_data: structure || null,
         grade_book_file_path: fileMetadata?.gradeBook || null,
         learners_file_path: fileMetadata?.learners || null,
         submissions_file_path: fileMetadata?.submissions || null,

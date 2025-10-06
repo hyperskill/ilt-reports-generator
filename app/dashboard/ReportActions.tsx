@@ -40,6 +40,8 @@ export function ReportActions({ reportId, reportTitle, reportDescription, isAdmi
       }
 
       setShowEditDialog(false);
+      // Force page refresh by navigating to dashboard with timestamp
+      router.push(`/dashboard?t=${Date.now()}`);
       router.refresh();
     } catch (error: any) {
       alert(`Failed to update report: ${error.message}`);
@@ -60,6 +62,8 @@ export function ReportActions({ reportId, reportTitle, reportDescription, isAdmi
       }
 
       setShowDeleteDialog(false);
+      // Force page refresh by navigating to dashboard with timestamp
+      router.push(`/dashboard?t=${Date.now()}`);
       router.refresh();
     } catch (error: any) {
       alert(`Failed to delete report: ${error.message}`);

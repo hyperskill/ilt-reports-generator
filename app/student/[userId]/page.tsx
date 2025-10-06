@@ -63,15 +63,14 @@ export default function StudentDetailPage({ params }: PageProps) {
   const report = useMemo(() => {
     // If we have savedReportData, use it
     if (savedReportData) {
-      // We need to reconstruct submissions data from the saved report
-      // For now, we'll generate the report from saved performance/dynamic data
+      // Use saved submissions and structure data
       return generateStudentReport({
         userId: params.userId,
         performanceData: savedReportData.performance_data,
         dynamicData: savedReportData.dynamic_data,
         dynamicSeries: savedReportData.dynamic_series || [],
-        submissions: [], // We don't have raw submissions in saved reports
-        structure: [], // We don't have structure data in saved reports
+        submissions: savedReportData.submissions_data || [],
+        structure: savedReportData.structure_data || [],
         excludedUserIds: savedReportData.excluded_user_ids || [],
       });
     }
@@ -142,6 +141,24 @@ export default function StudentDetailPage({ params }: PageProps) {
   return (
     <AppLayoutWithAuth>
       <Box className={styles.container}>
+        {/* AI Report Link for Admins */}
+        {isAdmin && reportId && (
+          <Card mb="3">
+            <Flex justify="between" align="center">
+              <Box>
+                <Text size="3" weight="bold">AI-Generated Learning Report</Text>
+                <Text size="2" color="gray">View and edit the personalized AI summary for this student</Text>
+              </Box>
+              <Button 
+                variant="soft"
+                onClick={() => router.push(`/reports/${reportId}/student-reports/${params.userId}`)}
+              >
+                📝 Edit AI Report
+              </Button>
+            </Flex>
+          </Card>
+        )}
+
         {/* Header */}
         <Card>
           <Flex justify="between" align="start" mb="3">

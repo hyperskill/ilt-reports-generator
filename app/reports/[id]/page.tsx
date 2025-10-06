@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Heading, Text, Tabs, Card, Flex, Badge } from '@radix-ui/themes';
+import { Box, Heading, Text, Tabs, Card, Flex, Badge, Button } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { PerformanceResults } from '@/app/components/PerformanceResults';
 import { DynamicResults } from '@/app/components/DynamicResults';
 import { CommentsSection } from './CommentsSection';
+import { LLMReportButtons } from './LLMReportButtons';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ReportDetailPage({ params }: { params: { id: string } }) {
@@ -82,7 +83,18 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
               <Text size="3" color="gray">{report.description}</Text>
             )}
           </Box>
-          <Badge color="green">Saved Report</Badge>
+          <Flex gap="2" align="center">
+            <Button 
+              variant="soft" 
+              onClick={() => {
+                router.push(`/dashboard?t=${Date.now()}`);
+                router.refresh();
+              }}
+            >
+              ← Back to Dashboard
+            </Button>
+            <Badge color="green">Saved Report</Badge>
+          </Flex>
         </Flex>
         <Flex gap="2" mt="2">
           <Text size="2" color="gray">
@@ -125,6 +137,9 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
           onUpdate={fetchReport}
         />
       </Box>
+
+      {/* LLM Report Generation */}
+      <LLMReportButtons reportId={params.id} isAdmin={isAdmin} />
     </AppLayoutWithAuth>
   );
 }

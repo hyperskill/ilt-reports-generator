@@ -169,6 +169,8 @@ export default function ProcessingPage() {
           settings,
           excludedUserIds,
           studentComments: studentComments || {},
+          submissions: files.submissions?.data || [],
+          structure: files.structure?.data || [],
           fileMetadata: {
             gradeBook: files.grade_book?.name,
             learners: files.learners?.name,
