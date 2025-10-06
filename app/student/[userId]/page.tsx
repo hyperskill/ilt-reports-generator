@@ -111,7 +111,7 @@ export default function StudentDetailPage({ params }: PageProps) {
 
         {/* Highlights */}
         <Card>
-          <Heading size="5" mb="3">📋 Your Progress Highlights</Heading>
+          <Heading size="5" mb="3">📋 {report.student.name.split(' ')[0]}'s Progress Highlights</Heading>
           <Flex direction="column" gap="2">
             {report.highlights.map((highlight, idx) => (
               <Box 
@@ -154,7 +154,7 @@ export default function StudentDetailPage({ params }: PageProps) {
 
         {/* Activity Curve */}
         <Card>
-          <Heading size="5" mb="3">📈 Your Activity Over Time</Heading>
+          <Heading size="5" mb="3">📈 {report.student.name.split(' ')[0]}'s Activity Over Time</Heading>
           <Text size="2" color="gray" mb="3">
             {report.curve.explain}
           </Text>
