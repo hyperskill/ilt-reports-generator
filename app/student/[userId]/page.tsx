@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator } from '@radix-ui/themes';
 import { AppLayout } from '@/app/components/AppLayout';
@@ -10,11 +10,10 @@ import { EasingChart } from '@/app/components/EasingChart';
 import styles from './student.module.css';
 
 interface PageProps {
-  params: Promise<{ userId: string }>;
+  params: { userId: string };
 }
 
 export default function StudentDetailPage({ params }: PageProps) {
-  const resolvedParams = use(params);
   const router = useRouter();
   const { results, files } = useAppContext();
 
@@ -22,14 +21,14 @@ export default function StudentDetailPage({ params }: PageProps) {
     if (!results || !files.submissions) return null;
 
     return generateStudentReport({
-      userId: resolvedParams.userId,
+      userId: params.userId,
       performanceData: results.performanceData,
       dynamicData: results.dynamicData,
       dynamicSeries: results.dynamicSeries,
       submissions: files.submissions.data,
       excludedUserIds: [],
     });
-  }, [resolvedParams.userId, results, files.submissions]);
+  }, [params.userId, results, files.submissions]);
 
   if (!report) {
     return (
