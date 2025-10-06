@@ -131,8 +131,8 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="7" mb="2">{report.student.name}</Heading>
               <Text size="2" color="gray">User ID: {report.student.user_id}</Text>
             </Box>
-            <Button variant="soft" onClick={() => router.push('/results')}>
-              ← Back to Results
+            <Button variant="soft" onClick={() => reportId ? router.push(`/reports/${reportId}`) : router.push('/results')}>
+              ← {reportId ? 'Back to Report' : 'Back to Results'}
             </Button>
           </Flex>
 
