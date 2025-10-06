@@ -1,14 +1,14 @@
-# 📤 Данные, отправляемые в LiteLLM
+# 📤 Data Sent to LiteLLM
 
-## Общая информация
+## General Information
 
-При генерации AI-отчетов приложение отправляет обработанные данные в LiteLLM прокси Hyperskill. Этот документ описывает точный состав отправляемых данных.
+When generating AI reports, the application sends processed data to the Hyperskill LiteLLM proxy. This document describes the exact composition of the data being sent.
 
 ---
 
-## 🏢 Manager Report (Командный отчет)
+## 🏢 Manager Report (Team Report)
 
-### Структура данных
+### Data Structure
 
 ```json
 {
@@ -22,139 +22,139 @@
 }
 ```
 
-### 1. Метаданные отчета
+### 1. Report Metadata
 
-| Поле | Тип | Описание | Пример |
+| Field | Type | Description | Example |
 |------|-----|----------|--------|
-| `reportTitle` | string | Название отчета | "Python Course 2024-Q1" |
-| `reportDescription` | string | Описание отчета | "Final cohort results" |
-| `totalStudents` | number | Количество студентов | 23 |
+| `reportTitle` | string | Report name | "Python Course 2024-Q1" |
+| `reportDescription` | string | Report description | "Final cohort results" |
+| `totalStudents` | number | Number of students | 23 |
 
-**Источник:** Таблица `reports`
+**Source:** `reports` table
 
 ---
 
-### 2. Комментарии команды
+### 2. Team Comments
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 |------|-----|----------|
-| `teamComments.programExpert` | string | Комментарий эксперта программы |
-| `teamComments.teachingAssistants` | string | Комментарий ассистентов |
-| `teamComments.learningSupport` | string | Комментарий службы поддержки |
+| `teamComments.programExpert` | string | Program expert comment |
+| `teamComments.teachingAssistants` | string | Teaching assistants comment |
+| `teamComments.learningSupport` | string | Learning support comment |
 
-**Источник:** Таблица `reports` (поля `comment_*`)
+**Source:** `reports` table (`comment_*` fields)
 
-**⚠️ Приватность:** Может содержать персональные наблюдения
-
----
-
-### 3. Данные производительности студентов
-
-Массив объектов, по одному на каждого студента:
-
-| Поле | Тип | Описание | Конфиденциальность |
-|------|-----|----------|--------------------|
-| `user_id` | string | ID студента | 🟠 Средняя |
-| `name` | string | Имя студента | 🟠 Средняя |
-| `total` | number | Общий балл | 🟢 Низкая |
-| `total_pct` | number | Процент выполнения (0-100) | 🟢 Низкая |
-| `submissions` | number | Всего попыток | 🟢 Низкая |
-| `unique_steps` | number | Уникальных шагов | 🟢 Низкая |
-| `correct_submissions` | number | Правильных попыток | 🟢 Низкая |
-| `success_rate` | number | Процент успеха (0-1) | 🟢 Низкая |
-| `persistence` | number | Попытки на шаг | 🟢 Низкая |
-| `efficiency` | number | Правильные на шаг | 🟢 Низкая |
-| `active_days` | number | Активных дней | 🟢 Низкая |
-| `active_days_ratio` | number | Доля активных дней (0-1) | 🟢 Низкая |
-| `effort_index` | number | Индекс усилий (z-score) | 🟢 Низкая |
-| `consistency_index` | number | Индекс постоянства | 🟢 Низкая |
-| `struggle_index` | number | Индекс затруднений | 🟢 Низкая |
-| `meetings_attended` | number | Посещено встреч | 🟢 Низкая |
-| `meetings_attended_pct` | number | Процент посещенных встреч | 🟢 Низкая |
-| `simple_segment` | string | Сегмент ("Leader engaged", etc.) | 🟢 Низкая |
-
-**Источник:** Обработанные данные из процессора `performance-processor.ts`
-
-**⚠️ Персональные данные:** `user_id`, `name`
+**⚠️ Privacy:** May contain personal observations
 
 ---
 
-### 4. Динамические данные (паттерны активности)
+### 3. Student Performance Data
 
-Массив объектов с паттернами активности каждого студента:
+Array of objects, one per student:
 
-| Поле | Тип | Описание |
+| Field | Type | Description | Confidentiality |
+|------|-----|----------|-------------------|
+| `user_id` | string | Student ID | 🟠 Medium |
+| `name` | string | Student name | 🟠 Medium |
+| `total` | number | Total score | 🟢 Low |
+| `total_pct` | number | Completion percentage (0-100) | 🟢 Low |
+| `submissions` | number | Total attempts | 🟢 Low |
+| `unique_steps` | number | Unique steps | 🟢 Low |
+| `correct_submissions` | number | Correct attempts | 🟢 Low |
+| `success_rate` | number | Success rate (0-1) | 🟢 Low |
+| `persistence` | number | Attempts per step | 🟢 Low |
+| `efficiency` | number | Correct per step | 🟢 Low |
+| `active_days` | number | Active days | 🟢 Low |
+| `active_days_ratio` | number | Active days ratio (0-1) | 🟢 Low |
+| `effort_index` | number | Effort index (z-score) | 🟢 Low |
+| `consistency_index` | number | Consistency index | 🟢 Low |
+| `struggle_index` | number | Struggle index | 🟢 Low |
+| `meetings_attended` | number | Meetings attended | 🟢 Low |
+| `meetings_attended_pct` | number | Meetings attended percentage | 🟢 Low |
+| `simple_segment` | string | Segment ("Leader engaged", etc.) | 🟢 Low |
+
+**Source:** Processed data from `performance-processor.ts`
+
+**⚠️ Personal Data:** `user_id`, `name`
+
+---
+
+### 4. Dynamic Data (Activity Patterns)
+
+Array of objects with activity patterns for each student:
+
+| Field | Type | Description |
 |------|-----|----------|
-| `user_id` | string | ID студента |
-| `name` | string | Имя студента |
-| `bezier_p1x` | number | Контрольная точка 1 кривой Безье (x) |
-| `bezier_p1y` | number | Контрольная точка 1 кривой Безье (y) |
-| `bezier_p2x` | number | Контрольная точка 2 кривой Безье (x) |
-| `bezier_p2y` | number | Контрольная точка 2 кривой Безье (y) |
-| `t25` | number | Время достижения 25% активности |
-| `t50` | number | Время достижения 50% активности |
-| `t75` | number | Время достижения 75% активности |
-| `frontload_index` | number | Индекс frontload (0-1) |
-| `easing_label` | string | Тип кривой ("linear", "ease-in", etc.) |
-| `consistency` | number | Постоянство активности |
-| `burstiness` | number | Всплески активности |
-| `activity_platform` | number | Активность на платформе |
-| `activity_meetings` | number | Активность на встречах |
-| `activity_total` | number | Общая активность |
+| `user_id` | string | Student ID |
+| `name` | string | Student name |
+| `bezier_p1x` | number | Bezier curve control point 1 (x) |
+| `bezier_p1y` | number | Bezier curve control point 1 (y) |
+| `bezier_p2x` | number | Bezier curve control point 2 (x) |
+| `bezier_p2y` | number | Bezier curve control point 2 (y) |
+| `t25` | number | Time to reach 25% activity |
+| `t50` | number | Time to reach 50% activity |
+| `t75` | number | Time to reach 75% activity |
+| `frontload_index` | number | Frontload index (0-1) |
+| `easing_label` | string | Curve type ("linear", "ease-in", etc.) |
+| `consistency` | number | Activity consistency |
+| `burstiness` | number | Activity burstiness |
+| `activity_platform` | number | Platform activity |
+| `activity_meetings` | number | Meetings activity |
+| `activity_total` | number | Total activity |
 
-**Источник:** Обработанные данные из процессора `dynamic-processor.ts`
-
----
-
-### 5. Индивидуальные комментарии студентов
-
-Массив объектов с персональными комментариями:
-
-| Поле | Тип | Описание | Конфиденциальность |
-|------|-----|----------|--------------------|
-| `user_id` | string | ID студента | 🟠 Средняя |
-| `comment_program_expert` | string | Комментарий эксперта | 🟠 Средняя |
-| `comment_teaching_assistants` | string | Комментарий ассистентов | 🟠 Средняя |
-| `comment_learning_support` | string | Комментарий поддержки | 🟠 Средняя |
-
-**Источник:** Таблица `student_comments`
-
-**⚠️ Приватность:** Содержит персональные наблюдения преподавателей
+**Source:** Processed data from `dynamic-processor.ts`
 
 ---
 
-### 6. Статистика submissions (агрегированная) **НОВОЕ**
+### 5. Individual Student Comments
 
-Агрегированные данные для углубленного анализа:
+Array of objects with personal comments:
 
-| Поле | Тип | Описание |
+| Field | Type | Description | Confidentiality |
+|------|-----|----------|-------------------|
+| `user_id` | string | Student ID | 🟠 Medium |
+| `comment_program_expert` | string | Program expert comment | 🟠 Medium |
+| `comment_teaching_assistants` | string | Teaching assistants comment | 🟠 Medium |
+| `comment_learning_support` | string | Learning support comment | 🟠 Medium |
+
+**Source:** `student_comments` table
+
+**⚠️ Privacy:** Contains personal observations from instructors
+
+---
+
+### 6. Submissions Statistics (Aggregated) **NEW**
+
+Aggregated data for in-depth analysis:
+
+| Field | Type | Description |
 |------|-----|----------|
-| `submissionsStats.totalSubmissions` | number | Всего попыток в курсе |
-| `submissionsStats.sampleSize` | number | Размер выборки (макс 100) |
-| `submissionsStats.topicDistribution` | object | Распределение попыток по топикам |
+| `submissionsStats.totalSubmissions` | number | Total attempts in course |
+| `submissionsStats.sampleSize` | number | Sample size (max 100) |
+| `submissionsStats.topicDistribution` | object | Distribution of attempts by topic |
 
-**Источник:** Агрегация из `submissions_data`
+**Source:** Aggregated from `submissions_data`
 
-**📝 Примечание:** Передаются только статистические данные, не сырые submissions
+**📝 Note:** Only statistical data is sent, not raw submissions
 
 ---
 
-### 7. Структура курса (агрегированная) **НОВОЕ**
+### 7. Course Structure (Aggregated) **NEW**
 
-Общая информация о структуре курса:
+General information about course structure:
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 |------|-----|----------|
-| `courseStructure.totalTopics` | number | Количество уникальных топиков |
-| `courseStructure.totalSteps` | number | Количество уникальных шагов |
+| `courseStructure.totalTopics` | number | Number of unique topics |
+| `courseStructure.totalSteps` | number | Number of unique steps |
 
-**Источник:** Агрегация из `structure_data`
+**Source:** Aggregated from `structure_data`
 
 ---
 
-## 👤 Student Report (Персональный отчет)
+## 👤 Student Report (Personal Report)
 
-### Структура данных
+### Data Structure
 
 ```json
 {
@@ -166,140 +166,140 @@
 }
 ```
 
-### 1. Базовая информация
+### 1. Basic Information
 
-| Поле | Тип | Описание | Конфиденциальность |
-|------|-----|----------|--------------------|
-| `studentName` | string | Имя студента | 🟠 Средняя |
-
----
-
-### 2. Данные производительности
-
-Объект с метриками производительности **одного** студента (те же поля, что в `performanceData` выше).
+| Field | Type | Description | Confidentiality |
+|------|-----|----------|-------------------|
+| `studentName` | string | Student name | 🟠 Medium |
 
 ---
 
-### 3. Динамические данные
+### 2. Performance Data
 
-Объект с паттернами активности **одного** студента (те же поля, что в `dynamicData` выше).
+Object with performance metrics for **one** student (same fields as `performanceData` above).
 
 ---
 
-### 4. Временная линия активности
+### 3. Dynamic Data
 
-Массив точек активности по дням:
+Object with activity patterns for **one** student (same fields as `dynamicData` above).
 
-| Поле | Тип | Описание |
+---
+
+### 4. Activity Timeline
+
+Array of activity points by day:
+
+| Field | Type | Description |
 |------|-----|----------|
-| `user_id` | string | ID студента |
-| `date` | string | Дата |
-| `x_norm` | number | Нормализованное время (0-1) |
-| `y_norm` | number | Нормализованная активность (0-1) |
-| `platform` | number | Активность на платформе |
-| `meetings` | number | Активность на встречах |
+| `user_id` | string | Student ID |
+| `date` | string | Date |
+| `x_norm` | number | Normalized time (0-1) |
+| `y_norm` | number | Normalized activity (0-1) |
+| `platform` | number | Platform activity |
+| `meetings` | number | Meetings activity |
 
-**Источник:** Обработанные данные из `dynamic_series`
+**Source:** Processed data from `dynamic_series`
 
-**📝 Примечание:** Данные нормализованы, точные timestamps не передаются
+**📝 Note:** Data is normalized, exact timestamps are not transmitted
 
 ---
 
-### 5. Комментарии преподавателей
+### 5. Instructor Comments
 
-Объект с персональными комментариями для **одного** студента:
+Object with personal comments for **one** student:
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 |------|-----|----------|
-| `user_id` | string | ID студента |
-| `comment_program_expert` | string | Комментарий эксперта |
-| `comment_teaching_assistants` | string | Комментарий ассистентов |
-| `comment_learning_support` | string | Комментарий поддержки |
+| `user_id` | string | Student ID |
+| `comment_program_expert` | string | Program expert comment |
+| `comment_teaching_assistants` | string | Teaching assistants comment |
+| `comment_learning_support` | string | Learning support comment |
 
-**Источник:** Таблица `student_comments`
+**Source:** `student_comments` table
 
 ---
 
-### 6. Анализ submissions студента (агрегированный) **НОВОЕ**
+### 6. Student Submissions Analysis (Aggregated) **NEW**
 
-Детальная статистика по топикам для конкретного студента:
+Detailed statistics by topic for a specific student:
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 |------|-----|----------|
-| `submissionsAnalysis.totalSubmissions` | number | Всего попыток студента |
-| `submissionsAnalysis.correctSubmissions` | number | Правильных попыток |
-| `submissionsAnalysis.successRate` | number | Общий процент успеха (0-1) |
-| `submissionsAnalysis.topicPerformance` | array | Производительность по топикам |
+| `submissionsAnalysis.totalSubmissions` | number | Total student attempts |
+| `submissionsAnalysis.correctSubmissions` | number | Correct attempts |
+| `submissionsAnalysis.successRate` | number | Overall success rate (0-1) |
+| `submissionsAnalysis.topicPerformance` | array | Performance by topic |
 
-**Структура topicPerformance:**
-- `topic` (string) - название топика
-- `attempts` (number) - попыток в топике
-- `correctRate` (number) - процент правильных (0-1)
-- `uniqueSteps` (number) - уникальных шагов пройдено
+**topicPerformance structure:**
+- `topic` (string) - topic name
+- `attempts` (number) - attempts in topic
+- `correctRate` (number) - correct rate (0-1)
+- `uniqueSteps` (number) - unique steps completed
 
-**Источник:** Агрегация из `submissions_data` для конкретного студента
+**Source:** Aggregated from `submissions_data` for specific student
 
-**📝 Примечание:** LLM использует эти данные для выявления сильных и слабых топиков
-
----
-
-## ❌ Что НЕ отправляется
-
-### Никогда не отправляется:
-
-- ❌ **Email адреса** студентов
-- ❌ **Пароли** или токены доступа
-- ❌ **Содержимое решений** студентов (код, текст ответов)
-- ❌ **Детальные логи** с точными timestamps
-- ❌ **IP адреса**
-- ❌ **Личная переписка**
-- ❌ **Сырые CSV данные** (только обработанные метрики)
-- ❌ **Данные других студентов** (в student report)
+**📝 Note:** LLM uses this data to identify strong and weak topics
 
 ---
 
-## 🔒 Уровни конфиденциальности
+## ❌ What is NOT Sent
 
-### 🟢 Низкая (агрегированные метрики)
-- Баллы, проценты, количества
-- Индексы (effort, consistency, struggle)
-- Статистика посещаемости
-- Паттерны кривых активности
+### Never sent:
 
-### 🟠 Средняя (персональные данные)
-- **Имена студентов**
+- ❌ **Email addresses** of students
+- ❌ **Passwords** or access tokens
+- ❌ **Solution content** from students (code, answer text)
+- ❌ **Detailed logs** with exact timestamps
+- ❌ **IP addresses**
+- ❌ **Private correspondence**
+- ❌ **Raw CSV data** (only processed metrics)
+- ❌ **Other students' data** (in student report)
+
+---
+
+## 🔒 Confidentiality Levels
+
+### 🟢 Low (aggregated metrics)
+- Scores, percentages, counts
+- Indices (effort, consistency, struggle)
+- Attendance statistics
+- Activity curve patterns
+
+### 🟠 Medium (personal data)
+- **Student names**
 - **User IDs**
-- **Комментарии преподавателей**
+- **Instructor comments**
 
-### 🔴 Высокая (НЕ отправляется)
-- Email, пароли, содержимое решений
-
----
-
-## 🛡️ Меры безопасности
-
-1. **Транспорт:**
-   - ✅ HTTPS для всех запросов
-   - ✅ Внутренний прокси Hyperskill (не публичный OpenAI)
-
-2. **Доступ:**
-   - ✅ Только админы могут генерировать отчеты
-   - ✅ API ключ хранится server-side (не в браузере)
-
-3. **Обработка:**
-   - ✅ Только обработанные метрики (не сырые данные)
-   - ✅ Нормализованные временные ряды
-   - ✅ Нет содержимого решений
-
-4. **Хранение:**
-   - ✅ Результаты LLM сохраняются в вашей Supabase БД
-   - ✅ Вы контролируете публикацию отчетов
+### 🔴 High (NOT sent)
+- Email, passwords, solution content
 
 ---
 
-## 📊 Пример реальных данных
+## 🛡️ Security Measures
 
-### Manager Report (фрагмент):
+1. **Transport:**
+   - ✅ HTTPS for all requests
+   - ✅ Internal Hyperskill proxy (not public OpenAI)
+
+2. **Access:**
+   - ✅ Only admins can generate reports
+   - ✅ API key stored server-side (not in browser)
+
+3. **Processing:**
+   - ✅ Only processed metrics (not raw data)
+   - ✅ Normalized time series
+   - ✅ No solution content
+
+4. **Storage:**
+   - ✅ LLM results saved in your Supabase DB
+   - ✅ You control report publication
+
+---
+
+## 📊 Real Data Example
+
+### Manager Report (excerpt):
 
 ```json
 {
@@ -339,7 +339,7 @@
 }
 ```
 
-### Student Report (фрагмент):
+### Student Report (excerpt):
 
 ```json
 {
@@ -384,30 +384,30 @@
 
 ---
 
-## 📋 Рекомендации
+## 📋 Recommendations
 
-### ✅ Рекомендуется:
-1. Получить согласие студентов на обработку данных
-2. Не включать чувствительную информацию в комментарии
-3. Использовать внутренний прокси (как настроено)
-4. Регулярно очищать старые отчеты
+### ✅ Recommended:
+1. Obtain student consent for data processing
+2. Don't include sensitive information in comments
+3. Use internal proxy (as configured)
+4. Regularly clean up old reports
 
-### ⚠️ Будьте осторожны:
-1. Комментарии преподавателей могут содержать личную информацию
-2. Имена студентов передаются для персонализации
-3. User IDs могут быть связаны с другими системами
-
----
-
-## 🔗 Связанные документы
-
-- **Техническая документация:** `docs/llm-reports-feature.md`
-- **Настройка:** `docs/LLM_SETUP.md`
-- **Руководство пользователя:** `docs/LLM_USER_GUIDE.md`
-- **Изменения для LiteLLM:** `CHANGES_FOR_LITELLM.md`
+### ⚠️ Be Careful:
+1. Instructor comments may contain personal information
+2. Student names are transmitted for personalization
+3. User IDs may be linked to other systems
 
 ---
 
-**Последнее обновление:** 2025-10-06  
-**Версия:** 1.0
+## 🔗 Related Documents
+
+- **Technical Documentation:** `docs/llm-reports-feature.md`
+- **Setup Guide:** `docs/LLM_SETUP.md`
+- **User Guide:** `docs/LLM_USER_GUIDE.md`
+- **LiteLLM Changes:** `CHANGES_FOR_LITELLM.md`
+
+---
+
+**Last Updated:** 2025-10-06  
+**Version:** 1.0
 
