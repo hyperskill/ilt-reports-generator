@@ -53,31 +53,23 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log('=== API: Received student comment save request ===');
-    console.log('Body:', JSON.stringify(body, null, 2));
-    
     const { reportId, userId, comment_program_expert, comment_teaching_assistants, comment_learning_support } = body;
 
     if (!reportId || !userId) {
-      console.error('Missing required fields - reportId:', reportId, 'userId:', userId);
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-
-    const recordToUpsert = {
-      report_id: reportId,
-      user_id: userId,
-      comment_program_expert: comment_program_expert || null,
-      comment_teaching_assistants: comment_teaching_assistants || null,
-      comment_learning_support: comment_learning_support || null,
-      updated_by: user.id,
-    };
-
-    console.log('Record to upsert:', JSON.stringify(recordToUpsert, null, 2));
 
     // Upsert (insert or update)
     const { data, error } = await supabase
       .from('student_comments')
-      .upsert(recordToUpsert, {
+      .upsert({
+        report_id: reportId,
+        user_id: userId,
+        comment_program_expert: comment_program_expert || null,
+        comment_teaching_assistants: comment_teaching_assistants || null,
+        comment_learning_support: comment_learning_support || null,
+        updated_by: user.id,
+      }, {
         onConflict: 'report_id,user_id'
       })
       .select()
@@ -85,11 +77,9 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Database error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('Successfully saved comment:', data);
     return NextResponse.json({ success: true, comments: data });
   } catch (error: any) {
     console.error('Server error:', error);
