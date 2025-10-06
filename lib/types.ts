@@ -147,4 +147,5 @@ export interface AppState {
   settings: DisplaySettings;
   results?: ProcessingResult;
   currentMode: 'performance' | 'dynamic';
+  currentReportId?: string | null;
 }

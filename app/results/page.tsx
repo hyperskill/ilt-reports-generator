@@ -1,14 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Card, Flex, Heading, Text, Tabs } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { PerformanceResults } from '@/app/components/PerformanceResults';
 import { DynamicResults } from '@/app/components/DynamicResults';
+import { CommentsSection } from './CommentsSection';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ResultsPage() {
-  const { results, currentMode, setCurrentMode } = useAppContext();
+  const { results, currentMode, setCurrentMode, currentReportId } = useAppContext();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [reportComments, setReportComments] = useState<any>(null);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+    if (currentReportId) {
+      loadReportComments();
+    }
+  }, [currentReportId]);
+
+  const checkAdminStatus = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      setIsAdmin(profile?.role === 'admin');
+    }
+  };
+
+  const loadReportComments = async () => {
+    if (!currentReportId) return;
+    
+    setLoadingComments(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('reports')
+        .select('comment_program_expert, comment_teaching_assistants, comment_learning_support')
+        .eq('id', currentReportId)
+        .single();
+
+      if (!error && data) {
+        setReportComments(data);
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleCommentsUpdate = (updatedReport: any) => {
+    setReportComments({
+      comment_program_expert: updatedReport.comment_program_expert,
+      comment_teaching_assistants: updatedReport.comment_teaching_assistants,
+      comment_learning_support: updatedReport.comment_learning_support,
+    });
+  };
 
   if (!results) {
     return (
@@ -59,6 +116,19 @@ export default function ResultsPage() {
           </Tabs.Content>
         </Box>
       </Tabs.Root>
+
+      {currentReportId && reportComments && !loadingComments && (
+        <CommentsSection
+          reportId={currentReportId}
+          isAdmin={isAdmin}
+          initialComments={{
+            programExpert: reportComments.comment_program_expert,
+            teachingAssistants: reportComments.comment_teaching_assistants,
+            learningSupport: reportComments.comment_learning_support,
+          }}
+          onUpdate={handleCommentsUpdate}
+        />
+      )}
     </AppLayoutWithAuth>
   );
 }

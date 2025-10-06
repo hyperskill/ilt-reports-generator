@@ -9,6 +9,7 @@ interface AppContextType extends AppState {
   setSettings: (settings: DisplaySettings) => void;
   setResults: (results: ProcessingResult) => void;
   setCurrentMode: (mode: 'performance' | 'dynamic') => void;
+  setCurrentReportId: (id: string | null) => void;
   resetSession: () => void;
 }
 
@@ -29,6 +30,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<DisplaySettings>(initialSettings);
   const [results, setResults] = useState<ProcessingResult | undefined>();
   const [currentMode, setCurrentMode] = useState<'performance' | 'dynamic'>('performance');
+  const [currentReportId, setCurrentReportId] = useState<string | null>(null);
 
   const resetSession = () => {
     setFiles({});
@@ -36,6 +38,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings(initialSettings);
     setResults(undefined);
     setCurrentMode('performance');
+    setCurrentReportId(null);
   };
 
   return (
@@ -46,11 +49,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         settings,
         results,
         currentMode,
+        currentReportId,
         setFiles,
         setExcludedUserIds,
         setSettings,
         setResults,
         setCurrentMode,
+        setCurrentReportId,
         resetSession,
       }}
     >
