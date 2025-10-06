@@ -91,20 +91,6 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
         </Flex>
       </Box>
 
-      {/* Comments Section */}
-      <Box mb="5">
-        <CommentsSection
-          reportId={params.id}
-          isAdmin={isAdmin}
-          initialComments={{
-            comment_program_expert: report.comment_program_expert,
-            comment_teaching_assistants: report.comment_teaching_assistants,
-            comment_learning_support: report.comment_learning_support,
-          }}
-          onUpdate={fetchReport}
-        />
-      </Box>
-
       <Tabs.Root defaultValue="performance">
         <Tabs.List>
           <Tabs.Trigger value="performance">Performance Segmentation</Tabs.Trigger>
@@ -124,6 +110,20 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
           </Tabs.Content>
         </Box>
       </Tabs.Root>
+
+      {/* Comments Section */}
+      <Box mt="5">
+        <CommentsSection
+          reportId={params.id}
+          isAdmin={isAdmin}
+          initialComments={{
+            comment_program_expert: report.comment_program_expert,
+            comment_teaching_assistants: report.comment_teaching_assistants,
+            comment_learning_support: report.comment_learning_support,
+          }}
+          onUpdate={fetchReport}
+        />
+      </Box>
     </AppLayoutWithAuth>
   );
 }
