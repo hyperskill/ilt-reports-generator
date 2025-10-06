@@ -24,11 +24,13 @@ export default async function ReportsPage() {
   const isAdmin = profile?.role === 'admin';
 
   // Fetch all completed reports
-  const { data: reports } = await supabase
+  const { data: reports, error: reportsError } = await supabase
     .from('reports')
-    .select('*, created_by_profile:profiles!reports_created_by_fkey(full_name, email)')
+    .select('*')
     .eq('status', 'completed')
     .order('created_at', { ascending: false });
+
+  console.log('Reports fetch result:', { reports, reportsError });
 
   return (
     <Box p="6">
@@ -40,6 +42,12 @@ export default async function ReportsPage() {
           </Box>
           <UserNav user={user} profile={profile} />
         </Flex>
+
+        {reportsError && (
+          <Card style={{ background: 'var(--red-a3)' }}>
+            <Text color="red">Error loading reports: {reportsError.message}</Text>
+          </Card>
+        )}
 
         {reports && reports.length > 0 ? (
           <Card>
@@ -69,8 +77,8 @@ export default async function ReportsPage() {
                       </Text>
                     </Table.Cell>
                     <Table.Cell>
-                      <Text size="2">
-                        {report.created_by_profile?.full_name || report.created_by_profile?.email || 'Unknown'}
+                      <Text size="2" color="gray">
+                        {report.created_by === user.id ? 'You' : 'Admin'}
                       </Text>
                     </Table.Cell>
                     <Table.Cell>
