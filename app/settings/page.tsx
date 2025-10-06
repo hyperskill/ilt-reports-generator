@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Text, Card, Heading, RadioGroup, Switch } from '@radix-ui/themes';
-import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
+import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { DisplaySettings } from '@/lib/types';
 

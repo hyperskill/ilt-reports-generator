@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Card, Flex, Heading, Text, Tabs } from '@radix-ui/themes';
-import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
+import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { PerformanceResults } from '@/app/components/PerformanceResults';
 import { DynamicResults } from '@/app/components/DynamicResults';

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Box, Button, Flex, Heading, Text, Card, Badge, Table } from '@radix-ui/themes';
-import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
+import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { findColumn } from '@/lib/utils/csv-parser';
 import styles from './review.module.css';

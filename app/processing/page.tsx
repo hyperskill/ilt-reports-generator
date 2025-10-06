@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Text, Heading, Progress, Badge } from '@radix-ui/themes';
-import { AppLayoutWithAuthWithAuth } from '@/app/components/AppLayoutWithAuthWithAuth';
+import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { processPerformanceSegmentation } from '@/lib/processors/performance-processor';
 import { processDynamicSegmentation } from '@/lib/processors/dynamic-processor';
