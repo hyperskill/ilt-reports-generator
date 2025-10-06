@@ -156,6 +156,10 @@ export default function ProcessingPage() {
     }
 
     console.log('Student comments to save:', studentComments);
+    console.log('Number of students with comments:', studentComments ? Object.keys(studentComments).length : 0);
+    if (studentComments && Object.keys(studentComments).length > 0) {
+      console.log('Student IDs with comments:', Object.keys(studentComments));
+    }
 
     setSaving(true);
     try {
@@ -190,7 +194,13 @@ export default function ProcessingPage() {
       // Store report ID in context
       setCurrentReportId(data.report.id);
       setShowSaveDialog(false);
-      router.push('/results');
+      
+      console.log('Report saved successfully! ID:', data.report.id);
+      console.log('Redirecting to dashboard...');
+      
+      // Redirect to dashboard with refresh
+      router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       alert(`Failed to save report: ${error.message}`);
     } finally {
