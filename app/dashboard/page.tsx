@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Box, Card, Flex, Heading, Text, Button, Table, Badge } from '@radix-ui/themes';
 import { UserNav } from '@/app/components/UserNav';
+import { ReportActions } from './ReportActions';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
@@ -158,11 +159,13 @@ export default async function DashboardPage() {
                         </Text>
                       </Table.Cell>
                       <Table.Cell>
-                        <Link href={`/reports/${report.id}`}>
-                          <Button size="1" variant="soft">
-                            View
-                          </Button>
-                        </Link>
+                        <ReportActions
+                          reportId={report.id}
+                          reportTitle={report.title}
+                          reportDescription={report.description}
+                          isAdmin={isAdmin}
+                          isOwner={report.created_by === user.id}
+                        />
                       </Table.Cell>
                     </Table.Row>
                   ))}
