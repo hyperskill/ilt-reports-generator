@@ -87,20 +87,6 @@ export default async function DashboardPage() {
               </Link>
             </Flex>
           </Card>
-
-          <Card style={{ flex: '1', minWidth: '300px' }}>
-            <Flex direction="column" gap="3">
-              <Heading size="5">👤 Profile</Heading>
-              <Text size="2" color="gray">
-                View and update your account settings and preferences.
-              </Text>
-              <Link href="/profile">
-                <Button variant="soft" size="3" style={{ width: '100%' }}>
-                  View Profile
-                </Button>
-              </Link>
-            </Flex>
-          </Card>
         </Flex>
 
         {!isAdmin && (
