@@ -4,6 +4,9 @@ create table if not exists public.profiles (
   email text unique not null,
   full_name text,
   role text not null check (role in ('admin', 'manager', 'student')),
+  requested_admin boolean default false,
+  admin_approved_at timestamp with time zone,
+  admin_approved_by uuid references auth.users,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -16,10 +19,30 @@ create policy "Users can view own profile"
   on profiles for select
   using (auth.uid() = id);
 
--- Allow users to update their own profile (except role)
+-- Allow users to update their own profile (except role and admin fields)
 create policy "Users can update own profile"
   on profiles for update
   using (auth.uid() = id);
+
+-- Admins can view all profiles
+create policy "Admins can view all profiles"
+  on profiles for select
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
+-- Admins can update any profile (for role approval)
+create policy "Admins can update any profile"
+  on profiles for update
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
 
 -- Create a function to automatically create profile on signup
 create or replace function public.handle_new_user()
@@ -28,12 +51,13 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, role, requested_admin)
   values (
     new.id,
     new.email,
     new.raw_user_meta_data->>'full_name',
-    coalesce(new.raw_user_meta_data->>'role', 'student')
+    coalesce(new.raw_user_meta_data->>'role', 'student'),
+    coalesce((new.raw_user_meta_data->>'requested_admin')::boolean, false)
   );
   return new;
 end;
@@ -100,6 +124,8 @@ create policy "Managers and students can view completed reports"
   );
 
 -- Create indexes for better query performance
+create index if not exists profiles_role_idx on public.profiles(role);
+create index if not exists profiles_requested_admin_idx on public.profiles(requested_admin) where requested_admin = true;
 create index if not exists reports_created_by_idx on public.reports(created_by);
 create index if not exists reports_status_idx on public.reports(status);
 create index if not exists reports_created_at_idx on public.reports(created_at desc);
@@ -127,3 +153,18 @@ create trigger set_reports_updated_at
   for each row
   execute procedure public.handle_updated_at();
 
+-- Create a view for pending admin requests (for admin dashboard)
+create or replace view public.pending_admin_requests as
+select 
+  id,
+  email,
+  full_name,
+  role,
+  created_at
+from public.profiles
+where requested_admin = true 
+  and role != 'admin'
+order by created_at desc;
+
+-- Grant access to the view
+grant select on public.pending_admin_requests to authenticated;
