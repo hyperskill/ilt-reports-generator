@@ -58,29 +58,47 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
   };
 
   const handleSave = async () => {
+    console.log('=== SAVING STUDENT COMMENTS ===');
+    console.log('reportId:', reportId);
+    console.log('userId:', userId);
+    console.log('programExpert:', programExpert);
+    console.log('teachingAssistants:', teachingAssistants);
+    console.log('learningSupport:', learningSupport);
+
     setSaving(true);
     try {
       if (reportId) {
+        console.log('Saving to database...');
         // Save to database if reportId exists
+        const payload = {
+          reportId,
+          userId,
+          comment_program_expert: programExpert,
+          comment_teaching_assistants: teachingAssistants,
+          comment_learning_support: learningSupport,
+        };
+        console.log('Payload:', JSON.stringify(payload, null, 2));
+
         const response = await fetch('/api/student-comments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            reportId,
-            userId,
-            comment_program_expert: programExpert,
-            comment_teaching_assistants: teachingAssistants,
-            comment_learning_support: learningSupport,
-          }),
+          body: JSON.stringify(payload),
         });
 
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
           throw new Error('Failed to save comments');
         }
 
         const data = await response.json();
+        console.log('Success response:', data);
         setComments(data.comments);
+        alert('Comments saved successfully!');
       } else {
+        console.log('Saving to context (no reportId)...');
         // Save to context if no reportId (current session)
         const newComment = {
           userId,
@@ -88,11 +106,14 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
           comment_teaching_assistants: teachingAssistants || undefined,
           comment_learning_support: learningSupport || undefined,
         };
+        console.log('Context comment:', newComment);
         setStudentComment(userId, newComment);
         setComments(newComment);
+        alert('Comments saved to session!');
       }
       setIsEditing(false);
     } catch (error: any) {
+      console.error('Save error:', error);
       alert(`Failed to save comments: ${error.message}`);
     } finally {
       setSaving(false);
