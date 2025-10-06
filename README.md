@@ -42,6 +42,29 @@ A comprehensive web application for analyzing student performance and dynamic ac
 6. **Results** - View results in two modes:
    - Performance Segmentation: tables, filters, segment distribution
    - Dynamic/Easing: curves, charts, easing patterns
+   - **NEW**: Click any student name to view personalized report
+
+### Personalized Student Reports
+
+**New Feature**: Individual student detail pages with comprehensive, actionable insights.
+
+**Access**: Click on any student's name in the results tables (both Performance and Dynamic tabs).
+
+**What's Included**:
+- 📋 **Progress Highlights**: 3-5 key wins and focus areas in plain English
+- 📈 **Activity Momentum**: Weekly trend (Up/Flat/Down) with explanation
+- 📊 **Activity Curve**: Visual timeline with frontload index, consistency, burstiness
+- ✨ **Going Well Topics**: Areas where student excels
+- 🎯 **Focus Areas**: Topics needing attention with specific reasons
+- 🚀 **Next Steps**: 2-3 prioritized, actionable suggestions
+- 📚 **Topic Analysis Table**: Detailed breakdown with deltas from course average
+- 📊 **Full Statistics**: All performance metrics in one view
+
+**Algorithm**: Based on Personal Student Report Algorithm v1 (see `docs/personal_student_report_algorithm.md`)
+
+**Language**: Student-friendly, supportive, actionable - no heavy statistics or rankings
+
+**Learn More**: See `docs/student-report-feature-guide.md` for complete documentation
 
 ## Getting Started
 
