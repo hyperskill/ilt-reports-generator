@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
 import { EasingChart } from '@/app/components/EasingChart';
+import { createClient } from '@/lib/supabase/client';
 import styles from './student.module.css';
 
 interface PageProps {
@@ -15,9 +16,49 @@ interface PageProps {
 
 export default function StudentDetailPage({ params }: PageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reportId = searchParams.get('reportId');
   const { results, files } = useAppContext();
+  const [savedReportData, setSavedReportData] = useState<any>(null);
+  const [loading, setLoading] = useState(!!reportId);
+
+  useEffect(() => {
+    if (reportId) {
+      loadReportData(reportId);
+    }
+  }, [reportId]);
+
+  const loadReportData = async (id: string) => {
+    try {
+      const response = await fetch(`/api/reports/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSavedReportData(data.report);
+      }
+    } catch (error) {
+      console.error('Failed to load report:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const report = useMemo(() => {
+    // If we have savedReportData, use it
+    if (savedReportData) {
+      // We need to reconstruct submissions data from the saved report
+      // For now, we'll generate the report from saved performance/dynamic data
+      return generateStudentReport({
+        userId: params.userId,
+        performanceData: savedReportData.performance_data,
+        dynamicData: savedReportData.dynamic_data,
+        dynamicSeries: savedReportData.dynamic_series || [],
+        submissions: [], // We don't have raw submissions in saved reports
+        structure: [], // We don't have structure data in saved reports
+        excludedUserIds: savedReportData.excluded_user_ids || [],
+      });
+    }
+
+    // Otherwise, use context data (current session)
     if (!results || !files.submissions) return null;
 
     return generateStudentReport({
@@ -29,15 +70,25 @@ export default function StudentDetailPage({ params }: PageProps) {
       structure: files.structure?.data,
       excludedUserIds: [],
     });
-  }, [params.userId, results, files.submissions, files.structure]);
+  }, [params.userId, results, files.submissions, files.structure, savedReportData]);
+
+  if (loading) {
+    return (
+      <AppLayoutWithAuth title="Student Report">
+        <Card>
+          <Text>Loading student report...</Text>
+        </Card>
+      </AppLayoutWithAuth>
+    );
+  }
 
   if (!report) {
     return (
       <AppLayoutWithAuth title="Student Report">
         <Card>
           <Text>Student not found or data not available.</Text>
-          <Button mt="3" onClick={() => router.push('/results')}>
-            Back to Results
+          <Button mt="3" onClick={() => reportId ? router.push(`/reports/${reportId}`) : router.push('/results')}>
+            {reportId ? 'Back to Report' : 'Back to Results'}
           </Button>
         </Card>
       </AppLayoutWithAuth>

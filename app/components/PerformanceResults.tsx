@@ -10,9 +10,10 @@ import styles from './PerformanceResults.module.css';
 
 interface Props {
   data: PerformanceRow[];
+  reportId?: string | null;
 }
 
-export function PerformanceResults({ data }: Props) {
+export function PerformanceResults({ data, reportId }: Props) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSegments, setSelectedSegments] = useState<Set<string>>(new Set());
@@ -208,7 +209,7 @@ export function PerformanceResults({ data }: Props) {
                       size="2" 
                       weight="bold"
                       className={styles.clickableName}
-                      onClick={() => router.push(`/student/${row.user_id}`)}
+                      onClick={() => router.push(reportId ? `/student/${row.user_id}?reportId=${reportId}` : `/student/${row.user_id}`)}
                     >
                       {row.name}
                     </Text>

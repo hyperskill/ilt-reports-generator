@@ -99,13 +99,14 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
 
         <Box pt="4">
           <Tabs.Content value="performance">
-            <PerformanceResults data={report.performance_data} />
+            <PerformanceResults data={report.performance_data} reportId={params.id} />
           </Tabs.Content>
 
           <Tabs.Content value="dynamic">
             <DynamicResults 
               summary={report.dynamic_data} 
               series={report.dynamic_series || []}
+              reportId={params.id}
             />
           </Tabs.Content>
         </Box>

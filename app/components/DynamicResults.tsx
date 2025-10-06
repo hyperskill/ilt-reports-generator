@@ -12,9 +12,10 @@ import styles from './DynamicResults.module.css';
 interface Props {
   summary: DynamicSummaryRow[];
   series: DynamicSeriesRow[];
+  reportId?: string | null;
 }
 
-export function DynamicResults({ summary, series }: Props) {
+export function DynamicResults({ summary, series, reportId }: Props) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEasings, setSelectedEasings] = useState<Set<string>>(new Set());
@@ -285,7 +286,7 @@ export function DynamicResults({ summary, series }: Props) {
                       size="2" 
                       weight="bold"
                       className={styles.clickableName}
-                      onClick={() => router.push(`/student/${row.user_id}`)}
+                      onClick={() => router.push(reportId ? `/student/${row.user_id}?reportId=${reportId}` : `/student/${row.user_id}`)}
                     >
                       {row.name}
                     </Text>
