@@ -14,93 +14,129 @@ export function TableLegend({ mode }: LegendProps) {
         <Accordion.Root type="single" collapsible>
           <Accordion.Item value="legend">
             <Accordion.Trigger>
-              <Heading size="3">📊 Performance Segmentation - Column Legend</Heading>
+              <Heading size="3">📊 Что означают колонки таблицы</Heading>
             </Accordion.Trigger>
             <Accordion.Content>
               <Box>
-                <Text size="2" weight="bold" mb="3">Column Descriptions:</Text>
+                <Text size="2" weight="bold" mb="3">Простыми словами:</Text>
                 <Table.Root size="1" variant="surface">
                   <Table.Header>
                     <Table.Row>
-                      <Table.ColumnHeaderCell>Column</Table.ColumnHeaderCell>
-                      <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
-                      <Table.ColumnHeaderCell>Calculation</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Колонка</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Что это значит</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Откуда берётся</Table.ColumnHeaderCell>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">User ID</Text></Table.Cell>
-                      <Table.Cell>Unique identifier for the learner</Table.Cell>
-                      <Table.Cell>From learners.csv or grade_book.csv</Table.Cell>
+                      <Table.Cell>Уникальный номер студента</Table.Cell>
+                      <Table.Cell>Из ваших файлов</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Name</Text></Table.Cell>
-                      <Table.Cell>Full name of the learner</Table.Cell>
-                      <Table.Cell>first_name + last_name from learners.csv</Table.Cell>
+                      <Table.Cell>Имя и фамилия студента</Table.Cell>
+                      <Table.Cell>Из learners.csv</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Score %</Text></Table.Cell>
-                      <Table.Cell>Percentage score relative to highest score</Table.Cell>
-                      <Table.Cell>(total / max_total) × 100</Table.Cell>
+                      <Table.Cell>Процент от максимального балла в группе</Table.Cell>
+                      <Table.Cell>Из grade_book.csv</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Submissions</Text></Table.Cell>
-                      <Table.Cell>Total number of submissions made</Table.Cell>
-                      <Table.Cell>Count of all submission records</Table.Cell>
+                      <Table.Cell>Сколько всего попыток сделал студент</Table.Cell>
+                      <Table.Cell>Считается из submissions.csv</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Success Rate</Text></Table.Cell>
-                      <Table.Cell>Percentage of correct submissions</Table.Cell>
-                      <Table.Cell>(correct_submissions / total_submissions) × 100</Table.Cell>
+                      <Table.Cell>Процент правильных ответов с первой попытки</Table.Cell>
+                      <Table.Cell>Правильные ответы ÷ все попытки × 100</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Persistence</Text></Table.Cell>
-                      <Table.Cell>Average submissions per unique step</Table.Cell>
-                      <Table.Cell>total_submissions / unique_steps</Table.Cell>
+                      <Table.Cell>Сколько попыток в среднем на одно задание<br/>(больше = больше усилий)</Table.Cell>
+                      <Table.Cell>Все попытки ÷ количество заданий</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Efficiency</Text></Table.Cell>
-                      <Table.Cell>Correct submissions per unique step</Table.Cell>
-                      <Table.Cell>correct_submissions / unique_steps</Table.Cell>
+                      <Table.Cell>Сколько заданий решено правильно<br/>(выше = лучше)</Table.Cell>
+                      <Table.Cell>Правильные ответы ÷ количество заданий</Table.Cell>
                     </Table.Row>
                     <Table.Row>
-                      <Table.Cell><Text weight="bold">Segment</Text></Table.Cell>
-                      <Table.Cell>Performance classification</Table.Cell>
-                      <Table.Cell>Rule-based assignment (see segment definitions below)</Table.Cell>
+                      <Table.Cell><Text weight="bold">Active Days</Text></Table.Cell>
+                      <Table.Cell>Сколько дней студент заходил на платформу</Table.Cell>
+                      <Table.Cell>Уникальные даты из submissions.csv</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Consistency</Text></Table.Cell>
+                      <Table.Cell>Регулярность занятий (0-1, где 1 = каждый день)</Table.Cell>
+                      <Table.Cell>Активные дни ÷ общий период обучения</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Effort Index</Text></Table.Cell>
+                      <Table.Cell>Насколько активен по сравнению с группой<br/>(выше среднего = положительное число)</Table.Cell>
+                      <Table.Cell>Учитывает попытки и активные дни</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Struggle Index</Text></Table.Cell>
+                      <Table.Cell>Показатель трудностей в обучении<br/>(выше = больше проблем)</Table.Cell>
+                      <Table.Cell>Высокая настойчивость + низкий успех</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell><Text weight="bold">Meetings %</Text></Table.Cell>
-                      <Table.Cell>Percentage of meetings attended</Table.Cell>
-                      <Table.Cell>(meetings_attended / total_meetings) × 100</Table.Cell>
+                      <Table.Cell>Процент посещённых вебинаров/встреч</Table.Cell>
+                      <Table.Cell>Из meetings.csv (если есть)</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Segment</Text></Table.Cell>
+                      <Table.Cell>К какой группе относится студент</Table.Cell>
+                      <Table.Cell>Автоматическое определение по правилам ниже</Table.Cell>
                     </Table.Row>
                   </Table.Body>
                 </Table.Root>
 
                 <Box mt="4">
-                  <Text size="2" weight="bold" mb="2">Segment Definitions:</Text>
-                  <Box style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="green">Leader engaged:</Text> Score ≥80% AND meetings ≥70%
+                  <Text size="2" weight="bold" mb="2">Группы студентов (Segments):</Text>
+                  <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="green">🏆 Leader engaged</Text><br/>
+                      Лидеры, активные на встречах: Score ≥80% И посещаемость встреч ≥70%
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="green">⚡ Leader efficient</Text><br/>
+                      Эффективные лидеры: Score ≥80% И мало повторных попыток (≤3) И регулярные занятия
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="blue">👥 Balanced + engaged</Text><br/>
+                      Средний уровень, активные: Score 30-80% И посещают встречи (≥60%) И регулярность ≥0.4
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="orange">💪 Hardworking but struggling</Text><br/>
+                      Стараются, но с трудностями: Высокие усилия И показатель трудностей ≥0.6
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="red">😴 Low engagement</Text><br/>
+                      Низкая вовлечённость: Мало попыток (&lt;20) ИЛИ очень низкая активность
                     </Text>
                     <Text as="p" mb="1">
-                      <Text weight="bold" color="green">Leader efficient:</Text> Score ≥80% AND persistence ≤3
-                    </Text>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="blue">Balanced + engaged:</Text> 30% ≤ Score &lt;80% AND meetings ≥60%
-                    </Text>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="red">Low engagement but socially active:</Text> Score &lt;30% AND meetings ≥50%
-                    </Text>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="orange">Hardworking but struggling:</Text> Score &lt;30% AND persistence ≥5
-                    </Text>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="red">Low engagement:</Text> Score &lt;30% AND submissions &lt;20
-                    </Text>
-                    <Text as="p" mb="1">
-                      <Text weight="bold" color="gray">Balanced middle:</Text> All other cases
+                      <Text weight="bold" color="gray">📊 Balanced middle</Text><br/>
+                      Средний уровень: Все остальные студенты
                     </Text>
                   </Box>
+                </Box>
+
+                <Box mt="4" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+                  <Text size="2" weight="bold" mb="1">💡 Важно знать:</Text>
+                  <Text size="2" as="p" mb="1">
+                    • Все метрики активности автоматически высчитываются из ваших попыток (submissions)
+                  </Text>
+                  <Text size="2" as="p" mb="1">
+                    • Правильный ответ = 1 балл активности, неправильный = 0.25 балла
+                  </Text>
+                  <Text size="2" as="p">
+                    • Чем выше Consistency, тем регулярнее студент занимается
+                  </Text>
                 </Box>
               </Box>
             </Accordion.Content>
@@ -115,108 +151,107 @@ export function TableLegend({ mode }: LegendProps) {
       <Accordion.Root type="single" collapsible>
         <Accordion.Item value="legend">
           <Accordion.Trigger>
-            <Heading size="3">📈 Dynamic/Easing Segmentation - Column Legend</Heading>
+            <Heading size="3">📈 Что показывает график активности</Heading>
           </Accordion.Trigger>
           <Accordion.Content>
             <Box>
-              <Text size="2" weight="bold" mb="3">Column Descriptions:</Text>
+              <Text size="2" weight="bold" mb="3">Простыми словами:</Text>
               <Table.Root size="1" variant="surface">
                 <Table.Header>
                   <Table.Row>
-                    <Table.ColumnHeaderCell>Column</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Calculation</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Показатель</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Что это значит</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Как понять</Table.ColumnHeaderCell>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
                   <Table.Row>
-                    <Table.Cell><Text weight="bold">User ID</Text></Table.Cell>
-                    <Table.Cell>Unique identifier for the learner</Table.Cell>
-                    <Table.Cell>From learners.csv or grade_book.csv</Table.Cell>
-                  </Table.Row>
-                  <Table.Row>
-                    <Table.Cell><Text weight="bold">Name</Text></Table.Cell>
-                    <Table.Cell>Full name of the learner</Table.Cell>
-                    <Table.Cell>first_name + last_name from learners.csv</Table.Cell>
-                  </Table.Row>
-                  <Table.Row>
                     <Table.Cell><Text weight="bold">Easing Label</Text></Table.Cell>
-                    <Table.Cell>CSS-like easing pattern classification</Table.Cell>
-                    <Table.Cell>Based on cumulative activity curve shape</Table.Cell>
+                    <Table.Cell>Тип кривой активности студента</Table.Cell>
+                    <Table.Cell>Показывает, как распределялась активность во времени</Table.Cell>
                   </Table.Row>
                   <Table.Row>
                     <Table.Cell><Text weight="bold">Frontload Index</Text></Table.Cell>
-                    <Table.Cell>How early activity accumulates</Table.Cell>
-                    <Table.Cell>0.5 - t50 (positive = early, negative = late)</Table.Cell>
+                    <Table.Cell>Когда студент был более активен</Table.Cell>
+                    <Table.Cell>Положительное = активен в начале<br/>Отрицательное = активен в конце</Table.Cell>
+                  </Table.Row>
+                  <Table.Row>
+                    <Table.Cell><Text weight="bold">Consistency</Text></Table.Cell>
+                    <Table.Cell>Насколько регулярно занимался</Table.Cell>
+                    <Table.Cell>От 0 до 1: чем ближе к 1, тем регулярнее</Table.Cell>
+                  </Table.Row>
+                  <Table.Row>
+                    <Table.Cell><Text weight="bold">Burstiness</Text></Table.Cell>
+                    <Table.Cell>Насколько "скачками" была активность</Table.Cell>
+                    <Table.Cell>Выше = работал рывками, ниже = равномерно</Table.Cell>
                   </Table.Row>
                   <Table.Row>
                     <Table.Cell><Text weight="bold">t25/t50/t75</Text></Table.Cell>
-                    <Table.Cell>Time points for 25%, 50%, 75% completion</Table.Cell>
-                    <Table.Cell>Normalized time (0-1) when cumulative activity reaches quartiles</Table.Cell>
-                  </Table.Row>
-                  <Table.Row>
-                    <Table.Cell><Text weight="bold">Score %</Text></Table.Cell>
-                    <Table.Cell>Percentage score for context</Table.Cell>
-                    <Table.Cell>(total / max_total) × 100</Table.Cell>
+                    <Table.Cell>Когда выполнено 25%, 50%, 75% работы</Table.Cell>
+                    <Table.Cell>Числа от 0 до 1 показывают момент времени</Table.Cell>
                   </Table.Row>
                 </Table.Body>
               </Table.Root>
 
               <Box mt="4">
-                <Text size="2" weight="bold" mb="2">Easing Pattern Definitions:</Text>
-                <Box style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="gray">linear:</Text> Steady, consistent activity throughout
+                <Text size="2" weight="bold" mb="2">Типы активности (Easing Patterns):</Text>
+                <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                  <Text as="p" mb="2">
+                    <Text weight="bold" color="green">📈 ease-out (Ранний старт)</Text><br/>
+                    Студент был очень активен в начале, потом активность снизилась
+                  </Text>
+                  <Text as="p" mb="2">
+                    <Text weight="bold" color="orange">📉 ease-in (Поздний старт)</Text><br/>
+                    Студент начал медленно, но к концу стал более активным
+                  </Text>
+                  <Text as="p" mb="2">
+                    <Text weight="bold" color="gray">📊 linear (Равномерная)</Text><br/>
+                    Активность распределена равномерно на протяжении всего времени
+                  </Text>
+                  <Text as="p" mb="2">
+                    <Text weight="bold" color="purple">〰️ ease-in-out (S-кривая)</Text><br/>
+                    Медленный старт, активная середина, затухание в конце
+                  </Text>
+                  <Text as="p" mb="2">
+                    <Text weight="bold" color="blue">⚖️ ease (Умеренная)</Text><br/>
+                    Небольшое ускорение, потом замедление - сбалансированная активность
                   </Text>
                   <Text as="p" mb="1">
-                    <Text weight="bold" color="blue">ease:</Text> Moderate acceleration, then deceleration
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="orange">ease-in:</Text> Slow start, then accelerates (late loading)
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="green">ease-out:</Text> Fast start, then slows down (early loading)
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="purple">ease-in-out:</Text> S-curve: slow start, fast middle, slow end
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="red">no-activity:</Text> No timestamp data or activity recorded
-                  </Text>
-                </Box>
-              </Box>
-
-              <Box mt="4">
-                <Text size="2" weight="bold" mb="2">Frontload Index Interpretation:</Text>
-                <Box style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="green">Positive (&gt;0.1):</Text> Early loading - most activity happens early
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="orange">Negative (&lt;-0.1):</Text> Late loading - most activity happens late
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold" color="gray">Near zero (-0.1 to 0.1):</Text> Balanced activity distribution
+                    <Text weight="bold" color="red">❌ no-activity</Text><br/>
+                    Нет данных об активности студента
                   </Text>
                 </Box>
               </Box>
 
               <Box mt="4">
-                <Text size="2" weight="bold" mb="2">Activity Calculation:</Text>
-                <Box style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                <Text size="2" weight="bold" mb="2">Как читать Frontload Index:</Text>
+                <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
                   <Text as="p" mb="1">
-                    <Text weight="bold">Platform Activity:</Text> Weighted submissions (correct=1.0, incorrect=0.25)
+                    <Text weight="bold" color="green">+0.3 (сильный ранний старт):</Text> 80% работы сделано в первой половине периода
                   </Text>
                   <Text as="p" mb="1">
-                    <Text weight="bold">Meeting Activity:</Text> Binary attendance (1.5x weight)
+                    <Text weight="bold" color="blue">0.0 (сбалансированно):</Text> Половину работы к середине периода
                   </Text>
                   <Text as="p" mb="1">
-                    <Text weight="bold">Total Activity:</Text> Platform + Meeting activity per day
-                  </Text>
-                  <Text as="p" mb="1">
-                    <Text weight="bold">Normalization:</Text> Time (0→1) and Activity (0→1) for curve comparison
+                    <Text weight="bold" color="orange">-0.3 (поздний старт):</Text> Основная работа во второй половине периода
                   </Text>
                 </Box>
+              </Box>
+
+              <Box mt="4" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+                <Text size="2" weight="bold" mb="1">💡 Как считается активность:</Text>
+                <Text size="2" as="p" mb="1">
+                  <Text weight="bold">1. Активность от попыток:</Text> Каждый правильный ответ = 1 балл, неправильный = 0.25 балла
+                </Text>
+                <Text size="2" as="p" mb="1">
+                  <Text weight="bold">2. Активность от встреч:</Text> Каждая посещённая встреча = 1.5 балла (если есть meetings.csv)
+                </Text>
+                <Text size="2" as="p" mb="1">
+                  <Text weight="bold">3. Накопление:</Text> Баллы накапливаются день за днём, создавая кривую роста
+                </Text>
+                <Text size="2" as="p">
+                  <Text weight="bold">4. Нормализация:</Text> Кривая масштабируется от 0 до 1 для удобного сравнения
+                </Text>
               </Box>
             </Box>
           </Accordion.Content>

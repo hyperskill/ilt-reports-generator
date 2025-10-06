@@ -253,27 +253,38 @@ function classifySegment({
   const low = totalPct < 30;
   const balanced = !leader && !low;
 
-  // Priority rules (from v3 spec)
+  // Priority rules (more flexible)
+  // 1. Leader engaged - if meetings are being used
   if (useMeetings && leader && meetingsAttendedPct >= 70) {
     return 'Leader engaged';
   }
   
+  // 2. Leader efficient - efficient leaders with good consistency
   if (leader && persistence <= 3 && consistencyIndex >= 0.5) {
     return 'Leader efficient';
   }
   
+  // 3. Leaders without strict conditions (fallback for leaders)
+  if (leader) {
+    return 'Leader efficient'; // All other leaders default here
+  }
+  
+  // 4. Balanced + engaged
   if (useMeetings && balanced && meetingsAttendedPct >= 60 && consistencyIndex >= 0.4) {
     return 'Balanced + engaged';
   }
   
-  if (totalPct < 80 && effortIndex >= 0.5 && struggleIndex >= 0.6) {
+  // 5. Hardworking but struggling
+  if (!leader && effortIndex >= 0.5 && struggleIndex >= 0.6) {
     return 'Hardworking but struggling';
   }
   
+  // 6. Low engagement
   if ((low && submissions < 20) || (effortIndex <= -0.5 && consistencyIndex < 0.3)) {
     return 'Low engagement';
   }
   
+  // 7. Default: Balanced middle
   return 'Balanced middle';
 }
 

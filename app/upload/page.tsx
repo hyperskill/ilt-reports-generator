@@ -129,19 +129,26 @@ export default function UploadPage() {
       <Box mt="6">
         <Card>
           <Flex direction="column" gap="3">
-            <Heading size="4">What does each mode produce?</Heading>
+            <Heading size="4">Что покажет анализ?</Heading>
             <Box>
-              <Text weight="bold" size="3">Performance Segmentation</Text>
+              <Text weight="bold" size="3">📊 Performance Segmentation (Анализ успеваемости)</Text>
               <Text size="2" color="gray" as="p" mt="1">
-                Builds a static performance profile per learner (grades, attempts, persistence, meeting attendance)
-                and assigns a segment (e.g., "Leader efficient", "Balanced middle").
+                Создаёт профиль каждого студента: оценки, количество попыток, регулярность занятий, посещаемость встреч.
+                Автоматически распределяет студентов по группам: "Лидеры", "Средний уровень", "Нужна поддержка" и др.
               </Text>
             </Box>
             <Box>
-              <Text weight="bold" size="3">Dynamic/Easing Segmentation</Text>
+              <Text weight="bold" size="3">📈 Dynamic/Easing (Анализ активности во времени)</Text>
               <Text size="2" color="gray" as="p" mt="1">
-                Analyzes temporal activity and classifies each learner's cumulative behavior as a CSS-like easing
-                (linear, ease, ease-in, ease-out, ease-in-out).
+                Показывает, как студент работал на протяжении курса: был активен в начале или в конце, работал равномерно или рывками.
+                Определяет тип активности (ранний старт, поздний старт, равномерная работа).
+              </Text>
+            </Box>
+            <Box mt="2" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+              <Text size="2" weight="bold" mb="1">💡 Важно:</Text>
+              <Text size="2">
+                Вся активность автоматически высчитывается из ваших попыток (submissions.csv). 
+                Дополнительные файлы с активностью НЕ нужны!
               </Text>
             </Box>
           </Flex>

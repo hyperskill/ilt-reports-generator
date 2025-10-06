@@ -23,9 +23,12 @@ export default function ResultsPage() {
   return (
     <AppLayout>
       <Box mb="5">
-        <Heading size="8" mb="2">Results Overview</Heading>
+        <Heading size="8" mb="2">Результаты анализа</Heading>
         <Text size="3" color="gray">
-          Switch between Performance and Dynamic/Easing segmentation modes.
+          Переключайтесь между анализом успеваемости и анализом активности во времени.
+        </Text>
+        <Text size="2" color="gray" mt="1">
+          💡 Все метрики автоматически рассчитаны из ваших данных о попытках студентов
         </Text>
       </Box>
 
@@ -33,12 +36,12 @@ export default function ResultsPage() {
         <Tabs.List>
           <Tabs.Trigger value="performance">
             <Flex align="center" gap="2">
-              Performance Segmentation
+              📊 Анализ успеваемости
             </Flex>
           </Tabs.Trigger>
           <Tabs.Trigger value="dynamic">
             <Flex align="center" gap="2">
-              Dynamic/Easing Segmentation
+              📈 Анализ активности
             </Flex>
           </Tabs.Trigger>
         </Tabs.List>
