@@ -42,18 +42,32 @@ export async function POST(request: Request) {
       updateData.admin_approved_by = user.id;
     }
 
+    console.log('Updating user:', userId, 'with data:', updateData);
+
     const { data, error } = await supabase
       .from('profiles')
       .update(updateData)
       .eq('id', userId)
       .select();
 
+    console.log('Update result:', { data, error });
+
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data });
+    // Even if data is empty, the update might have succeeded
+    // Check by fetching the updated profile
+    const { data: updatedProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    console.log('Fetched updated profile:', updatedProfile);
+
+    return NextResponse.json({ success: true, data: updatedProfile });
   } catch (error: any) {
     console.error('Server error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

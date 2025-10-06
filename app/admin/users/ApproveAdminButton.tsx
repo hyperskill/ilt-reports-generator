@@ -35,7 +35,14 @@ export function ApproveAdminButton({ userId, currentAdminId }: ApproveAdminButto
       }
 
       console.log('Admin approved successfully:', data);
+      
+      // Force refresh and redirect
       router.refresh();
+      
+      // Small delay to ensure DB is updated, then hard refresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error('Error approving admin:', error);
       alert(`Failed to approve admin request: ${error.message}`);
