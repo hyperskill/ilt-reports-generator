@@ -90,6 +90,23 @@ export function CommentsSection({
         </Flex>
 
         <Flex direction="column" gap="4">
+          {editing && (
+            <Box 
+              p="3" 
+              style={{ 
+                background: 'var(--blue-a2)', 
+                borderRadius: 'var(--radius-3)',
+                border: '1px solid var(--blue-a4)'
+              }}
+            >
+              <Text as="div" size="2" color="blue" style={{ lineHeight: '1.6' }}>
+                💡 <strong>Guidance for Comments:</strong> Please focus on the team's overall dynamics, 
+                final projects and their practical applicability, general atmosphere, and collaboration patterns. 
+                Highlight any notable <strong>gaps and opportunities</strong> you observed that could benefit this team's growth.
+              </Text>
+            </Box>
+          )}
+
           {/* Program Expert Comment */}
           <Box>
             <Text as="div" size="3" weight="bold" mb="2">
@@ -102,7 +119,7 @@ export function CommentsSection({
                   ...comments,
                   comment_program_expert: e.target.value
                 })}
-                placeholder="Add comment from Program Expert..."
+                placeholder="Share insights on team dynamics, project quality, practical outcomes, and key opportunities for improvement..."
                 rows={4}
                 style={{ width: '100%' }}
               />
@@ -125,7 +142,7 @@ export function CommentsSection({
                   ...comments,
                   comment_teaching_assistants: e.target.value
                 })}
-                placeholder="Add comment from Teaching Assistants..."
+                placeholder="Describe team collaboration, learning atmosphere, engagement patterns, and areas needing attention..."
                 rows={4}
                 style={{ width: '100%' }}
               />
@@ -148,7 +165,7 @@ export function CommentsSection({
                   ...comments,
                   comment_learning_support: e.target.value
                 })}
-                placeholder="Add comment from Learning Support..."
+                placeholder="Note student well-being, support effectiveness, team morale, and potential growth opportunities..."
                 rows={4}
                 style={{ width: '100%' }}
               />
