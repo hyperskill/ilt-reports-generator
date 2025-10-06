@@ -26,9 +26,10 @@ export default function StudentDetailPage({ params }: PageProps) {
       dynamicData: results.dynamicData,
       dynamicSeries: results.dynamicSeries,
       submissions: files.submissions.data,
+      structure: files.structure?.data,
       excludedUserIds: [],
     });
-  }, [params.userId, results, files.submissions]);
+  }, [params.userId, results, files.submissions, files.structure]);
 
   if (!report) {
     return (
@@ -361,7 +362,27 @@ export default function StudentDetailPage({ params }: PageProps) {
                                       topic.label_topic === 'Watch' ? 'orange' : 'red';
                     return (
                       <Table.Row key={idx}>
-                        <Table.Cell><Text size="2" weight="bold">{topic.topic_title}</Text></Table.Cell>
+                        <Table.Cell>
+                          {topic.lesson_id && topic.first_step_id && topic.unit_id ? (
+                            <a 
+                              href={`https://cogniterra.org/lesson/${topic.lesson_id}/step/${topic.first_step_id}?unit=${topic.unit_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ 
+                                color: 'var(--accent-11)', 
+                                textDecoration: 'none',
+                                borderBottom: '1px solid var(--accent-11)',
+                                transition: 'opacity 0.2s',
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                            >
+                              <Text size="2" weight="bold">{topic.topic_title}</Text>
+                            </a>
+                          ) : (
+                            <Text size="2" weight="bold">{topic.topic_title}</Text>
+                          )}
+                        </Table.Cell>
                         <Table.Cell>
                           <Badge color={labelColor} size="1">{topic.label_topic}</Badge>
                         </Table.Cell>

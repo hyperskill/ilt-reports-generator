@@ -10,7 +10,7 @@ import { parseCSV, validateRequiredColumns, getFileValidation } from '@/lib/util
 import { CSVFile } from '@/lib/types';
 import styles from './upload.module.css';
 
-type FileType = 'grade_book' | 'learners' | 'submissions' | 'meetings';
+type FileType = 'grade_book' | 'learners' | 'submissions' | 'meetings' | 'structure';
 
 interface FileConfig {
   key: FileType;
@@ -43,6 +43,12 @@ const FILE_CONFIGS: FileConfig[] = [
     label: 'Meetings',
     required: false,
     description: 'Meeting attendance with [dd.mm.yyyy] columns (optional)',
+  },
+  {
+    key: 'structure',
+    label: 'Course Structure',
+    required: false,
+    description: 'Course structure (step_id, lesson_id, module_id) - enables clickable topic links (optional)',
   },
 ];
 

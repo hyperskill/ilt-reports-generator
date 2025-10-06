@@ -84,6 +84,11 @@ export function getFileValidation(fileName: string): string[][] {
         ['user_id', 'userid', 'uid', 'user'],
         ['timestamp', 'time', 'date'],
       ];
+    case 'structure':
+      return [
+        ['step_id', 'stepid', 'step'],
+        ['lesson_id', 'lessonid', 'lesson'],
+      ];
     default:
       return [];
   }

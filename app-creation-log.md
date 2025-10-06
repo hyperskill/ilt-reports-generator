@@ -484,3 +484,58 @@ Implements algorithm from `easing_activity_algorithm_node.md`:
 - ARIA labels where needed
 - Color-blind friendly segment colors
 
+---
+
+## 2025-10-06: Cogniterra Links Integration
+
+### Overview
+Added support for clickable topic links to the Cogniterra platform in student reports.
+
+### Changes Made
+
+#### 1. Type System Updates
+- **lib/types.ts**: Added `structure?: CSVFile` to `UploadedFiles`
+- **lib/types.ts**: Added URL components to `StudentTopic`:
+  - `lesson_id?: number`
+  - `first_step_id?: number`
+  - `unit_id?: number`
+  - `course_id?: number`
+
+#### 2. Upload System
+- **app/upload/page.tsx**: Added `structure` as optional file type
+- **lib/utils/csv-parser.ts**: Added validation for structure.csv (requires `step_id`, `lesson_id`)
+
+#### 3. Processor Updates
+- **lib/processors/student-report-processor.ts**:
+  - Added `structure?: any[]` to `ProcessorInput`
+  - Created `structureMap` to map `step_id` → `{lesson_id, unit_id, course_id}`
+  - Extended topic aggregation to include URL components
+  - Each topic now stores first step's structure data
+
+#### 4. UI Updates
+- **app/student/[userId]/page.tsx**:
+  - Passed `structure` data to `generateStudentReport()`
+  - Made topic names in Topic Analysis table clickable links
+  - URL format: `https://cogniterra.org/lesson/{lesson_id}/step/{first_step_id}?unit={unit_id}`
+  - Added hover effect for better UX
+  - Links open in new tab with `rel="noopener noreferrer"`
+
+#### 5. Data Flow
+1. User uploads `structure.csv` (optional) with columns: `course_id`, `module_id`, `lesson_id`, `step_id`
+2. System builds map: `step_id` → URL components
+3. During topic generation, each topic stores structure data from its first step
+4. UI renders clickable links when structure data is available
+5. Fallback: plain text when structure not provided
+
+### User Experience
+- **With structure.csv**: Topic names become clickable links to Cogniterra
+- **Without structure.csv**: Topic names display as plain text
+- Hover effect indicates clickable links
+- External links open in new tabs
+
+### Technical Details
+- Optional file: app works without structure.csv
+- No breaking changes to existing functionality
+- Graceful fallback for missing data
+- Structure data loaded once, used throughout student reports
+

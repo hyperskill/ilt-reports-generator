@@ -11,6 +11,7 @@ export interface UploadedFiles {
   learners?: CSVFile;
   submissions?: CSVFile;
   meetings?: CSVFile;
+  structure?: CSVFile;
 }
 
 export interface DisplaySettings {
@@ -91,6 +92,10 @@ export interface StudentTopic {
   mean_delta_first: number;
   topic_score: number;
   label_topic: 'Comfortable' | 'Watch' | 'Attention';
+  lesson_id?: number;
+  first_step_id?: number;
+  unit_id?: number;
+  course_id?: number;
 }
 
 export interface StudentEngagement {

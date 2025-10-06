@@ -21,11 +21,12 @@ A comprehensive web application for analyzing student performance and dynamic ac
 
 ### Application Flow
 
-1. **Upload** - Upload 3-4 CSV files:
+1. **Upload** - Upload 3-5 CSV files:
    - `grade_book.csv` (Required): user_id, total
    - `learners.csv` (Required): user_id, first_name, last_name
    - `submissions.csv` (Required): user_id, step_id, status, timestamp
    - `meetings.csv` (Optional): user_id, name, [dd.mm.yyyy] columns
+   - `structure.csv` (Optional): course_id, module_id, lesson_id, step_id - enables clickable topic links to Cogniterra
 
 2. **Review** - Verify column recognition and preview data
 
@@ -52,12 +53,13 @@ A comprehensive web application for analyzing student performance and dynamic ac
 
 **What's Included**:
 - 📋 **Progress Highlights**: 3-5 key wins and focus areas in plain English
-- 📈 **Activity Momentum**: Weekly trend (Up/Flat/Down) with explanation
+- 🔥 **Overall Engagement**: Program-wide engagement level (High/Medium/Low) with description
 - 📊 **Activity Curve**: Visual timeline with frontload index, consistency, burstiness
 - ✨ **Going Well Topics**: Areas where student excels
 - 🎯 **Focus Areas**: Topics needing attention with specific reasons
 - 🚀 **Next Steps**: 2-3 prioritized, actionable suggestions
 - 📚 **Topic Analysis Table**: Detailed breakdown with deltas from course average
+  - **NEW**: Clickable topic links to Cogniterra (when structure.csv is uploaded)
 - 📊 **Full Statistics**: All performance metrics in one view
 
 **Algorithm**: Based on Personal Student Report Algorithm v1 (see `docs/personal_student_report_algorithm.md`)

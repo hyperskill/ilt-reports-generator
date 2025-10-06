@@ -15,6 +15,7 @@ interface ProcessorInput {
   dynamicData: DynamicSummaryRow[];
   dynamicSeries: DynamicSeriesRow[];
   submissions: any[];
+  structure?: any[];
   excludedUserIds: string[];
 }
 
@@ -24,6 +25,7 @@ export function generateStudentReport({
   dynamicData,
   dynamicSeries,
   submissions,
+  structure,
   excludedUserIds,
 }: ProcessorInput): StudentReport | null {
   // Find student data
@@ -36,7 +38,7 @@ export function generateStudentReport({
   }
 
   // Generate topic table
-  const topicTable = generateTopicTable(userId, submissions, excludedUserIds);
+  const topicTable = generateTopicTable(userId, submissions, structure, excludedUserIds);
 
   // Extract signals
   const wins = extractWins(perfRow, dynRow, topicTable);
@@ -96,8 +98,27 @@ export function generateStudentReport({
   };
 }
 
-function generateTopicTable(userId: string, submissions: any[], excludedUserIds: string[]): StudentTopic[] {
+function generateTopicTable(userId: string, submissions: any[], structure: any[] | undefined, excludedUserIds: string[]): StudentTopic[] {
   const excluded = new Set(excludedUserIds.map(id => String(id).trim().toLowerCase()));
+  
+  // Build structure map: step_id -> {lesson_id, unit_id, course_id}
+  const structureMap = new Map<string, { lesson_id: number; unit_id: number; course_id: number }>();
+  if (structure && structure.length > 0) {
+    for (const row of structure) {
+      const stepId = String(row.step_id || row.stepid || row.step || '').trim();
+      const lessonId = Number(row.lesson_id || row.lessonid || 0);
+      const moduleId = Number(row.module_id || row.moduleid || 0);
+      const courseId = Number(row.course_id || row.courseid || 0);
+      
+      if (stepId && lessonId) {
+        structureMap.set(stepId, {
+          lesson_id: lessonId,
+          unit_id: moduleId,
+          course_id: courseId,
+        });
+      }
+    }
+  }
   
   // Group submissions by step_id for this user
   const stepStats = new Map<string, {
@@ -142,6 +163,10 @@ function generateTopicTable(userId: string, submissions: any[], excludedUserIds:
     totalAttempts: number;
     firstPassCount: number;
     correctCount: number;
+    firstStepId?: string;
+    lessonId?: number;
+    unitId?: number;
+    courseId?: number;
   }>();
 
   for (const [stepId, stats] of stepStats.entries()) {
@@ -151,11 +176,16 @@ function generateTopicTable(userId: string, submissions: any[], excludedUserIds:
     const topicKey = `Topic ${topicIndex + 1}`;
 
     if (!topics.has(topicKey)) {
+      const structInfo = structureMap.get(stepId);
       topics.set(topicKey, {
         steps: [],
         totalAttempts: 0,
         firstPassCount: 0,
         correctCount: 0,
+        firstStepId: stepId,
+        lessonId: structInfo?.lesson_id,
+        unitId: structInfo?.unit_id,
+        courseId: structInfo?.course_id,
       });
     }
 
@@ -208,6 +238,10 @@ function generateTopicTable(userId: string, submissions: any[], excludedUserIds:
       mean_delta_first: Number(deltaFirst.toFixed(2)),
       topic_score: Number(topicScore.toFixed(2)),
       label_topic: label,
+      lesson_id: data.lessonId,
+      first_step_id: data.firstStepId ? Number(data.firstStepId) : undefined,
+      unit_id: data.unitId,
+      course_id: data.courseId,
     });
   }
 
