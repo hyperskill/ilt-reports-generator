@@ -118,8 +118,8 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
 
           <Tabs.Content value="dynamic">
             <DynamicResults 
-              summaryData={report.dynamic_data} 
-              seriesData={report.dynamic_series || []}
+              summary={report.dynamic_data} 
+              series={report.dynamic_series || []}
             />
           </Tabs.Content>
         </Box>
