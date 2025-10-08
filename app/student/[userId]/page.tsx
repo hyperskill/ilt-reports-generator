@@ -141,24 +141,6 @@ export default function StudentDetailPage({ params }: PageProps) {
   return (
     <AppLayoutWithAuth>
       <Box className={styles.container}>
-        {/* AI Report Link for Admins */}
-        {isAdmin && reportId && (
-          <Card mb="3">
-            <Flex justify="between" align="center">
-              <Box>
-                <Text size="3" weight="bold">AI-Generated Learning Report</Text>
-                <Text size="2" color="gray">View and edit the personalized AI summary for this student</Text>
-              </Box>
-              <Button 
-                variant="soft"
-                onClick={() => router.push(`/reports/${reportId}/student-reports/${params.userId}`)}
-              >
-                📝 Edit AI Report
-              </Button>
-            </Flex>
-          </Card>
-        )}
-
         {/* Header */}
         <Card>
           <Flex justify="between" align="start" mb="3">
@@ -166,7 +148,17 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="7" mb="2">{report.student.name}</Heading>
               <Text size="2" color="gray">User ID: {report.student.user_id}</Text>
             </Box>
-            <Button variant="soft" onClick={() => reportId ? router.push(`/reports/${reportId}`) : router.push('/results')}>
+            <Button 
+              variant="soft" 
+              onClick={() => {
+                if (reportId) {
+                  const tab = searchParams.get('tab') || 'preview';
+                  router.push(`/reports/${reportId}?tab=${tab}`);
+                } else {
+                  router.push('/results');
+                }
+              }}
+            >
               ← {reportId ? 'Back to Report' : 'Back to Results'}
             </Button>
           </Flex>
@@ -520,6 +512,24 @@ export default function StudentDetailPage({ params }: PageProps) {
           userId={params.userId}
           isAdmin={isAdmin}
         />
+
+        {/* AI Report Link for Admins */}
+        {isAdmin && reportId && (
+          <Card>
+            <Flex justify="between" align="center">
+              <Box>
+                <Text size="3" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>AI-Generated Learning Report</Text>
+                <Text size="2" color="gray" style={{ display: 'block' }}>View and edit the personalized AI summary for this student</Text>
+              </Box>
+              <Button 
+                variant="soft"
+                onClick={() => router.push(`/reports/${reportId}/student-reports/${params.userId}`)}
+              >
+                📝 Edit AI Report
+              </Button>
+            </Flex>
+          </Card>
+        )}
       </Box>
     </AppLayoutWithAuth>
   );

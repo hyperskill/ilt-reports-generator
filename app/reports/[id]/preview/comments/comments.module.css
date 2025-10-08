@@ -1,0 +1,81 @@
+.accordionRoot {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--gray-6);
+}
+
+.accordionItem {
+  border-bottom: 1px solid var(--gray-6);
+}
+
+.accordionItem:last-child {
+  border-bottom: none;
+}
+
+.accordionTrigger {
+  all: unset;
+  font-family: inherit;
+  background-color: transparent;
+  padding: 16px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.accordionTrigger:hover {
+  background-color: var(--gray-2);
+}
+
+.accordionTrigger[data-state='open'] {
+  background-color: var(--gray-3);
+}
+
+.accordionContent {
+  overflow: hidden;
+  padding: 16px;
+  background-color: var(--gray-1);
+  margin: 0 -16px;
+}
+
+.accordionContent[data-state='open'] {
+  animation: slideDown 200ms ease-out;
+}
+
+.accordionContent[data-state='closed'] {
+  animation: slideUp 200ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.chevron {
+  transition: transform 200ms ease;
+}
+
+.accordionTrigger[data-state='open'] .chevron {
+  transform: rotate(180deg);
+}

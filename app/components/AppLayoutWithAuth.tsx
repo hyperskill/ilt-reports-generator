@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { UserNav } from './UserNav';
 import styles from './AppLayout.module.css';
 import type { User } from '@supabase/supabase-js';
+import Link from 'next/link';
 
 interface AppLayoutWithAuthProps {
   children: ReactNode;
@@ -41,7 +42,9 @@ export function AppLayoutWithAuth({ children, title, subtitle }: AppLayoutWithAu
       <Box className={styles.header}>
         <Container size="4">
           <Flex justify="between" align="center">
-            <Heading size="6">Performance Segmentation</Heading>
+            <Link href="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Heading size="6">ILT-Report builder</Heading>
+            </Link>
             {user && profile && <UserNav user={user} profile={profile} />}
           </Flex>
         </Container>

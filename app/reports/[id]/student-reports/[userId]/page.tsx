@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Card, Flex, Heading, Text, Button, TextArea, Badge } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { createClient } from '@/lib/supabase/client';
@@ -13,6 +13,7 @@ export default function StudentReportEditPage({
   params: { id: string; userId: string } 
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -236,11 +237,70 @@ export default function StudentReportEditPage({
                 isAdmin={isAdmin}
               />
             )}
-            <Button variant="soft" onClick={() => router.push(`/reports/${params.id}/student-reports`)}>
+            <Button 
+              variant="soft" 
+              onClick={() => {
+                const tab = searchParams.get('tab') || 'preview';
+                router.push(`/reports/${params.id}/student-reports?tab=${tab}`);
+              }}
+            >
               ← Back to List
             </Button>
           </Flex>
         </Flex>
+
+        {/* Expert Comments Information */}
+        <Card>
+          <Flex direction="column" gap="4">
+            <Box p="3" style={{ 
+              backgroundColor: 'var(--blue-2)',
+              borderRadius: 'var(--radius-2)',
+              border: '1px solid var(--blue-6)'
+            }}>
+              <Text size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                💡 Better Reports with Expert Comments
+              </Text>
+              <Text size="2" style={{ display: 'block' }}>
+                Student LLM reports are significantly improved when Program Experts, Teaching Assistants, and Learning Support provide personalized comments. These insights help create more accurate and valuable reports for each student.
+              </Text>
+            </Box>
+
+            {/* Comment Status */}
+            <Box>
+              <Text size="2" weight="bold" mb="3" style={{ display: 'block' }}>
+                Expert Comments Status for {studentName}
+              </Text>
+              <Flex gap="3" wrap="wrap">
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentProgramExpert ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentProgramExpert ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentProgramExpert ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Program Expert</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentTeachingAssistants ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentTeachingAssistants ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentTeachingAssistants ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Teaching Assistants</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentLearningSupport ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentLearningSupport ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentLearningSupport ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Learning Support</Text>
+                </Flex>
+              </Flex>
+            </Box>
+          </Flex>
+        </Card>
 
         {!studentReport && (
           <Card>
@@ -313,7 +373,7 @@ export default function StudentReportEditPage({
                   
                   <Flex direction="column" gap="3">
                     <Box>
-                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Program Expert Comments
                       </Text>
                       <TextArea
@@ -325,7 +385,7 @@ export default function StudentReportEditPage({
                     </Box>
 
                     <Box>
-                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Teaching Assistants Comments
                       </Text>
                       <TextArea
@@ -337,7 +397,7 @@ export default function StudentReportEditPage({
                     </Box>
 
                     <Box>
-                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Learning Support Comments
                       </Text>
                       <TextArea

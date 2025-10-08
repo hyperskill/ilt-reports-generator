@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Box, 
   Heading, 
@@ -25,6 +25,7 @@ import { SharedReport } from '@/lib/types';
 
 export default function SharedReportsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<any>(null);
@@ -46,6 +47,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
 
   const [studentReportsStatus, setStudentReportsStatus] = useState<Record<string, boolean>>({});
   const [studentCommentsStatus, setStudentCommentsStatus] = useState<Record<string, boolean>>({});
+  const [studentCommentsDetails, setStudentCommentsDetails] = useState<Record<string, any>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -63,6 +65,44 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
   });
 
   const supabase = createClient();
+
+  // Helper functions for status determination
+  const getStudentCommentsStatus = () => {
+    const totalStudents = report?.performance_data?.length || 0;
+    const studentsWithComments = Object.values(studentCommentsStatus).filter(status => status).length;
+    const allStudentsHaveComments = totalStudents > 0 && studentsWithComments === totalStudents;
+    const someStudentsHaveComments = studentsWithComments > 0;
+    
+    return {
+      totalStudents,
+      studentsWithComments,
+      allComplete: allStudentsHaveComments,
+      someComplete: someStudentsHaveComments,
+      status: allStudentsHaveComments ? 'complete' : someStudentsHaveComments ? 'partial' : 'none'
+    };
+  };
+
+  const getStudentReportsStatus = () => {
+    const totalStudents = report?.performance_data?.length || 0;
+    const studentsWithReports = Object.values(studentReportsStatus).filter(status => status).length;
+    const allStudentsHaveReports = totalStudents > 0 && studentsWithReports === totalStudents;
+    
+    return {
+      totalStudents,
+      studentsWithReports,
+      allComplete: allStudentsHaveReports,
+      status: allStudentsHaveReports ? 'complete' : 'incomplete'
+    };
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'complete': return { bg: 'var(--green-2)', border: 'var(--green-6)', icon: '✅' };
+      case 'partial': return { bg: 'var(--yellow-2)', border: 'var(--yellow-6)', icon: '⚠️' };
+      case 'incomplete': return { bg: 'var(--red-2)', border: 'var(--red-6)', icon: '❌' };
+      default: return { bg: 'var(--gray-2)', border: 'var(--gray-6)', icon: '❌' };
+    }
+  };
 
   useEffect(() => {
     checkUserRole();
@@ -164,25 +204,47 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
       // Check student comments (individual student comments)
       const { data: studentComments } = await supabase
         .from('student_comments')
-        .select('user_id')
+        .select('user_id, comment_program_expert, comment_teaching_assistants, comment_learning_support')
         .eq('report_id', params.id);
 
-      // Create status map for individual student comments
+      // Create status map and details for individual student comments
       const commentsStatusMap: Record<string, boolean> = {};
+      const commentsDetailsMap: Record<string, any> = {};
       if (report?.performance_data) {
         report.performance_data.forEach((student: any) => {
           commentsStatusMap[student.user_id] = false; // Default to no comments
+          commentsDetailsMap[student.user_id] = {
+            comment_program_expert: '',
+            comment_teaching_assistants: '',
+            comment_learning_support: '',
+            filled: 0,
+            total: 3
+          };
         });
       }
       
-      // Mark students with comments
+      // Mark students with comments and count filled fields
       if (studentComments) {
         studentComments.forEach((comment: any) => {
-          commentsStatusMap[comment.user_id] = true;
+          const filled = [
+            comment.comment_program_expert,
+            comment.comment_teaching_assistants,
+            comment.comment_learning_support
+          ].filter(field => field && field.trim() !== '').length;
+          
+          commentsStatusMap[comment.user_id] = filled > 0;
+          commentsDetailsMap[comment.user_id] = {
+            comment_program_expert: comment.comment_program_expert || '',
+            comment_teaching_assistants: comment.comment_teaching_assistants || '',
+            comment_learning_support: comment.comment_learning_support || '',
+            filled,
+            total: 3
+          };
         });
       }
       
       setStudentCommentsStatus(commentsStatusMap);
+      setStudentCommentsDetails(commentsDetailsMap);
       const hasStudentComments = Object.values(commentsStatusMap).some(status => status);
 
       setLlmStatus({
@@ -338,9 +400,17 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
     if (formData.reportType === 'manager') {
       return llmStatus.hasManagerReport && llmStatus.hasManagerComments;
     } else {
-      return llmStatus.hasStudentReports && llmStatus.hasStudentComments;
+      // For student reports, all students must have generated LLM reports
+      const reportsStatus = getStudentReportsStatus();
+      return reportsStatus.allComplete;
     }
   };
+
+  // Calculate statuses for rendering
+  const commentsStatus = getStudentCommentsStatus();
+  const commentsColors = getStatusColor(commentsStatus.status);
+  const reportsStatus = getStudentReportsStatus();
+  const reportsColors = getStatusColor(reportsStatus.status);
 
   if (loading) {
     return (
@@ -377,7 +447,10 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
           <Flex gap="2" align="center">
             <Button 
               variant="soft" 
-              onClick={() => router.push(`/reports/${params.id}`)}
+              onClick={() => {
+                const tab = searchParams.get('tab') || 'constructor';
+                router.push(`/reports/${params.id}?tab=${tab}`);
+              }}
             >
               ← Back to Report
             </Button>
@@ -435,7 +508,10 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
             <Button
               size="1"
               variant="outline"
-              onClick={() => router.push(`/reports/${params.id}/manager-report`)}
+              onClick={() => {
+                const tab = searchParams.get('tab') || 'constructor';
+                router.push(`/reports/${params.id}/manager-report?tab=${tab}`);
+              }}
             >
               {llmStatus.hasManagerReport ? 'View Report' : 'Generate Report'}
             </Button>
@@ -453,16 +529,25 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
         <Flex direction="column" gap="4">
           {/* Student Comments */}
           <Box p="3" mb="2" style={{ 
-            backgroundColor: llmStatus.hasStudentComments ? 'var(--green-2)' : 'var(--orange-2)',
+            backgroundColor: commentsColors.bg,
             borderRadius: 'var(--radius-2)',
-            border: `1px solid ${llmStatus.hasStudentComments ? 'var(--green-6)' : 'var(--orange-6)'}`
+            border: `1px solid ${commentsColors.border}`
           }}>
             <Flex align="center" gap="2" mb="2">
-              {llmStatus.hasStudentComments ? '✅' : '❌'}
+              {commentsColors.icon}
               <Box>
-                <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>Student Expert Comments</Text>
+                <Flex align="center" gap="2">
+                  <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>Student Expert Comments</Text>
+                  <Badge size="1" color={commentsStatus.status === 'complete' ? 'green' : commentsStatus.status === 'partial' ? 'yellow' : 'gray'}>
+                    {commentsStatus.studentsWithComments}/{commentsStatus.totalStudents}
+                  </Badge>
+                </Flex>
                 <Text size="1" color="gray" style={{ display: 'block' }}>
-                  {llmStatus.hasStudentComments ? 'Individual comments added' : 'Add individual comments for each student'}
+                  {commentsStatus.status === 'complete' 
+                    ? 'All students have expert comments' 
+                    : commentsStatus.status === 'partial'
+                    ? `${commentsStatus.studentsWithComments} of ${commentsStatus.totalStudents} students have comments`
+                    : 'Add individual comments for each student'}
                 </Text>
               </Box>
             </Flex>
@@ -505,7 +590,10 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                           key={student.user_id}
                           size="1"
                           variant="outline"
-                          onClick={() => router.push(`/student/${student.user_id}?reportId=${params.id}`)}
+                          onClick={() => {
+                            const tab = searchParams.get('tab') || 'constructor';
+                            router.push(`/student/${student.user_id}?reportId=${params.id}&tab=${tab}`);
+                          }}
                           style={{ justifyContent: 'flex-start' }}
                         >
                           {hasComments ? '✅' : '👤'} {student.name || student.user_id} - Add/Edit Comments
@@ -520,28 +608,38 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
 
           {/* Student LLM Reports */}
           <Box p="3" mb="2" style={{ 
-            backgroundColor: llmStatus.hasStudentReports ? 'var(--green-2)' : 'var(--orange-2)',
+            backgroundColor: reportsColors.bg,
             borderRadius: 'var(--radius-2)',
-            border: `1px solid ${llmStatus.hasStudentReports ? 'var(--green-6)' : 'var(--orange-6)'}`
+            border: `1px solid ${reportsColors.border}`
           }}>
             <Flex align="center" justify="between" mb="2">
               <Flex align="center" gap="2">
-                {llmStatus.hasStudentReports ? '✅' : '❌'}
+                {reportsColors.icon}
                 <Box>
-                  <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>Student LLM Reports</Text>
+                  <Flex align="center" gap="2">
+                    <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>Student LLM Reports</Text>
+                    <Badge size="1" color={reportsStatus.status === 'complete' ? 'green' : 'red'}>
+                      {reportsStatus.studentsWithReports}/{reportsStatus.totalStudents}
+                    </Badge>
+                  </Flex>
                   <Text size="1" color="gray" style={{ display: 'block' }}>
-                    {llmStatus.hasStudentReports ? 'Reports generated' : 'Generate AI-powered reports for students'}
+                    {reportsStatus.status === 'complete' 
+                      ? 'All students have generated reports' 
+                      : `${reportsStatus.studentsWithReports} of ${reportsStatus.totalStudents} students have reports`}
                   </Text>
                 </Box>
               </Flex>
-              <Button
-                size="1"
-                variant="outline"
-                onClick={() => router.push(`/reports/${params.id}/student-reports`)}
-              >
-                {llmStatus.hasStudentReports ? 'View Reports' : 'Generate Reports'}
-              </Button>
-            </Flex>
+                  <Button
+                    size="1"
+                    variant="outline"
+                    onClick={() => {
+                      const tab = searchParams.get('tab') || 'constructor';
+                      router.push(`/reports/${params.id}/student-reports?tab=${tab}`);
+                    }}
+                  >
+                    {reportsStatus.status === 'complete' ? 'View Reports' : 'Generate Reports'}
+                  </Button>
+                </Flex>
             
             {/* Accordion with individual student status */}
             <Accordion.Root type="single" collapsible>
@@ -642,7 +740,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                   <Table.Cell>
                     <Text weight="bold">{sharedReport.title}</Text>
                     {sharedReport.description && (
-                      <Text size="1" color="gray" display="block">
+                      <Text size="1" color="gray" style={{ display: 'block' }}>
                         {sharedReport.description}
                       </Text>
                     )}
@@ -734,7 +832,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
 
             {formData.reportType === 'student' && (
               <Box>
-                <Text as="label" size="2" weight="bold" mb="3" display="block">
+                <Text as="label" size="2" weight="bold" mb="3" style={{ display: 'block' }}>
                   Student
                 </Text>
                 <Text size="1" color="gray" mb="3" style={{ display: 'block', marginTop: '4px' }}>
@@ -749,7 +847,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                   >
                     <Select.Trigger placeholder="Select a student..." />
                     <Select.Content>
-                      {getStudents().map((student) => (
+                      {getStudents().map((student: any) => (
                         <Select.Item key={student.value} value={student.value}>
                           {student.label}
                         </Select.Item>
@@ -771,7 +869,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
             )}
 
             <Box>
-              <Text as="label" size="2" weight="bold" mb="3" display="block">
+              <Text as="label" size="2" weight="bold" mb="3" style={{ display: 'block' }}>
                 Title *
               </Text>
               <TextField.Root
@@ -782,7 +880,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
             </Box>
 
             <Box>
-              <Text as="label" size="2" weight="bold" mb="3" display="block">
+              <Text as="label" size="2" weight="bold" mb="3" style={{ display: 'block' }}>
                 Description
               </Text>
               <TextArea
@@ -847,7 +945,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
 
           <Flex direction="column" gap="4">
             <Box>
-              <Text as="label" size="2" weight="bold" mb="2" display="block">
+              <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                 Program Expert Comments
               </Text>
               <TextArea
@@ -862,7 +960,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
             </Box>
 
             <Box>
-              <Text as="label" size="2" weight="bold" mb="2" display="block">
+              <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                 Teaching Assistants Comments
               </Text>
               <TextArea
@@ -877,7 +975,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
             </Box>
 
             <Box>
-              <Text as="label" size="2" weight="bold" mb="2" display="block">
+              <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                 Learning Support Comments
               </Text>
               <TextArea

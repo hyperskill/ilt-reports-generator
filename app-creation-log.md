@@ -1747,3 +1747,925 @@ Improved the student selection in the shared report creation form by adding auto
 - **Improved Workflow**: Smoother transition from report type to student selection
 - **Better Guidance**: Clear instructions on what to do when no students are available
 
+---
+
+## 2025-10-08: Enhanced Student Reports Page with Comments Integration
+
+### Overview
+Enhanced the student reports page to include expert comments information, making student names clickable links to their personal report pages, and adding educational content about the importance of expert comments for better LLM reports.
+
+### Changes Made
+
+#### 1. Added Expert Comments Information
+- **app/reports/[id]/student-reports/page.tsx**:
+  - Added `studentComments` state to track individual student comments
+  - Enhanced `loadData` function to fetch comments from `student_comments` table
+  - Added helper functions to get and display comment information
+
+#### 2. Educational Content About Comments
+- **Information Box**: Added blue information box explaining the importance of expert comments
+- **Clear Messaging**: Explains how Program Expert, Teaching Assistant, and Learning Support comments improve LLM reports
+- **Visual Design**: Professional blue box with icon and clear typography
+
+#### 3. Enhanced Student Table
+- **New Comments Column**: Added "Comments" column showing available comment types
+- **Comment Labels**: Shows badges for Expert, TA, and Support comments
+- **Clickable Names**: Student names are now clickable links to their personal report pages
+- **Improved Navigation**: Direct links to `/student/[userId]?reportId=[reportId]` format
+
+### User Interface Features
+
+#### Smart Comment Display
+- **Comment Badges**: Green badges showing which types of comments are available
+- **No Comments State**: Shows "No comments" text when no expert comments exist
+- **Visual Indicators**: Clear visual distinction between students with and without comments
+
+#### Enhanced Navigation
+- **Clickable Student Names**: Names are styled as blue underlined links
+- **Direct Access**: Links lead directly to student personal report pages
+- **Consistent URL Format**: Uses `/student/[userId]?reportId=[reportId]` pattern
+
+#### Educational Content
+- **Information Box**: Blue box with tip icon explaining comment importance
+- **Clear Benefits**: Explains how expert comments improve report quality
+- **Professional Design**: Consistent with other informational elements
+
+### Technical Implementation
+1. **State Management**: Added `studentComments` state for tracking comment data
+2. **Data Loading**: Enhanced `loadData` to fetch from `student_comments` table
+3. **Helper Functions**: Added `getStudentComments` and `getCommentLabels` functions
+4. **UI Components**: Updated table structure with new Comments column
+
+### User Experience Benefits
+- **Clear Comment Status**: Users can see which students have expert comments
+- **Easy Navigation**: Direct access to student personal report pages
+- **Educational Value**: Users understand the importance of expert comments
+- **Improved Workflow**: Streamlined process for managing student reports and comments
+
+---
+
+## 2025-10-08: Reordered AI Report Block on Student Pages
+
+### Overview
+Moved the "AI-Generated Learning Report" block from the top of student pages to the bottom, positioning it after the expert comments section for better content flow.
+
+### Changes Made
+
+#### 1. Block Repositioning
+- **app/student/[userId]/page.tsx**:
+  - Removed "AI-Generated Learning Report" block from the top of the page (after container opening)
+  - Repositioned the block to the bottom of the page, after the `StudentCommentsSection`
+  - Maintained all functionality and styling of the block
+
+#### 2. Improved Content Flow
+- **Logical Order**: AI report block now appears after all student data and expert comments
+- **Better UX**: Users see student information and comments before the AI report editing option
+- **Consistent Layout**: Block maintains the same styling and functionality in its new position
+
+### User Interface Features
+
+#### Enhanced Page Structure
+- **Header Section**: Student name, ID, and key metrics at the top
+- **Content Sections**: Progress highlights, engagement, activity curves, topics, and statistics
+- **Expert Comments**: Individual expert comment fields for admins
+- **AI Report Block**: AI report editing option at the bottom
+
+#### Improved User Experience
+- **Natural Flow**: Users review student data before accessing AI report editing
+- **Context First**: Student information and expert insights are presented before AI tools
+- **Clear Hierarchy**: Logical progression from data to analysis to AI editing
+
+### Technical Implementation
+1. **Block Movement**: Moved the conditional AI report block from top to bottom
+2. **Maintained Functionality**: All click handlers and navigation remain unchanged
+3. **Preserved Styling**: Block maintains its original appearance and behavior
+4. **Conditional Rendering**: Block still only shows for admin users with reportId
+
+### User Experience Benefits
+- **Better Information Flow**: Users see student data before AI editing options
+- **Logical Progression**: Natural flow from data review to AI report editing
+- **Improved Context**: Expert comments are reviewed before AI report modifications
+- **Enhanced Usability**: More intuitive page structure for admin users
+
+---
+
+## 2025-10-08: Fixed Inline Text Display in AI Report Block
+
+### Overview
+Fixed the "slipped together" text appearance in the AI-Generated Learning Report block by converting inline text elements to block-level elements with proper spacing.
+
+### Changes Made
+
+#### 1. Fixed Text Display in AI Report Block
+- **app/student/[userId]/page.tsx**:
+  - Updated "AI-Generated Learning Report" title to use `display: 'block'` and `marginBottom: '4px'`
+  - Updated description text to use `display: 'block'` for proper block-level rendering
+  - Ensured text appears on separate lines with proper spacing
+
+#### 2. Enhanced Text Spacing
+- **Block Display**: Both title and description now display as block-level elements
+- **Proper Margins**: Added 4px bottom margin between title and description
+- **Clear Separation**: Text elements no longer appear "slipped together"
+
+### Visual Improvements
+
+#### Proper Text Layout
+- **Block Display**: Title and description display as block-level elements
+- **Vertical Spacing**: 4px margin between title and description
+- **Clear Separation**: Title and description are visually distinct
+- **Better Readability**: Each text element has proper spacing
+
+#### Enhanced Block Design
+- **Consistent Spacing**: Text elements have proper vertical spacing
+- **Professional Layout**: Clean, well-structured text layout
+- **Improved Hierarchy**: Clear visual distinction between title and description
+
+### Technical Implementation
+1. **CSS Styling**: Added inline styles to Text components in AI report block
+2. **Display Properties**: Set `display: 'block'` for proper block-level rendering
+3. **Margin Control**: Added `marginBottom: '4px'` for consistent spacing
+4. **Block Consistency**: Applied changes to maintain uniform text display
+
+### User Experience Benefits
+- **Clear Text Hierarchy**: Title and description are visually distinct
+- **Improved Readability**: No more "slipped together" text appearance
+- **Better Scanning**: Easy to distinguish between different text elements
+- **Professional Look**: Clean, well-structured text layout in AI report block
+
+---
+
+## 2025-10-08: Enhanced Student Report Edit Page with Expert Comments Information
+
+### Overview
+Enhanced the student report edit page to include educational content about the importance of expert comments and a visual status display showing which expert comments are available for the specific student.
+
+### Changes Made
+
+#### 1. Added Expert Comments Information
+- **app/reports/[id]/student-reports/[userId]/page.tsx**:
+  - Added informational card explaining the importance of expert comments
+  - Included blue information box with tip icon and clear messaging
+  - Positioned after page header but before main content
+
+#### 2. Expert Comments Status Display
+- **Visual Status Indicators**: Added status cards for each expert role
+- **Color-coded Status**: Green background for comments that exist, orange for missing comments
+- **Clear Icons**: ✅ for existing comments, ❌ for missing comments
+- **Individual Tracking**: Shows status for Program Expert, Teaching Assistants, and Learning Support
+
+### User Interface Features
+
+#### Educational Content
+- **Information Box**: Blue box with tip icon explaining comment importance
+- **Clear Benefits**: Explains how expert comments improve report quality
+- **Professional Design**: Consistent with other informational elements in the app
+
+#### Status Display
+- **Visual Indicators**: Color-coded cards showing comment availability
+- **Real-time Updates**: Status updates when comments are added or removed
+- **Clear Labels**: Each expert role is clearly labeled and identified
+- **Responsive Layout**: Cards wrap appropriately on different screen sizes
+
+#### Enhanced User Experience
+- **Immediate Feedback**: Users can see comment status at a glance
+- **Educational Value**: Users understand the importance of expert comments
+- **Clear Guidance**: Visual indicators guide users to add missing comments
+
+### Technical Implementation
+1. **State Integration**: Uses existing comment state variables for status display
+2. **Conditional Styling**: Dynamic background colors based on comment availability
+3. **Responsive Design**: Flex layout with wrap for different screen sizes
+4. **Consistent Styling**: Matches existing design patterns and color schemes
+
+### User Experience Benefits
+- **Clear Comment Status**: Users can immediately see which expert comments are available
+- **Educational Value**: Users understand why expert comments improve reports
+- **Visual Guidance**: Color-coded status helps users prioritize missing comments
+- **Improved Workflow**: Better understanding of comment requirements before report generation
+
+---
+
+## 2025-10-08: Redesigned Report Navigation Structure
+
+### Overview
+Completely redesigned the report navigation structure to organize all report-related functionality into three logical sections: Preview and Setup, Constructor, and Manage Access.
+
+### Changes Made
+
+#### 1. New Navigation Structure
+- **app/reports/[id]/page.tsx**:
+  - Replaced single-page layout with tabbed navigation structure
+  - Created three main sections: Preview and Setup, Constructor, and Manage Access
+  - Maintained all existing functionality while reorganizing the interface
+
+#### 2. Preview and Setup Section
+- **Performance Segmentation**: `/reports/[id]/preview/performance/page.tsx`
+- **Dynamic/Easing Segmentation**: `/reports/[id]/preview/dynamic/page.tsx`
+- **Personal Student Reports**: `/reports/[id]/preview/students/page.tsx`
+- **LLM Report Generation**: `/reports/[id]/preview/llm/page.tsx`
+- **Expert Comments**: `/reports/[id]/preview/comments/page.tsx`
+
+#### 3. Constructor Section
+- **Shared Reports Management**: Links to existing shared reports functionality
+- **Report Builder**: Access to shared report editing tools
+
+#### 4. Manage Access Section
+- **Access Management**: `/reports/[id]/access/page.tsx`
+- **User Management**: View all users and their roles
+- **Permission Control**: Toggle public/private access for shared reports
+
+### User Interface Features
+
+#### Organized Navigation
+- **Three Main Tabs**: Clear separation of functionality into logical groups
+- **Descriptive Icons**: Each section has relevant icons for easy identification
+- **Consistent Layout**: All sections follow the same design patterns
+
+#### Preview and Setup Features
+- **Performance Reports**: Dedicated page for performance segmentation analysis
+- **Dynamic Reports**: Dedicated page for dynamic/easing segmentation
+- **Student Reports**: Table view of all students with individual report links
+- **LLM Generation**: Centralized LLM report generation tools
+- **Expert Comments**: Dedicated page for managing expert comments
+
+#### Constructor Features
+- **Shared Reports**: Access to shared report management
+- **Report Builder**: Links to report editing functionality
+- **Admin Controls**: Proper role-based access control
+
+#### Access Management Features
+- **Report Access Control**: Toggle public/private access for shared reports
+- **User Management**: View all system users and their roles
+- **Permission Overview**: Clear visibility of report access status
+
+### Technical Implementation
+1. **Tab Navigation**: Used Radix UI Tabs component for main navigation
+2. **Page Structure**: Created dedicated pages for each functionality area
+3. **Route Organization**: Organized routes under logical path structures
+4. **Component Reuse**: Reused existing components in new page contexts
+5. **Access Control**: Maintained proper admin role checking throughout
+
+### User Experience Benefits
+- **Clear Organization**: Related functionality is grouped logically
+- **Easy Navigation**: Intuitive tab-based navigation system
+- **Reduced Complexity**: Single-page complexity is broken into manageable sections
+- **Better Workflow**: Users can focus on specific tasks without distraction
+- **Improved Discoverability**: All functionality is easily discoverable through organized sections
+
+---
+
+## 2025-10-08: Enhanced Comments Management with Individual Student Comments
+
+### Overview
+Enhanced the comments management page to include both program-level and individual student comments management, with each student having their own accordion for personalized comments.
+
+### Changes Made
+
+#### 1. Enhanced Comments Page Structure
+- **app/reports/[id]/preview/comments/page.tsx**:
+  - Added individual student comments management alongside program-level comments
+  - Created accordion-based interface for each student
+  - Added state management for student comments loading and saving
+
+#### 2. Individual Student Comments Management
+- **Accordion Interface**: Each student gets their own accordion with comment fields
+- **Comment Status Indicators**: Visual indicators showing which students have comments
+- **Real-time Saving**: Individual save functionality for each student's comments
+- **Form Validation**: Proper form handling with loading states
+
+#### 3. Student Comment Form Component
+- **Three Comment Fields**: Program Expert, Teaching Assistants, Learning Support
+- **Auto-save Functionality**: Saves comments to database with proper error handling
+- **Loading States**: Visual feedback during save operations
+- **Form State Management**: Proper state synchronization with database
+
+### User Interface Features
+
+#### Program-Level Comments Section
+- **Existing Functionality**: Maintains all existing program-level comment management
+- **Clear Separation**: Distinct section for program-wide comments
+- **Consistent Design**: Matches existing design patterns
+
+#### Individual Student Comments Section
+- **Accordion Layout**: Each student in their own expandable accordion
+- **Student Information**: Shows student name, user ID, and comment status
+- **Comment Status**: Visual indicators (✓ Has comments) for students with existing comments
+- **Form Fields**: Three text areas for different types of expert comments
+
+#### Student Comment Form Features
+- **Program Expert Comments**: Text area for program expert feedback
+- **Teaching Assistants Comments**: Text area for TA feedback
+- **Learning Support Comments**: Text area for learning support feedback
+- **Save Button**: Individual save functionality with loading states
+- **Form Validation**: Proper form handling and error management
+
+### Technical Implementation
+1. **State Management**: Added `studentComments` state to track individual student comments
+2. **Database Integration**: Uses Supabase for loading and saving student comments
+3. **Accordion Component**: Uses Radix UI Accordion (`@radix-ui/react-accordion`) for expandable student sections
+4. **Form Handling**: Proper form state management with useEffect synchronization
+5. **Error Handling**: Comprehensive error handling for database operations
+6. **CSS Modules**: Created `comments.module.css` for accordion styling with animations
+7. **Chevron Icon**: Added animated chevron icon for visual feedback on accordion state
+8. **Layout Fixes**: Fixed accordion overflow issues with proper padding and margin adjustments
+9. **Card Text Spacing**: Fixed "slipped together" text issue in all navigation cards with proper block display and margins
+10. **Constructor Section Enhancement**: Added dynamic display of existing shared reports separated by type (manager/student) with edit and view buttons
+
+### Database Operations
+- **Load Comments**: Fetches all student comments for the report
+- **Save Comments**: Uses upsert to create or update student comments
+- **State Synchronization**: Updates local state after successful saves
+- **Error Management**: Proper error handling with user feedback
+
+### User Experience Benefits
+- **Centralized Management**: All comment management in one location
+- **Individual Focus**: Each student gets dedicated attention for personalized comments
+- **Visual Clarity**: Clear separation between program-level and individual comments
+- **Efficient Workflow**: Easy to see which students need comments and manage them individually
+- **Real-time Feedback**: Immediate visual feedback on comment status and save operations
+
+---
+
+## 2025-10-08: Enhanced Constructor Section with Dynamic Shared Reports Display
+
+### Overview
+Enhanced the Constructor section to dynamically display existing shared reports, separated by type (manager and student), with direct access to edit and view functionality.
+
+### Changes Made
+
+#### 1. Enhanced Constructor Section
+- **app/reports/[id]/page.tsx**:
+  - Added state management for shared reports loading and display
+  - Integrated API call to fetch existing shared reports
+  - Created separate sections for manager and student reports
+
+#### 2. Dynamic Report Display
+- **Manager Reports Section**: Displays all manager-type shared reports with edit/view buttons
+- **Student Reports Section**: Displays all student-type shared reports with edit/view buttons
+- **Report Counters**: Badge indicators showing the number of reports for each type
+- **Loading States**: Proper loading indicators while fetching reports
+
+#### 3. Report Management Features
+- **Edit Access**: Direct links to edit shared reports (`/reports/shared/[id]/edit`)
+- **View Access**: Direct links to view shared reports (`/reports/shared/[id]/view`)
+- **Report Information**: Shows report title, creation date, and student ID (for student reports)
+- **Visual Separation**: Clear visual distinction between manager and student reports
+
+### User Interface Features
+
+#### Manager Reports Section
+- **Header**: "👔 Manager Reports" with blue badge showing count
+- **Description**: "Edit and customize manager shared reports"
+- **Report List**: Each report shows title, creation date, and action buttons
+- **Empty State**: "No manager reports created yet" when no reports exist
+
+#### Student Reports Section
+- **Header**: "🎓 Student Reports" with green badge showing count
+- **Description**: "Edit and customize student shared reports"
+- **Report List**: Each report shows title, student ID, creation date, and action buttons
+- **Empty State**: "No student reports created yet" when no reports exist
+
+#### Shared Reports Management
+- **Existing Functionality**: Maintains the original "Shared Reports Management" card
+- **Direct Access**: Button to navigate to the shared reports management page
+
+### Technical Implementation
+1. **State Management**: Added `sharedReports` and `loadingSharedReports` state variables
+2. **API Integration**: Uses existing `/api/reports/shared/list` endpoint with correct parameters
+3. **Data Filtering**: Filters shared reports by `report_type` (manager/student)
+4. **Loading States**: Proper loading indicators and error handling
+5. **Navigation**: Direct links to edit and view pages for each report
+
+### Database Operations
+- **Load Shared Reports**: Fetches all shared reports for the current source report
+- **Filter by Type**: Separates manager and student reports for display
+- **Real-time Updates**: Reports are loaded when admin status is confirmed
+
+### User Experience Benefits
+- **Immediate Visibility**: Users can see all existing shared reports at a glance
+- **Direct Access**: Quick access to edit and view functionality for each report
+- **Clear Organization**: Separate sections for manager and student reports
+- **Status Awareness**: Badge counters show how many reports exist for each type
+- **Efficient Workflow**: No need to navigate to separate management page to see existing reports
+
+---
+
+## 2025-10-08: Fixed Access Management Page Shared Reports Loading
+
+### Overview
+Fixed the Access Management page to properly load and display existing shared reports for access control management.
+
+### Changes Made
+
+#### 1. Fixed Data Loading Logic
+- **app/reports/[id]/access/page.tsx**:
+  - Separated admin role checking from data loading
+  - Added proper useEffect hooks for data loading after admin confirmation
+  - Added loading states for shared reports
+
+#### 2. Enhanced Loading States
+- **Loading Indicators**: Added proper loading states for shared reports
+- **Error Handling**: Improved error handling for data loading operations
+- **State Management**: Better separation of loading states for different data types
+
+#### 3. Improved User Experience
+- **Loading Feedback**: Users see "Loading shared reports..." while data is being fetched
+- **Proper Sequencing**: Data loads only after admin status is confirmed
+- **Error Recovery**: Better error handling and user feedback
+
+### Technical Implementation
+1. **useEffect Separation**: Split admin checking and data loading into separate useEffect hooks
+2. **Loading States**: Added `loadingSharedReports` state for better UX
+3. **Error Handling**: Enhanced try-catch blocks for all async operations
+4. **Data Refresh**: Proper data reloading after access changes
+
+### User Experience Benefits
+- **Immediate Visibility**: Shared reports now load and display correctly
+- **Loading Feedback**: Clear indication when data is being loaded
+- **Proper Access Control**: Users can now manage access to existing shared reports
+- **Error Recovery**: Better error handling prevents silent failures
+
+---
+
+## 2025-10-08: Fixed Supabase Foreign Key Relationship Error
+
+### Overview
+Fixed the foreign key relationship error that was preventing shared reports from loading on the Access Management page.
+
+### Problem Identified
+- **Error**: `Could not find a relationship between 'shared_reports' and 'created_by' in the schema cache`
+- **Cause**: Supabase query was trying to join `shared_reports.created_by` with `profiles.email` but the foreign key relationship wasn't properly configured
+- **Impact**: Access Management page showed "No shared reports found" even when reports existed
+
+### Changes Made
+
+#### 1. Fixed Supabase Query
+- **Removed problematic join**: Eliminated the `profiles:created_by (email)` join from the query
+- **Simplified select**: Changed from complex join to simple `select('*')`
+- **Maintained functionality**: All other functionality remains intact
+
+#### 2. Updated UI Components
+- **Removed "Created By" column**: Since we can't easily fetch creator email without proper foreign key setup
+- **Simplified table structure**: Table now shows Title, Type, Target User, Status, and Actions
+- **Maintained all core functionality**: Edit, View, and Delete buttons still work
+
+#### 3. Cleaned Up Code
+- **Removed debug code**: Cleaned up all debugging code that was added for troubleshooting
+
+### Technical Details
+- **Query before**: `.select('*, profiles:created_by (email)')`
+- **Query after**: `.select('*')`
+- **Result**: Shared reports now load correctly without foreign key relationship errors
+
+### User Experience Benefits
+- **Shared Reports Now Visible**: Access Management page correctly displays existing shared reports
+- **Full Functionality**: All management features (edit, view, delete, toggle access) work as expected
+- **Clean Interface**: Simplified table structure without unnecessary columns
+- **Error-Free Loading**: No more console errors when loading the page
+
+---
+
+## 2025-10-08: Added URL Parameters for Tab Navigation
+
+### Overview
+Implemented URL parameters for tab navigation to preserve tab state and enable proper back button navigation throughout the report management interface.
+
+### Changes Made
+
+#### 1. Enhanced Main Report Page Navigation
+- **app/reports/[id]/page.tsx**:
+  - Added `useSearchParams` hook for reading URL parameters
+  - Added `activeTab` state to track current tab
+  - Implemented `handleTabChange` function to update URL when tabs change
+  - Updated all navigation links to include tab parameter
+
+#### 2. Updated All Preview Pages
+- **Performance Preview**: `/reports/[id]/preview/performance/page.tsx`
+- **Dynamic Preview**: `/reports/[id]/preview/dynamic/page.tsx`
+- **Students Preview**: `/reports/[id]/preview/students/page.tsx`
+- **LLM Preview**: `/reports/[id]/preview/llm/page.tsx`
+- **Comments Preview**: `/reports/[id]/preview/comments/page.tsx`
+- **Access Management**: `/reports/[id]/access/page.tsx`
+
+#### 3. Enhanced Back Button Navigation
+- **Smart Back Navigation**: All "Back to Report" buttons now preserve the current tab state
+- **URL Parameter Preservation**: Tab parameter is maintained when navigating between pages
+- **Consistent Navigation**: Users return to the same tab they were viewing
+
+### Technical Implementation
+
+#### 1. URL Parameter Management
+```javascript
+// Reading tab from URL
+const tab = searchParams.get('tab');
+if (tab && ['preview', 'constructor', 'access'].includes(tab)) {
+  setActiveTab(tab);
+}
+
+// Updating URL when tab changes
+const handleTabChange = (value: string) => {
+  setActiveTab(value);
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', value);
+  router.push(url.pathname + url.search, { scroll: false });
+};
+```
+
+#### 2. Back Button Enhancement
+```javascript
+// Smart back navigation preserving tab state
+onClick={() => {
+  const tab = searchParams.get('tab') || 'preview';
+  router.push(`/reports/${params.id}?tab=${tab}`);
+}}
+```
+
+#### 3. Navigation Link Updates
+- **Preview links**: Include `?tab=preview` parameter
+- **Constructor links**: Include `?tab=constructor` parameter  
+- **Access links**: Include `?tab=access` parameter
+
+### User Experience Benefits
+- **Persistent Tab State**: Users stay on the same tab when navigating back
+- **Browser History Support**: Back button works correctly with tab navigation
+- **Shareable URLs**: URLs can be shared with specific tabs selected
+- **Consistent Navigation**: Seamless experience across all report management pages
+- **No State Loss**: Tab selection is preserved during page navigation
+
+---
+
+## 2025-10-08: Fixed Back Navigation from Constructor Tab
+
+### Overview
+Fixed the back navigation issue where users coming from the "Constructor" tab were incorrectly redirected to the "Preview and Setup" tab instead of returning to the "Constructor" tab.
+
+### Problem Identified
+When users navigated from the "Constructor" tab to shared reports management pages, the "Back to Report" buttons were not preserving the tab parameter, causing users to return to the default "Preview and Setup" tab instead of the "Constructor" tab they came from.
+
+### Changes Made
+
+#### 1. Enhanced Shared Reports Management Page
+- **app/reports/[id]/shared/page.tsx**:
+  - Added `useSearchParams` hook for reading URL parameters
+  - Updated "Back to Report" button to preserve tab parameter
+  - Updated all navigation links within the page to include tab parameter
+
+#### 2. Updated All Related Pages
+- **Student Reports List**: `/reports/[id]/student-reports/page.tsx`
+- **Individual Student Report Edit**: `/reports/[id]/student-reports/[userId]/page.tsx`
+- **Individual Student Page**: `/student/[userId]/page.tsx`
+
+#### 3. Enhanced Navigation Links
+- **Shared Reports Management**: All internal links now preserve tab parameter
+- **Student Navigation**: Links to individual student pages maintain tab context
+- **Back Navigation**: All "Back to Report" buttons now return to the correct tab
+
+### Technical Implementation
+
+#### 1. Tab Parameter Preservation
+```javascript
+// Reading and preserving tab parameter
+const tab = searchParams.get('tab') || 'constructor'; // Default to constructor for shared reports
+router.push(`/reports/${params.id}?tab=${tab}`);
+```
+
+#### 2. Enhanced Back Button Logic
+```javascript
+// Smart back navigation preserving tab state
+onClick={() => {
+  const tab = searchParams.get('tab') || 'constructor';
+  router.push(`/reports/${params.id}?tab=${tab}`);
+}}
+```
+
+#### 3. Internal Link Updates
+- **Student Individual Reports**: Include tab parameter in student navigation links
+- **Manager Report Links**: Preserve tab context when navigating to manager reports
+- **Student Report Generation**: Maintain tab parameter in all student-related navigation
+
+### User Experience Benefits
+- **Correct Tab Return**: Users return to the same tab they navigated from
+- **Seamless Navigation**: No confusion about which tab to return to
+- **Consistent Behavior**: All back navigation works predictably
+- **Context Preservation**: Tab context is maintained throughout the user journey
+- **Intuitive UX**: Users stay in their expected workflow context
+
+---
+
+## 2025-10-08: Enhanced Prerequisites Status Display
+
+### Overview
+Significantly improved the prerequisites status display for shared reports creation with detailed progress indicators, color coding, and enhanced user feedback.
+
+### Changes Made
+
+#### 1. Enhanced Student Expert Comments Block
+- **Dynamic Status Display**: 
+  - ✅ Green: All students have expert comments
+  - ⚠️ Yellow: Some students have comments (partial completion)
+  - ❌ Gray: No students have comments
+- **Progress Badge**: Shows "X/Y" format indicating how many students have comments out of total
+- **Detailed Status Text**: Contextual messages based on completion level
+- **Color-coded Background**: Visual feedback with appropriate background colors
+
+#### 2. Enhanced Student LLM Reports Block
+- **Dynamic Status Display**:
+  - ✅ Green: All students have generated LLM reports
+  - ❌ Red: Some or no students have generated reports
+- **Progress Badge**: Shows "X/Y" format indicating generated reports count
+- **Detailed Status Text**: Clear indication of completion status
+- **Color-coded Background**: Red highlighting for incomplete reports
+
+#### 3. Improved Shared Report Creation Logic
+- **Restrictive Creation**: Cannot create shared reports for students without generated LLM reports
+- **Enhanced Validation**: All students must have LLM reports before shared report creation
+- **Better User Feedback**: Clear indication of why creation might be disabled
+
+### Technical Implementation
+
+#### 1. Enhanced Status Calculation Functions
+```javascript
+const getStudentCommentsStatus = () => {
+  const totalStudents = report?.performance_data?.length || 0;
+  const studentsWithComments = Object.values(studentCommentsStatus).filter(status => status).length;
+  const allStudentsHaveComments = totalStudents > 0 && studentsWithComments === totalStudents;
+  const someStudentsHaveComments = studentsWithComments > 0;
+  
+  return {
+    totalStudents,
+    studentsWithComments,
+    allComplete: allStudentsHaveComments,
+    someComplete: someStudentsHaveComments,
+    status: allStudentsHaveComments ? 'complete' : someStudentsHaveComments ? 'partial' : 'none'
+  };
+};
+```
+
+#### 2. Dynamic Color Coding System
+```javascript
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'complete': return { bg: 'var(--green-2)', border: 'var(--green-6)', icon: '✅' };
+    case 'partial': return { bg: 'var(--yellow-2)', border: 'var(--yellow-6)', icon: '⚠️' };
+    case 'incomplete': return { bg: 'var(--red-2)', border: 'var(--red-6)', icon: '❌' };
+    default: return { bg: 'var(--gray-2)', border: 'var(--gray-6)', icon: '❌' };
+  }
+};
+```
+
+#### 3. Enhanced Database Queries
+- **Detailed Comments Data**: Fetch all comment fields to calculate exact completion status
+- **Progress Tracking**: Count filled vs empty fields for granular status
+- **Real-time Updates**: Status updates automatically when data changes
+
+#### 4. Improved Creation Validation
+```javascript
+const canCreateSharedReport = () => {
+  if (formData.reportType === 'manager') {
+    return llmStatus.hasManagerReport && llmStatus.hasManagerComments;
+  } else {
+    // For student reports, all students must have generated LLM reports
+    const reportsStatus = getStudentReportsStatus();
+    return reportsStatus.allComplete;
+  }
+};
+```
+
+### User Experience Benefits
+- **Clear Progress Indication**: Users can see exactly how many students have comments/reports
+- **Visual Status Feedback**: Color coding provides immediate understanding of completion status
+- **Prevented Errors**: Cannot create shared reports without proper prerequisites
+- **Better Planning**: Users understand what needs to be completed before proceeding
+- **Professional Appearance**: Clean, informative interface with progress indicators
+
+---
+
+## 2025-10-08: Fixed Segment Display in Student Reports Table
+
+### Overview
+Fixed the issue where segment information was not displaying in the student reports table, showing only gray dashes instead of actual segment names.
+
+### Problem Identified
+The student reports table was trying to access `student.segment` but the actual data field in the processed performance data is `student.simple_segment`.
+
+### Changes Made
+
+#### 1. Fixed Data Field Reference
+- **app/reports/[id]/preview/students/page.tsx**:
+  - Changed `student.segment` to `student.simple_segment || 'Unknown'`
+  - Added fallback to 'Unknown' for missing segment data
+
+#### 2. Enhanced Visual Presentation
+- **Color-coded Badges**: Added color coding for different segment types:
+  - **Green**: Leader engaged, Leader efficient
+  - **Blue**: Balanced + engaged, Balanced middle  
+  - **Orange**: Hardworking but struggling
+  - **Red**: Low engagement
+  - **Gray**: Unknown segments
+
+#### 3. Improved Navigation
+- **Tab Parameter Preservation**: Updated "View Report" button to preserve tab parameter when navigating to individual student pages
+
+### Technical Implementation
+
+#### 1. Data Field Correction
+```javascript
+// Before
+<Badge color="blue">{student.segment}</Badge>
+
+// After  
+<Badge color={getSegmentColor(student.simple_segment || 'Unknown')}>
+  {student.simple_segment || 'Unknown'}
+</Badge>
+```
+
+#### 2. Color Coding Function
+```javascript
+const getSegmentColor = (segment: string) => {
+  switch (segment) {
+    case 'Leader engaged':
+    case 'Leader efficient':
+      return 'green';
+    case 'Balanced + engaged':
+    case 'Balanced middle':
+      return 'blue';
+    case 'Hardworking but struggling':
+      return 'orange';
+    case 'Low engagement':
+      return 'red';
+    default:
+      return 'gray';
+  }
+};
+```
+
+#### 3. Navigation Enhancement
+```javascript
+onClick={() => {
+  const tab = searchParams.get('tab') || 'preview';
+  router.push(`/student/${student.user_id}?reportId=${params.id}&tab=${tab}`);
+}}
+```
+
+### User Experience Benefits
+- **Visible Segment Information**: Students' performance segments are now clearly displayed
+- **Color-coded Categories**: Easy visual identification of different performance levels
+- **Consistent Navigation**: Tab context is preserved when viewing individual student reports
+- **Better Data Understanding**: Users can quickly identify student performance patterns
+
+---
+
+## 2025-10-08: Added Expert Comments Recommendation to LLM Report Generation
+
+### Overview
+Added an informational card on the LLM Report Generation page to encourage users to fill in expert comments before generating reports, with a direct link to the comments management page.
+
+### Changes Made
+
+#### 1. Enhanced LLM Report Generation Page
+- **app/reports/[id]/preview/llm/page.tsx**:
+  - Added recommendation card above the LLM report generation buttons
+  - Included informative text about the importance of expert comments
+  - Added direct navigation button to the comments management page
+  - Preserved tab parameter in navigation for consistent user experience
+
+#### 2. User Experience Improvements
+- **Clear Guidance**: Users are now informed about the benefits of expert comments
+- **Direct Access**: One-click navigation to manage expert comments
+- **Contextual Placement**: Recommendation appears before the generation buttons
+- **Consistent Navigation**: Tab parameter is preserved when navigating to comments
+
+### Technical Implementation
+
+#### 1. Recommendation Card Structure
+```javascript
+<Card mb="4">
+  <Flex direction="column" gap="3">
+    <Box>
+      <Text size="3" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>
+        💡 Recommendation for Better Reports
+      </Text>
+      <Text size="2" color="gray" style={{ display: 'block' }}>
+        For more comprehensive and personalized LLM reports, it is highly recommended to fill in expert comments before generation. Expert insights significantly improve the quality and relevance of AI-generated content.
+      </Text>
+    </Box>
+    <Button 
+      size="2" 
+      variant="soft"
+      onClick={() => {
+        const tab = searchParams.get('tab') || 'preview';
+        router.push(`/reports/${params.id}/preview/comments?tab=${tab}`);
+      }}
+    >
+      📝 Manage Expert Comments
+    </Button>
+  </Flex>
+</Card>
+```
+
+#### 2. Navigation Enhancement
+- **Tab Parameter Preservation**: Maintains current tab context when navigating to comments
+- **Consistent User Flow**: Seamless transition between report generation and comments management
+
+### User Experience Benefits
+- **Improved Report Quality**: Users are guided to add expert comments for better AI-generated content
+- **Clear Workflow**: Logical progression from comments to report generation
+- **Easy Access**: Direct link to comments management without losing context
+- **Educational Value**: Users understand the importance of expert insights in report generation
+
+---
+
+## 2025-10-08: Enhanced Comments Status Display on LLM Report Generation
+
+### Overview
+Enhanced the LLM Report Generation page with detailed comments status information, showing both program-level and individual student comment statistics to help users understand the current state of expert feedback.
+
+### Changes Made
+
+#### 1. Added Comments Status Tracking
+- **app/reports/[id]/preview/llm/page.tsx**:
+  - Added `commentsStatus` state to track comment statistics
+  - Implemented `fetchCommentsStatus()` function to gather comprehensive comment data
+  - Added automatic status fetching when report and admin status are available
+
+#### 2. Enhanced Status Display
+- **Program-level Comments**: Shows status of Program Expert, Teaching Assistants, and Learning Support comments
+- **Individual Student Comments**: Displays statistics for student-specific comments
+- **Visual Indicators**: Color-coded status with ✅/❌ icons and green/red text
+- **Detailed Statistics**: Shows exact counts of comments by type and total students with comments
+
+#### 3. User Experience Improvements
+- **Real-time Status**: Comments status is fetched and displayed automatically
+- **Clear Visual Hierarchy**: Organized display with distinct sections for program and student comments
+- **Comprehensive Overview**: Users can see exactly what comments are missing before generating reports
+
+### Technical Implementation
+
+#### 1. Comments Status Data Structure
+```javascript
+const commentsStatus = {
+  program: {
+    expert: boolean,
+    teaching: boolean,
+    support: boolean,
+  },
+  students: {
+    total: number,
+    withComments: number,
+    stats: {
+      expert: number,
+      teaching: number,
+      support: number,
+    },
+  },
+};
+```
+
+#### 2. Status Fetching Logic
+```javascript
+const fetchCommentsStatus = async () => {
+  // Fetch program-level comments from reports table
+  const { data: reportData } = await supabase
+    .from('reports')
+    .select('comment_program_expert, comment_teaching_assistants, comment_learning_support')
+    .eq('id', params.id)
+    .single();
+
+  // Fetch student-level comments from student_comments table
+  const { data: studentComments } = await supabase
+    .from('student_comments')
+    .select('user_id, comment_program_expert, comment_teaching_assistants, comment_learning_support')
+    .eq('report_id', params.id);
+
+  // Process and count comments...
+};
+```
+
+#### 3. Enhanced Status Display
+```javascript
+{/* Program-level comments */}
+<Flex gap="2" wrap="wrap">
+  <Text size="1" color={commentsStatus.program.expert ? 'green' : 'red'}>
+    {commentsStatus.program.expert ? '✅' : '❌'} Program Expert
+  </Text>
+  <Text size="1" color={commentsStatus.program.teaching ? 'green' : 'red'}>
+    {commentsStatus.program.teaching ? '✅' : '❌'} Teaching Assistants
+  </Text>
+  <Text size="1" color={commentsStatus.program.support ? 'green' : 'red'}>
+    {commentsStatus.program.support ? '✅' : '❌'} Learning Support
+  </Text>
+</Flex>
+
+{/* Student-level comments */}
+<Text size="1" color="gray">
+  {commentsStatus.students.withComments} of {commentsStatus.students.total} students have at least one comment
+</Text>
+```
+
+### User Experience Benefits
+- **Complete Visibility**: Users can see exactly which comments are filled and which are missing
+- **Progress Tracking**: Clear indication of how many students have received expert feedback
+- **Informed Decisions**: Users can make better decisions about when to generate reports
+- **Efficiency**: No need to navigate to comments page to check status
+- **Professional Interface**: Clean, organized display of comment statistics
+

@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // If admin or creator, fetch access list
-    let accessList = [];
+    let accessList: any[] = [];
     if (isAdmin || isCreator) {
       const { data: accessData } = await supabase
         .from('report_access')
