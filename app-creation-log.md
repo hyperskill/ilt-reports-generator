@@ -1141,3 +1141,609 @@ DROP CONSTRAINT IF EXISTS shared_reports_source_report_id_user_id_report_type_ke
 - Multiple shared report versions per student are now supported
 - Each shared report can have different block configurations
 
+---
+
+## 2025-10-08: Shared Reports Management Interface
+
+### Overview
+Created a comprehensive management interface for shared reports, allowing admins to create, edit, delete, and manage shared reports from the main report page.
+
+### Changes Made
+
+#### 1. Main Report Page Integration
+- **app/reports/[id]/page.tsx**:
+  - Added "📤 Manage Shared Reports" button for admins
+  - Button appears only for users with admin role
+  - Links to the new shared reports management page
+
+#### 2. Shared Reports Management Page
+- **app/reports/[id]/shared/page.tsx**:
+  - Complete management interface for shared reports
+  - Lists all existing shared reports with details
+  - Create new shared reports with validation
+  - Edit, view, and delete existing shared reports
+  - Prerequisites check before creation
+
+#### 3. Prerequisites Validation
+- **LLM Reports Check**: Verifies manager and student LLM reports are generated
+- **Comments Check**: Ensures expert comments are added before creating shared reports
+- **Visual Indicators**: Clear ✅/❌ status for each requirement
+- **Guidance**: Helpful messages explaining what needs to be done
+
+#### 4. API Endpoints
+- **app/api/reports/shared/list/route.ts**: GET endpoint for listing shared reports
+- **app/api/reports/shared/[id]/route.ts**: Enhanced with DELETE method
+- Proper admin authentication and authorization
+
+### User Interface Features
+
+#### Prerequisites Check
+- **Manager LLM Report**: ✅ Generated / ❌ Not generated
+- **Student LLM Reports**: ✅ Generated / ❌ Not generated  
+- **Expert Comments**: ✅ Added / ❌ Not added
+- **Guidance Messages**: Clear instructions on what to do next
+
+#### Shared Reports List
+- **Table View**: Title, Type, Student, Status, Created date
+- **Actions**: View, Edit, Delete buttons for each report
+- **Status Badges**: Manager/Student type, Public/Private status
+- **Empty State**: Helpful message when no reports exist
+
+#### Create Dialog
+- **Report Type Selection**: Manager or Student
+- **Student Selection**: Dropdown with all students (for student reports)
+- **Title & Description**: Required title, optional description
+- **Validation**: Prevents creation without prerequisites
+
+### Technical Implementation
+1. **Access Control**: Admin-only access with proper authentication
+2. **Data Validation**: Comprehensive checks before report creation
+3. **Error Handling**: User-friendly error messages and loading states
+4. **Navigation**: Seamless integration with existing report workflow
+
+### User Experience
+- **One-Click Access**: Direct link from main report page
+- **Clear Prerequisites**: Visual indicators of what's needed
+- **Comprehensive Management**: Full CRUD operations in one interface
+- **Guided Workflow**: Step-by-step guidance for report creation
+- **Consistent Design**: Matches existing application styling
+
+### Integration Points
+- **Main Report Page**: New management button for admins
+- **Existing Shared Reports**: Full compatibility with existing functionality
+- **LLM Generation**: Integrates with existing LLM report workflow
+- **Comments System**: Works with existing expert comments feature
+
+---
+
+## 2025-10-08: Enhanced Prerequisites Interface
+
+### Overview
+Redesigned the prerequisites check interface to provide clearer, more actionable guidance for creating shared reports. Split the interface into separate sections for manager and student reports with direct action buttons.
+
+### Changes Made
+
+#### 1. Restructured Prerequisites Interface
+- **app/reports/[id]/shared/page.tsx**:
+  - Split into two separate cards: "Manager Report Prerequisites" and "Student Report Prerequisites"
+  - Each card shows specific steps with visual status indicators
+  - Added direct action buttons for each prerequisite step
+
+#### 2. Manager Report Prerequisites
+- **Expert Comments**: 
+  - Status indicator (✅/❌) with color-coded background
+  - "Add Comments" / "Edit Comments" button
+  - Opens popup dialog with three comment fields
+- **Manager LLM Report**:
+  - Status indicator with color-coded background
+  - "Generate Report" / "View Report" button
+  - Links to manager report page
+
+#### 3. Student Report Prerequisites
+- **Expert Comments**:
+  - Status indicator with color-coded background
+  - "Manage Student Comments" button
+  - Links to student reports page for individual student comments
+- **Student LLM Reports**:
+  - Status indicator with color-coded background
+  - "Generate Reports" / "View Reports" button
+  - Links to student reports page
+
+#### 4. Comments Management Dialog
+- **Popup Dialog**: Three separate text areas for:
+  - Program Expert Comments
+  - Teaching Assistants Comments
+  - Learning Support Comments
+- **Save Functionality**: Updates comments in the database
+- **Auto-refresh**: Updates status indicators after saving
+
+#### 5. API Enhancement
+- **app/api/reports/[id]/route.ts**:
+  - Enhanced PATCH endpoint to support comment updates
+  - Added support for `comment_program_expert`, `comment_teaching_assistants`, `comment_learning_support`
+
+### User Interface Features
+
+#### Visual Status Indicators
+- **Green Background**: Prerequisite completed (✅)
+- **Orange Background**: Prerequisite pending (❌)
+- **Color-coded Borders**: Consistent with status
+- **Clear Labels**: Descriptive text for each step
+
+#### Action Buttons
+- **Context-aware**: Button text changes based on status
+- **Direct Navigation**: Links to relevant pages for completion
+- **Inline Actions**: Comments can be added/edited without leaving the page
+
+#### Improved Workflow
+- **Step-by-step Guidance**: Clear progression through prerequisites
+- **Immediate Feedback**: Status updates after each action
+- **Reduced Confusion**: Separate sections for different report types
+
+### Technical Implementation
+1. **State Management**: Added comments state and dialog management
+2. **API Integration**: Enhanced report update endpoint for comments
+3. **Data Loading**: Automatic loading of existing comments
+4. **Status Updates**: Real-time status refresh after actions
+
+### User Experience
+- **Clearer Instructions**: Specific steps for each report type
+- **Reduced Clicks**: Direct action buttons for each prerequisite
+- **Visual Feedback**: Immediate status updates and color coding
+- **Guided Workflow**: Step-by-step progression through requirements
+- **Context-aware Actions**: Buttons adapt based on current status
+
+---
+
+## 2025-10-08: Fixed Student Comments Status Logic
+
+### Issue
+The "Expert Comments" status for student reports was incorrectly showing as completed when program-level comments were filled, instead of checking for individual student comments.
+
+### Solution
+**Separated Comment Status Logic:**
+- **Manager Comments**: Checks program-level comments (`comment_program_expert`, `comment_teaching_assistants`, `comment_learning_support`)
+- **Student Comments**: Checks individual student comments in `student_comments` table
+
+**Enhanced Student Comments Interface:**
+- **Accordion Component**: Added collapsible section with individual student links
+- **Direct Navigation**: Each student has a button linking to their personal report page (`/student/[userId]?reportId=[reportId]`)
+- **Individual Management**: Comments are managed per student, not globally
+
+### Changes Made
+
+#### 1. State Management Update
+- **app/reports/[id]/shared/page.tsx**:
+  - Split `hasComments` into `hasManagerComments` and `hasStudentComments`
+  - Updated status checking logic to differentiate between comment types
+
+#### 2. Status Check Logic
+- **Manager Comments**: Checks `reports` table for program-level comments
+- **Student Comments**: Checks `student_comments` table for individual student comments
+- **Independent Status**: Each type has its own status indicator
+
+#### 3. Student Comments Interface
+- **Accordion Design**: Collapsible section titled "👥 View Individual Student Reports"
+- **Student Links**: Individual buttons for each student linking to `/student/[userId]?reportId=[reportId]`
+- **Clear Labeling**: "👤 [Student Name] - Add/Edit Comments"
+
+#### 4. Visual Indicators
+- **Manager Section**: Shows status based on program-level comments
+- **Student Section**: Shows status based on individual student comments
+- **Color Coding**: Green for completed, orange for pending
+
+### Technical Implementation
+1. **Database Queries**: Separate queries for manager vs student comments
+2. **State Separation**: Independent status tracking for each comment type
+3. **UI Components**: Accordion with dynamic student list
+4. **Navigation**: Direct links to individual student report pages
+
+### User Experience
+- **Accurate Status**: Student comments status now reflects actual individual comments
+- **Easy Access**: Accordion provides quick access to all student report pages
+- **Clear Separation**: Manager and student comment requirements are clearly distinguished
+- **Individual Management**: Each student's comments can be managed independently
+
+---
+
+## 2025-10-08: Enhanced Student Report Pages with Expert Comments
+
+### Overview
+Enhanced individual student report pages to include dedicated sections for expert comments, allowing admins to add specific comments from Program Expert, Teaching Assistants, and Learning Support for each student.
+
+### Changes Made
+
+#### 1. Student Report Page Enhancement
+- **app/reports/[id]/student-reports/[userId]/page.tsx**:
+  - Added three new state variables for expert comments
+  - Enhanced data loading to fetch existing expert comments
+  - Updated save functionality to persist expert comments
+  - Added new UI section for expert comments management
+
+#### 2. Expert Comments Interface
+- **New Section**: "Expert Comments" card with three separate text areas
+- **Individual Fields**:
+  - Program Expert Comments
+  - Teaching Assistants Comments  
+  - Learning Support Comments
+- **Admin Only**: Section visible only to admin users
+- **Auto-save**: Comments are saved along with the main report
+
+#### 3. Data Management
+- **Loading**: Fetches existing comments from `student_comments` table
+- **Saving**: Uses `upsert` to create or update comment records
+- **Integration**: Comments are saved alongside the main student report
+
+#### 4. User Interface
+- **Clear Labeling**: Each comment field has descriptive labels
+- **Placeholder Text**: Helpful placeholder text for each field
+- **Consistent Styling**: Matches existing page design
+- **Responsive Layout**: Proper spacing and organization
+
+### Technical Implementation
+1. **State Management**: Added three new state variables for expert comments
+2. **Database Integration**: Uses `student_comments` table for persistence
+3. **Error Handling**: Proper error handling for comment operations
+4. **Data Loading**: Automatic loading of existing comments on page load
+
+### User Experience
+- **Individual Comments**: Each student can have unique expert comments
+- **Role-based Comments**: Separate fields for different expert roles
+- **Easy Management**: Comments are managed directly on student report pages
+- **Persistent Storage**: Comments are automatically saved and loaded
+- **Admin Control**: Only admins can view and edit expert comments
+
+### Integration Points
+- **Shared Reports**: Comments are used in shared student reports
+- **Status Checking**: Comments status is checked for shared report prerequisites
+- **Data Flow**: Comments flow from individual pages to shared reports
+
+---
+
+## 2025-10-08: Added Individual Student Report Status Accordion
+
+### Overview
+Added a detailed accordion under the "Student LLM Reports" section that shows the generation status for each individual student, allowing admins to see exactly which students have generated reports and which don't.
+
+### Changes Made
+
+#### 1. Enhanced Status Tracking
+- **app/reports/[id]/shared/page.tsx**:
+  - Added `studentReportsStatus` state to track individual student report status
+  - Enhanced `checkLlmStatus` function to create detailed status map
+  - Added logic to mark which students have generated reports
+
+#### 2. Individual Status Accordion
+- **New Accordion**: "📊 View Individual Student Report Status"
+- **Student List**: Shows each student with their individual report status
+- **Visual Indicators**: 
+  - ✅ Green background for students with generated reports
+  - ❌ Orange background for students without generated reports
+- **Status Text**: "Report generated" or "Not generated"
+
+#### 3. Data Management
+- **Status Map**: Creates a map of `user_id` → `boolean` for report status
+- **Real-time Updates**: Status updates when data is refreshed
+- **Comprehensive Coverage**: Shows status for all students in the report
+
+### User Interface Features
+
+#### Visual Status Indicators
+- **Green Background**: Students with generated LLM reports (✅)
+- **Orange Background**: Students without generated reports (❌)
+- **Clear Labels**: Student names with status text
+- **Consistent Styling**: Matches existing accordion design
+
+#### Accordion Design
+- **Collapsible Section**: "📊 View Individual Student Report Status"
+- **Individual Rows**: Each student gets their own status row
+- **Responsive Layout**: Proper spacing and organization
+- **Easy Scanning**: Quick visual identification of status
+
+### Technical Implementation
+1. **State Management**: Added `studentReportsStatus` state for individual tracking
+2. **Database Queries**: Enhanced to fetch `user_id` from `student_reports` table
+3. **Status Mapping**: Creates comprehensive status map for all students
+4. **UI Components**: Accordion with individual student status rows
+
+### User Experience
+- **Detailed Visibility**: See exactly which students need report generation
+- **Quick Assessment**: Visual indicators for immediate status recognition
+- **Comprehensive Overview**: All students listed with their individual status
+- **Easy Navigation**: Accordion keeps interface clean while providing detail
+
+---
+
+## 2025-10-08: Added Individual Student Comments Status Indicators
+
+### Overview
+Enhanced the "View Individual Student Reports" accordion to show individual comment status for each student, displaying a checkmark (✅) for students who have expert comments and a person icon (👤) for those who don't.
+
+### Changes Made
+
+#### 1. Enhanced Comments Status Tracking
+- **app/reports/[id]/shared/page.tsx**:
+  - Added `studentCommentsStatus` state to track individual student comment status
+  - Enhanced `checkLlmStatus` function to create detailed comments status map
+  - Added logic to mark which students have expert comments
+
+#### 2. Visual Status Indicators in Student List
+- **Updated Student Buttons**: Now show individual comment status
+- **Visual Indicators**: 
+  - ✅ Checkmark for students with expert comments
+  - 👤 Person icon for students without comments
+- **Status Text**: Maintains "Add/Edit Comments" text for clarity
+
+#### 3. Data Management
+- **Comments Status Map**: Creates a map of `user_id` → `boolean` for comment status
+- **Real-time Updates**: Status updates when data is refreshed
+- **Comprehensive Coverage**: Shows status for all students in the report
+
+### User Interface Features
+
+#### Visual Status Indicators
+- **✅ Checkmark**: Students with at least one expert comment
+- **👤 Person Icon**: Students without expert comments
+- **Clear Labels**: Student names with "Add/Edit Comments" text
+- **Consistent Styling**: Matches existing button design
+
+#### Enhanced User Experience
+- **Quick Visual Assessment**: Immediately see which students have comments
+- **Targeted Actions**: Focus on students who need comment attention
+- **Status Clarity**: Clear distinction between commented and uncommented students
+- **Efficient Workflow**: Streamlined comment management process
+
+### Technical Implementation
+1. **State Management**: Added `studentCommentsStatus` state for individual comment tracking
+2. **Database Queries**: Enhanced to fetch `user_id` from `student_comments` table
+3. **Status Mapping**: Creates comprehensive status map for all students
+4. **UI Components**: Updated student buttons with conditional icon rendering
+
+### User Experience Benefits
+- **Immediate Recognition**: Visual indicators for instant status assessment
+- **Workflow Efficiency**: Quickly identify students needing attention
+- **Progress Tracking**: Clear view of comment completion status
+- **Reduced Cognitive Load**: Visual cues eliminate need to remember status
+
+---
+
+## 2025-10-08: Improved Block Spacing in Prerequisites Section
+
+### Overview
+Enhanced the visual spacing between prerequisite blocks to improve readability and prevent text from appearing "slipped together" as reported by users.
+
+### Changes Made
+
+#### 1. Increased Container Gap
+- **app/reports/[id]/shared/page.tsx**:
+  - Changed `gap="3"` to `gap="4"` in all `Flex direction="column"` containers
+  - Applied to both Manager and Student Report Prerequisites sections
+
+#### 2. Added Individual Block Margins
+- **Expert Comments Block**: Added `mb="2"` for additional bottom margin
+- **Manager LLM Report Block**: Added `mb="2"` for additional bottom margin  
+- **Student Expert Comments Block**: Added `mb="2"` for additional bottom margin
+- **Student LLM Reports Block**: Added `mb="2"` for additional bottom margin
+
+### Visual Improvements
+
+#### Enhanced Spacing
+- **Container Gap**: Increased from 12px to 16px between blocks
+- **Block Margins**: Added 8px bottom margin to each prerequisite block
+- **Total Separation**: Combined spacing provides clear visual separation
+
+#### Better Readability
+- **Clear Block Boundaries**: Each prerequisite block is now clearly separated
+- **Improved Text Flow**: Text no longer appears "slipped together"
+- **Professional Appearance**: Clean, well-spaced interface design
+
+### Technical Implementation
+1. **Container Updates**: Modified all `Flex direction="column"` containers to use `gap="4"`
+2. **Block Updates**: Added `mb="2"` to all prerequisite blocks
+3. **Consistent Spacing**: Applied changes uniformly across both prerequisite sections
+
+### User Experience Benefits
+- **Better Visual Hierarchy**: Clear separation between different prerequisite steps
+- **Improved Readability**: Text and blocks are no longer visually cramped
+- **Professional Look**: Clean, well-spaced interface that's easy to scan
+- **Reduced Eye Strain**: Better spacing reduces visual fatigue
+
+---
+
+## 2025-10-08: Fixed Inline Text Display in Prerequisites Blocks
+
+### Overview
+Fixed the "slipped together" text appearance in prerequisite blocks by converting inline text elements to block-level elements, ensuring proper vertical spacing between titles and descriptions.
+
+### Changes Made
+
+#### 1. Converted Inline Text to Block Elements
+- **app/reports/[id]/shared/page.tsx**:
+  - Added `display: 'block'` to all title and description text elements
+  - Added `marginBottom: '4px'` to title elements for proper spacing
+  - Applied to all prerequisite blocks in both Manager and Student sections
+
+#### 2. Updated Text Structure
+- **Expert Comments Block**: Title and description now display on separate lines
+- **Manager LLM Report Block**: Title and description now display on separate lines
+- **Student Expert Comments Block**: Title and description now display on separate lines
+- **Student LLM Reports Block**: Title and description now display on separate lines
+
+### Visual Improvements
+
+#### Proper Text Layout
+- **Block Display**: Text elements now display as block-level elements
+- **Vertical Spacing**: 4px margin between title and description
+- **Clear Separation**: Titles and descriptions are no longer "slipped together"
+- **Better Readability**: Each text element has its own line
+
+#### Enhanced Typography
+- **Title Elements**: Bold titles with proper bottom margin
+- **Description Elements**: Gray descriptions on separate lines
+- **Consistent Spacing**: Uniform 4px spacing across all blocks
+- **Professional Appearance**: Clean, well-structured text layout
+
+### Technical Implementation
+1. **CSS Styling**: Added inline styles to Text components
+2. **Display Properties**: Set `display: 'block'` for proper block-level rendering
+3. **Margin Control**: Added `marginBottom: '4px'` for consistent spacing
+4. **Universal Application**: Applied changes to all prerequisite blocks
+
+### User Experience Benefits
+- **Clear Text Hierarchy**: Titles and descriptions are visually distinct
+- **Improved Readability**: No more "slipped together" text appearance
+- **Better Scanning**: Easy to distinguish between different text elements
+- **Professional Look**: Clean, well-structured text layout
+
+---
+
+## 2025-10-08: Enhanced Student Selection in Shared Report Creation
+
+### Overview
+Improved the student selection process in the shared report creation form by filtering students based on LLM report generation status, adding descriptive text, and improving form spacing.
+
+### Changes Made
+
+#### 1. Filtered Student Selection
+- **app/reports/[id]/shared/page.tsx**:
+  - Updated `getStudents()` function to filter only students with generated LLM reports
+  - Added filter: `studentReportsStatus[student.user_id]` to show only eligible students
+  - Ensures only students with existing LLM reports can have shared reports created
+
+#### 2. Added Descriptive Text
+- **Student Selection Section**: Added explanatory text before the student dropdown
+- **Clear Messaging**: "Only students with generated LLM reports are available for shared report creation."
+- **User Guidance**: Helps users understand why certain students may not appear in the list
+
+#### 3. Improved Form Spacing
+- **Label Spacing**: Increased `mb` from "2" to "3" for all form labels
+- **Consistent Spacing**: Applied to Report Type, Student, Title, and Description fields
+- **Better Visual Hierarchy**: Clear separation between labels and form elements
+
+### User Interface Features
+
+#### Smart Student Filtering
+- **Automatic Filtering**: Only shows students with generated LLM reports
+- **Dynamic Updates**: List updates based on current LLM report generation status
+- **Prevents Errors**: Eliminates possibility of creating shared reports for students without LLM reports
+
+#### Enhanced Form Design
+- **Descriptive Text**: Gray explanatory text before student selection
+- **Improved Spacing**: 12px margin between labels and form elements (was 8px)
+- **Professional Layout**: Clean, well-spaced form design
+
+#### User Experience Improvements
+- **Clear Expectations**: Users understand why some students aren't available
+- **Reduced Confusion**: No empty dropdowns or invalid selections
+- **Better Workflow**: Streamlined process for creating shared reports
+
+### Technical Implementation
+1. **Filter Logic**: Enhanced `getStudents()` function with status-based filtering
+2. **State Integration**: Uses `studentReportsStatus` state for filtering
+3. **UI Components**: Added descriptive text and improved spacing
+4. **Form Validation**: Ensures only valid students can be selected
+
+### User Experience Benefits
+- **Prevents Errors**: No shared reports can be created for students without LLM reports
+- **Clear Communication**: Users understand the selection criteria
+- **Improved Usability**: Better form spacing and visual hierarchy
+- **Streamlined Workflow**: Faster, more intuitive shared report creation
+
+---
+
+## 2025-10-08: Fixed Inline Text Display in Shared Report Creation Form
+
+### Overview
+Fixed the "slipped together" text appearance in the shared report creation form by ensuring all text elements display as block-level elements with proper spacing.
+
+### Changes Made
+
+#### 1. Fixed Descriptive Text Display
+- **app/reports/[id]/shared/page.tsx**:
+  - Updated descriptive text for student selection to use `display: 'block'`
+  - Added `marginTop: '4px'` for proper spacing from the label
+  - Ensured text appears on a separate line from the "Student" label
+
+#### 2. Enhanced Text Spacing
+- **Block Display**: All descriptive text now displays as block-level elements
+- **Proper Margins**: Added top margin to separate descriptive text from labels
+- **Clear Separation**: Text elements no longer appear "slipped together"
+
+### Visual Improvements
+
+#### Proper Text Layout
+- **Block Display**: Descriptive text displays as block-level elements
+- **Vertical Spacing**: 4px top margin between label and descriptive text
+- **Clear Separation**: Labels and descriptions are visually distinct
+- **Better Readability**: Each text element has proper spacing
+
+#### Enhanced Form Design
+- **Consistent Spacing**: All form elements have proper vertical spacing
+- **Professional Layout**: Clean, well-structured form design
+- **Improved Hierarchy**: Clear visual distinction between different text elements
+
+### Technical Implementation
+1. **CSS Styling**: Added inline styles to descriptive text elements
+2. **Display Properties**: Set `display: 'block'` for proper block-level rendering
+3. **Margin Control**: Added `marginTop: '4px'` for consistent spacing
+4. **Form Consistency**: Applied changes to maintain uniform form design
+
+### User Experience Benefits
+- **Clear Text Hierarchy**: Labels and descriptions are visually distinct
+- **Improved Readability**: No more "slipped together" text appearance
+- **Better Scanning**: Easy to distinguish between different text elements
+- **Professional Look**: Clean, well-structured form layout
+
+---
+
+## 2025-10-08: Enhanced Student Selection with Auto-Selection and Error Handling
+
+### Overview
+Improved the student selection in the shared report creation form by adding automatic selection of the first available student and displaying a warning message when no students with LLM reports are available.
+
+### Changes Made
+
+#### 1. Fixed Report Type Label Spacing
+- **app/reports/[id]/shared/page.tsx**:
+  - Updated "Report Type" label to use inline styles for proper block display
+  - Ensured consistent spacing with other form labels
+
+#### 2. Auto-Selection of First Student
+- **Automatic Selection**: Added useEffect to auto-select first available student
+- **Smart Logic**: Only selects when report type is 'student' and no student is currently selected
+- **Dynamic Updates**: Re-selects when student reports status changes
+
+#### 3. Enhanced Error Handling
+- **Conditional Rendering**: Shows select dropdown only when students are available
+- **Warning Message**: Displays orange warning box when no students with LLM reports exist
+- **Clear Guidance**: Provides actionable message to generate LLM reports first
+
+### User Interface Features
+
+#### Smart Student Selection
+- **Auto-Selection**: First available student is automatically selected
+- **Dynamic Updates**: Selection updates when student reports status changes
+- **Seamless Experience**: Users don't need to manually select if only one option exists
+
+#### Enhanced Error States
+- **Visual Warning**: Orange warning box with clear message
+- **Actionable Guidance**: Tells users exactly what to do (generate LLM reports)
+- **Professional Design**: Consistent with other warning states in the app
+
+#### Improved Form Flow
+- **Reduced Friction**: Automatic selection reduces manual steps
+- **Clear Feedback**: Users immediately understand if students are available
+- **Better UX**: Smooth workflow from report type selection to student selection
+
+### Technical Implementation
+1. **Auto-Selection Logic**: useEffect hook monitors form state and student availability
+2. **Conditional Rendering**: Ternary operator shows select or warning based on availability
+3. **State Management**: Form state automatically updates with first available student
+4. **Error Handling**: Graceful fallback when no students are available
+
+### User Experience Benefits
+- **Reduced Manual Steps**: Automatic selection of first available student
+- **Clear Error States**: Users understand when and why student selection isn't available
+- **Improved Workflow**: Smoother transition from report type to student selection
+- **Better Guidance**: Clear instructions on what to do when no students are available
+

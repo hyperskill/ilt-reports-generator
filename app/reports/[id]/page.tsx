@@ -84,6 +84,14 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
             )}
           </Box>
           <Flex gap="2" align="center">
+            {isAdmin && (
+              <Button 
+                variant="outline"
+                onClick={() => router.push(`/reports/${params.id}/shared`)}
+              >
+                📤 Manage Shared Reports
+              </Button>
+            )}
             <Button 
               variant="soft" 
               onClick={() => {

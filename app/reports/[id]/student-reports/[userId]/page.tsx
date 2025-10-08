@@ -26,6 +26,11 @@ export default function StudentReportEditPage({
   const [instructorFeedback, setInstructorFeedback] = useState('');
   const [growthOpportunities, setGrowthOpportunities] = useState('');
   const [nextSteps, setNextSteps] = useState('');
+  
+  // Expert comments
+  const [commentProgramExpert, setCommentProgramExpert] = useState('');
+  const [commentTeachingAssistants, setCommentTeachingAssistants] = useState('');
+  const [commentLearningSupport, setCommentLearningSupport] = useState('');
 
   useEffect(() => {
     checkAdminAndLoadReport();
@@ -85,6 +90,20 @@ export default function StudentReportEditPage({
         setGrowthOpportunities(content.growthOpportunities || '');
         setNextSteps(content.nextSteps || '');
       }
+
+      // Load expert comments
+      const { data: commentsData } = await supabase
+        .from('student_comments')
+        .select('*')
+        .eq('report_id', params.id)
+        .eq('user_id', params.userId)
+        .single();
+
+      if (commentsData) {
+        setCommentProgramExpert(commentsData.comment_program_expert || '');
+        setCommentTeachingAssistants(commentsData.comment_teaching_assistants || '');
+        setCommentLearningSupport(commentsData.comment_learning_support || '');
+      }
     } catch (error) {
       console.error('Failed to load student report:', error);
     } finally {
@@ -137,7 +156,22 @@ export default function StudentReportEditPage({
         throw new Error(error.message);
       }
 
-      alert('Report saved successfully!');
+      // Save expert comments
+      const { error: commentsError } = await supabase
+        .from('student_comments')
+        .upsert({
+          report_id: params.id,
+          user_id: params.userId,
+          comment_program_expert: commentProgramExpert,
+          comment_teaching_assistants: commentTeachingAssistants,
+          comment_learning_support: commentLearningSupport,
+        });
+
+      if (commentsError) {
+        throw new Error(commentsError.message);
+      }
+
+      alert('Report and comments saved successfully!');
       await loadReport();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -268,6 +302,55 @@ export default function StudentReportEditPage({
                 />
               </Flex>
             </Card>
+
+            {isAdmin && (
+              <Card>
+                <Flex direction="column" gap="4">
+                  <Heading size="5">Expert Comments</Heading>
+                  <Text size="2" color="gray" mb="2">
+                    Add individual comments from different expert roles for this student.
+                  </Text>
+                  
+                  <Flex direction="column" gap="3">
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                        Program Expert Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from the program expert..."
+                        value={commentProgramExpert}
+                        onChange={(e) => setCommentProgramExpert(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                        Teaching Assistants Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from teaching assistants..."
+                        value={commentTeachingAssistants}
+                        onChange={(e) => setCommentTeachingAssistants(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" display="block">
+                        Learning Support Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from learning support..."
+                        value={commentLearningSupport}
+                        onChange={(e) => setCommentLearningSupport(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+                  </Flex>
+                </Flex>
+              </Card>
+            )}
 
             <Card>
               <Flex direction="column" gap="4">

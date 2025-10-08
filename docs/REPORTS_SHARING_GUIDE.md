@@ -12,16 +12,41 @@ The Reports Sharing feature allows admins to create customizable, shareable vers
 
 ## Quick Start
 
-### 1. Create a Shared Report
+### 1. Access Shared Reports Management
 
-1. Navigate to any LLM-generated report (Manager or Student)
-2. Click the **"📤 Share Report"** button
-3. Enter a title and optional description
-4. Click **"Create & Edit"**
+1. Navigate to any saved report (e.g., `http://localhost:3000/reports/[report-id]`)
+2. Click the **"📤 Manage Shared Reports"** button (admin only)
+3. You'll see the Shared Reports management page
+
+### 2. Prerequisites Check
+
+The interface is now split into two clear sections:
+
+#### 📊 Manager Report Prerequisites
+- **Expert Comments**: Add comments from Program Expert, Teaching Assistants, and Learning Support
+  - Click "Add Comments" to open a popup with three comment fields
+- **Manager LLM Report**: Generate AI-powered manager report
+  - Click "Generate Report" to create the LLM report
+
+#### 👤 Student Report Prerequisites  
+- **Student Expert Comments**: Add individual comments for each student
+  - Expand "👥 View Individual Student Reports" accordion
+  - Click individual student buttons to go to their personal report page
+  - Add/edit expert comments on the student's personal report page
+- **Student LLM Reports**: Generate AI-powered reports for students
+  - Click "Generate Reports" to go to student reports page
+
+### 3. Create a Shared Report
+
+1. Click **"➕ Create New Shared Report"**
+2. Select report type (Manager or Student)
+3. For student reports, select the specific student
+4. Enter title and optional description
+5. Click **"Create & Edit"**
 
 You'll be taken to the Report Builder.
 
-### 2. Edit Blocks in Report Builder
+### 4. Edit Blocks in Report Builder
 
 **Reorder blocks:**
 - Drag any block by the `⋮⋮` handle
@@ -501,4 +526,4 @@ For issues or questions:
 ---
 
 **Last Updated:** 2025-10-08  
-**Version:** 1.4 (Topic links integration + enhanced block management)
+**Version:** 1.7 (Fixed student comments status logic + accordion interface)

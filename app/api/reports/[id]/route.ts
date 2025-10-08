@@ -54,11 +54,20 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { title, description } = body;
+    const { 
+      title, 
+      description, 
+      comment_program_expert, 
+      comment_teaching_assistants, 
+      comment_learning_support 
+    } = body;
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
+    if (comment_program_expert !== undefined) updateData.comment_program_expert = comment_program_expert;
+    if (comment_teaching_assistants !== undefined) updateData.comment_teaching_assistants = comment_teaching_assistants;
+    if (comment_learning_support !== undefined) updateData.comment_learning_support = comment_learning_support;
 
     const { data: report, error } = await supabase
       .from('reports')
