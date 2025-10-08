@@ -1,5 +1,391 @@
 # App Creation Log
 
+## 2025-10-08: Reports Sharing Feature
+
+### Major Feature: Shareable Reports with Block Constructor
+**Purpose**: Enable admins to create shareable versions of LLM-generated reports with customizable block order and granular access control.
+
+### Overview
+This feature allows admins to:
+1. Convert any Manager or Student report into a shareable version
+2. Use a visual constructor to reorder and edit content blocks
+3. Grant access to specific users or make reports public
+4. Manage who can view each shared report
+
+### Database Schema (`supabase/add-shared-reports.sql`)
+
+**`shared_reports` table**:
+- Stores shareable report versions with editable blocks
+- Fields:
+  - `report_type`: 'manager' or 'student'
+  - `source_report_id`: Reference to original report
+  - `user_id`: For student reports, identifies which student
+  - `title`, `description`: Metadata
+  - `blocks`: JSONB array of content blocks with order
+  - `is_public`: Public/private toggle
+  - `access_code`: Optional link-based sharing code
+  - Audit fields: `created_by`, `created_at`, `updated_at`
+
+**`report_access` table**:
+- Many-to-many relationship for access control
+- Fields:
+  - `shared_report_id`, `user_id`: Access relationship
+  - `granted_by`, `granted_at`: Audit trail
+  - `expires_at`: Optional expiration
+
+**Key Features**:
+- RLS policies for secure access control
+- Helper functions: `grant_report_access()`, `revoke_report_access()`
+- View: `shared_reports_with_access` for aggregated access info
+- Automatic `updated_at` trigger
+
+### API Endpoints
+
+**Report Management**:
+- `POST /api/reports/shared/create` - Create shared report from LLM report
+- `GET /api/reports/shared/[id]` - Fetch shared report with permissions
+- `PATCH /api/reports/shared/[id]` - Update blocks, title, or public status
+- `DELETE /api/reports/shared/[id]` - Delete shared report
+- `GET /api/reports/shared/list` - List all accessible shared reports
+
+**Access Control**:
+- `POST /api/reports/shared/[id]/access` - Grant access to users
+- `DELETE /api/reports/shared/[id]/access` - Revoke access
+- `GET /api/reports/shared/[id]/access` - List users with access
+
+**User Search**:
+- `GET /api/users/search?email={email}` - Find users by email (admin only)
+
+### UI Components & Pages
+
+**Report Builder** (`/reports/shared/[id]/edit`):
+- Visual constructor with drag-and-drop block reordering
+- Editable block titles and content
+- Up/down arrow buttons for precise ordering
+- Metadata editing (title, description)
+- Public/private toggle
+- Native HTML5 drag-and-drop (no external libraries)
+- **Multi-type block support**: sections, tables, charts, comments
+- Type-specific rendering and editing
+- Components:
+  - `ReportBuilder.tsx` - Main builder component
+  - `BlockRenderer.tsx` - Renders different block types (edit mode)
+  - `ReportBuilder.module.css` - Styling with animations
+
+**View Page** (`/reports/shared/[id]/view`):
+- Clean, reader-friendly layout
+- Blocks displayed in configured order
+- Access status badges (public/private)
+- Edit button for authorized users
+- Responsive design with fade-in animations
+- **Rich content rendering**: tables, charts, and formatted comments
+- Components:
+  - `BlockViewer.tsx` - Renders different block types (view mode)
+  - Interactive charts with Chart.js
+  - Styled tables with proper formatting
+
+**Access Management** (`/reports/shared/[id]/access`):
+- Grant access by email address
+- Table view of users with access
+- Revoke access functionality
+- Role badges and grant dates
+- User search integration
+
+**List Page** (`/reports/shared/`):
+- Overview of all shared reports
+- Sortable table with type, status, and access count
+- Quick access to view/edit actions
+- Type and status badges
+
+**Share Button** (`ShareReportButton.tsx`):
+- Dialog-based creation flow
+- Added to both Manager and Student report pages
+- Pre-fills title based on report type
+- Auto-navigates to editor after creation
+
+### Data Flow
+
+1. **Creation**:
+   - Admin views LLM-generated report (manager or student)
+   - Clicks "📤 Share Report" button
+   - Enters title and description
+   - System converts LLM content sections into blocks
+   - Navigates to Report Builder
+
+2. **Editing**:
+   - Drag blocks to reorder
+   - Click block title to rename
+   - Edit block content in text areas
+   - Save changes (updates `blocks` JSONB)
+   - Toggle public/private status
+
+3. **Access Control**:
+   - Admin enters user email
+   - System finds user in profiles
+   - Grants access record in `report_access`
+   - User can view report at `/reports/shared/[id]/view`
+
+4. **Viewing**:
+   - User navigates to shared report
+   - System checks: is_public OR has access record OR is admin
+   - Displays blocks in order
+   - Shows edit button if user has permission
+
+### Block Structure
+
+**Block Types:**
+- `section` - Text content blocks (editable)
+- `comments` - Instructor feedback blocks (editable, styled)
+- `table` - Data tables (read-only)
+- `pie-chart` - Pie charts for distributions (read-only)
+- `line-chart` - Line charts for time-series (read-only)
+
+**Manager Report Blocks** (up to 13 blocks):
+1. Executive Summary (`section`)
+2. **Student Segmentation Distribution** (`pie-chart`) - segment counts + helpText
+3. **Segmentation Statistics** (`table`) - segment analysis with avg completion + helpText
+4. Group Dynamics & Engagement (`section`)
+5. **Activity Pattern Distribution** (`pie-chart`) - easing types distribution + helpText
+6. **Activity Pattern Statistics** (`table`) - pattern analysis with avg frontload + helpText
+7. **Student Performance Overview** (`table`) - ALL students (not just top 10) with meetings column + helpText
+8. Learning Outcomes & Projects (`section`)
+9. Expert Observations (`section`)
+10. Program Expert Feedback (`comments`) - if filled
+11. Teaching Assistants Feedback (`comments`) - if filled
+12. Learning Support Feedback (`comments`) - if filled
+13. Opportunities & Recommendations (`section`)
+
+**Student Report Blocks** (up to 13 blocks):
+1. Your Learning Journey (`section`)
+2. Your Strengths & Achievements (`section`)
+3. **Your Performance Overview** (`table`) - single row with 8 key metrics + helpText
+4. **Your Activity Pattern Metrics** (`table`) - single row with 7 dynamic metrics + helpText
+5. **Your Activity Pattern Over Time** (`line-chart`) - cumulative curve + helpText
+6. Your Skills Development (`section`)
+7. Feedback from Your Instructors (`section`)
+8. Program Expert Feedback (`comments`) - if filled
+9. Teaching Assistants Feedback (`comments`) - if filled
+10. Learning Support Feedback (`comments`) - if filled
+11. Opportunities for Growth (`section`)
+12. Next Steps & Recommendations (`section`)
+13. **Performance by Topic** (`table`, if available) - topic breakdown + helpText
+
+Each block:
+```typescript
+{
+  id: string,
+  type: 'section' | 'table' | 'pie-chart' | 'line-chart' | 'comments',
+  title: string,
+  content: string, // For section and comments
+  data?: any, // For tables and charts
+  config?: {
+    columns?: string[], // For tables
+    chartType?: 'pie' | 'line', // For charts
+    xField?: string, yField?: string, // For line charts
+    showLegend?: boolean,
+  },
+  helpText?: string, // Optional help text shown in accordion
+  order: number
+}
+```
+
+**Data Sources:**
+- **Tables**: Sourced from `performance_data`, `dynamic_data`, and `submissions_data`
+- **Charts**: Calculated from performance segments and activity timelines
+- **Comments**: Aggregated from instructor feedback fields
+
+### Security & Permissions
+
+**Admin-only actions**:
+- Create shared reports
+- Edit any shared report
+- Manage access for any report
+- Delete shared reports
+
+**User actions**:
+- View public reports
+- View reports they have access to
+- View their own created reports (if admin created it)
+
+**RLS Policies**:
+- Separate policies for admins, creators, and viewers
+- Access records checked with expiration support
+- Cascading deletes when reports removed
+
+### Type System Updates (`lib/types.ts`)
+
+Added interfaces:
+- `ReportBlock` - Individual content block structure
+- `SharedReport` - Main shared report data
+- `ReportAccess` - Access control record
+- `SharedReportWithAccess` - Report with enriched access list
+
+### Integration Points
+
+**Existing Pages Updated**:
+1. `/reports/[id]/manager-report/page.tsx`:
+   - Added `ShareReportButton` import
+   - Button appears when report exists
+
+2. `/reports/[id]/student-reports/[userId]/page.tsx`:
+   - Added `ShareReportButton` import
+   - Button passes student name and ID
+
+### User Experience
+
+**Admin Workflow**:
+1. Generate LLM report (manager or student)
+2. Click "Share Report" → enters title
+3. Edit blocks in visual constructor
+4. Drag to reorder, click to edit content
+5. Save changes
+6. Manage access: add users by email
+7. Toggle public if needed
+
+**Viewer Workflow**:
+1. Receives access to shared report
+2. Navigates to `/reports/shared/[id]/view`
+3. Reads content in customized block order
+4. Clean, distraction-free reading experience
+
+### Benefits
+
+1. **Flexibility**: Reorder blocks to match audience needs
+2. **Customization**: Edit content without regenerating AI
+3. **Control**: Precise access management per report
+4. **Reusability**: One LLM report → multiple shared versions
+5. **Audit Trail**: Track who granted access and when
+6. **Expiration**: Optional time-limited access
+
+### Technical Decisions
+
+**Why HTML5 Drag-and-Drop?**:
+- No external dependencies
+- Native browser support
+- Lightweight and performant
+- Up/down buttons as fallback
+
+**Why JSONB for blocks?**:
+- Flexible structure for future block types
+- Efficient storage and querying
+- Easy to serialize/deserialize
+- PostgreSQL JSON operators available
+
+**Why separate tables?**:
+- LLM reports remain immutable
+- Shared versions are independent
+- Multiple shared reports from one source
+- Clear separation of concerns
+
+### Key Features Added in v2 (2025-10-08)
+
+**Multi-Type Block Support:**
+- Expanded from text-only blocks to 5 block types
+- Automatic data extraction from reports
+- Visual components (charts, tables) integrated
+- Instructor comments highlighted with special styling
+
+**Manager Report Analytics:**
+- **Segmentation Analysis**: Pie chart + statistics table per segment
+- **Activity Pattern Analysis**: Pie chart + statistics table for easing types
+- **All Students Table**: Complete roster (not just top 10) with meetings column
+- Comprehensive group dynamics visualization
+- **Help Accordions**: Each data block has contextual help text
+
+**Student Report Analytics:**
+- **Performance Overview**: Single-row table with 8 key metrics
+- **Activity Pattern Metrics**: Single-row table with 7 dynamic metrics
+- Line chart for cumulative activity curve
+- Topic performance breakdown (if available)
+- Comprehensive personal analytics in compact format
+- **Help Accordions**: Each data block explains how to interpret the data
+
+**Help System (v2.1):**
+- Added `helpText` field to ReportBlock interface
+- Collapsible accordions under tables and charts
+- "ℹ️ How to read this data" label
+- Contextual explanations for:
+  - What each metric means
+  - How to interpret values
+  - What patterns to look for
+  - Ideal vs. concerning values
+
+**Enhanced Help System with User-Friendly Content (v2.2):**
+- Converted all help text from Markdown to HTML format for proper rendering
+- Updated `HelpAccordion` component to use `dangerouslySetInnerHTML` for rich HTML content
+- Added scoped CSS styling for paragraphs, lists, bold text, and emphasis
+- Completely rewrote all help texts to be accessible for non-technical audiences:
+  - **Simplified language**: Replaced technical jargon with conversational explanations
+  - **Practical interpretations**: E.g., "Students doing great" instead of "High performers"
+  - **Encouraging tone**: Positive, supportive language for student-facing content
+  - **Clear structure**: Organized with headings, bullet points, and nested lists
+  - **Contextual guidance**: Each block explains "what to look for" in plain terms
+  - **Removed tip callouts**: Streamlined content without separate "Quick tip" sections
+- Applied to all data blocks in both manager and student reports
+- Improved typography and spacing in accordion content for better readability
+
+**Separate Comment Blocks by Role (v2.3):**
+- Split combined team/instructor comments into separate blocks for each role
+- **Manager Reports**: Now show up to 3 separate comment blocks at the beginning:
+  - Program Expert Feedback
+  - Teaching Assistants Feedback
+  - Learning Support Feedback
+- **Student Reports**: Same structure with 3 separate comment blocks
+- Each comment block only appears if the corresponding field is filled
+- Allows for better organization and independent reordering of feedback from different team members
+- Each role's feedback is clearly labeled and styled as a `comments` type block
+
+**Enhanced Block Management (v2.4):**
+- **Default Comment Positioning**: Comment blocks now appear after "Expert Observations" (manager) and "Feedback from Your Instructors" (student) sections by default
+- **Individual Block Save**: Added save button (💾) for each text/comment block to save changes individually
+- **Unsaved Changes Indicator**: Added "Unsaved" badge on edited blocks and counter in footer
+- **Add Existing Blocks**: Added "➕ Add Block" button with dialog to select from existing blocks:
+  - Shows dropdown list of all available blocks from the original report
+  - **Only shows blocks that are not yet on the page** (prevents duplicates)
+  - Each block displays its icon (📝 📊 📈 📉 💬) and title
+  - Shows count of available blocks (e.g., "Available Blocks (5)")
+  - **Adds block to the top** of the report (not the bottom)
+  - **Preserves latest saved version** - if you edit and save a block, then delete it, re-adding it will use the edited version
+  - Preserves all data, config, and helpText from the block
+  - **Auto-saves** immediately after adding a block
+  - Button becomes disabled when all blocks are already added
+  - Dialog shows message when no blocks are available
+  - **Silent operation** - no alert popups, smooth UX
+- **Delete Blocks**: Added delete button (🗑️) for each block with confirmation dialog
+  - **Auto-saves** immediately after deleting a block
+- **Block Management Features**:
+  - Track edited blocks individually
+  - Save single block without affecting others
+  - Add unlimited copies of existing blocks (auto-saved)
+  - Delete any block with confirmation (auto-saved)
+  - Visual indicators for unsaved changes
+  - Counter showing total unsaved blocks
+  - Dialog-based block selection from available blocks
+  - Automatic save on add/delete operations
+  - Revert on save failure
+
+**Technical Implementation:**
+- `BlockRenderer.tsx` for edit mode
+- `BlockViewer.tsx` for view mode
+- Chart.js integration for visualizations
+- Type-safe block definitions with TypeScript
+- Preserved editability for text content while keeping data blocks read-only
+
+### Future Enhancements (Not Implemented)
+
+- Block templates and presets
+- Rich text editor for section content
+- Custom block types (video embeds, images)
+- Version history for blocks
+- Bulk access management
+- Email notifications on access grant
+- Public link with access code
+- Export shared reports as PDF
+- Analytics: view counts, engagement
+- Chart customization options
+
+---
+
 ## 2025-10-06: Documentation Translation
 
 ### LLM Data Documentation Translation to English
@@ -662,4 +1048,96 @@ Added support for clickable topic links to the Cogniterra platform in student re
 - No breaking changes to existing functionality
 - Graceful fallback for missing data
 - Structure data loaded once, used throughout student reports
+
+---
+
+## 2025-10-08: Shared Reports - Topic Links Integration
+
+### Overview
+Added support for clickable topic links to Cogniterra in student shared reports. This feature applies the same topic linking functionality from regular student reports to shared student reports.
+
+### Changes Made
+
+#### 1. API Updates - Shared Report Creation
+- **app/api/reports/shared/create/route.ts**:
+  - Added structure map building from `baseReport.structure_data`
+  - Extended topic statistics to include `lesson_id`, `unit_id`, `course_id`
+  - Topics now store first step's structure data for linking
+  - Topic performance data includes `lesson_id` when available
+
+#### 2. UI Updates - Block Rendering
+- **app/reports/shared/[id]/view/BlockViewer.tsx**:
+  - Updated `TableBlockViewer` to detect topic columns with `lesson_id`
+  - Added clickable links to Cogniterra for topics with structure data
+  - URL format: `https://cogniterra.org/lesson/{lesson_id}/step/1`
+  - Applied hover effect for better UX
+  - Links open in new tab with `rel="noopener noreferrer"`
+
+- **app/reports/shared/[id]/edit/BlockRenderer.tsx**:
+  - Updated `TableBlock` with same topic link logic
+  - Links are displayed in both edit and view modes
+  - Maintains consistent styling with regular student reports
+
+### Technical Implementation
+1. **Data Flow**:
+   - Shared report creation fetches `structure_data` from base report
+   - Structure map is built: `step_id` → `{lesson_id, unit_id, course_id}`
+   - Topic aggregation includes structure data from first step
+   - `lesson_id` is stored in topic performance data
+
+2. **Rendering Logic**:
+   - Table renderer checks if column is `topic` AND row has `lesson_id`
+   - If both conditions met, renders clickable link
+   - Otherwise, renders plain text
+   - Graceful fallback when structure data not available
+
+### User Experience
+- **With structure.csv uploaded**: Topic names in student shared reports become clickable links
+- **Without structure.csv**: Topics display as plain text (no errors)
+- Consistent behavior with regular student reports
+- Works in both edit and view modes
+
+### Compatibility
+- All existing shared reports continue to work without changes
+- No breaking changes to shared report schema
+- Feature works automatically if source report has structure data
+- No changes needed to manager reports (they don't use topic tables)
+
+---
+
+## 2025-10-08: Shared Reports - Database Constraint Fix
+
+### Issue
+Users encountered a database error when trying to create multiple shared reports for the same student from the same source report:
+```
+duplicate key value violates unique constraint "shared_reports_source_report_id_user_id_report_type_key"
+```
+
+### Root Cause
+The database schema had an overly restrictive unique constraint that prevented creating multiple shared reports for the same student from the same source report. This constraint was:
+```sql
+UNIQUE(source_report_id, user_id, report_type)
+```
+
+### Solution
+**Database Schema Update:**
+- **supabase/add-shared-reports.sql**: Removed the unique constraint
+- **supabase/fix-shared-reports-constraint.sql**: Created migration script to drop existing constraint
+
+**Migration Required:**
+```sql
+ALTER TABLE shared_reports 
+DROP CONSTRAINT IF EXISTS shared_reports_source_report_id_user_id_report_type_key;
+```
+
+### Impact
+- ✅ Admins can now create multiple shared reports for the same student
+- ✅ Different block configurations can be shared with the same student
+- ✅ No breaking changes to existing functionality
+- ✅ Better flexibility for report customization
+
+### User Experience
+- No more "duplicate key" errors when sharing reports
+- Multiple shared report versions per student are now supported
+- Each shared report can have different block configurations
 

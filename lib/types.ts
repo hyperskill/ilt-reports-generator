@@ -157,3 +157,56 @@ export interface AppState {
   currentReportId?: string | null;
   studentComments?: Record<string, StudentComment>;
 }
+
+// Shared Reports Feature
+export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'comments';
+
+export interface ReportBlock {
+  id: string;
+  type: BlockType;
+  title: string;
+  content: string; // For 'section' and 'comments' types
+  data?: any; // For 'table' and 'chart' types
+  config?: {
+    columns?: string[]; // For tables
+    chartType?: 'pie' | 'line'; // For charts
+    showLegend?: boolean;
+    [key: string]: any;
+  };
+  helpText?: string; // Optional help text explaining how to read the data
+  order: number;
+}
+
+export interface SharedReport {
+  id: string;
+  report_type: 'manager' | 'student';
+  source_report_id: string;
+  user_id?: string;
+  title: string;
+  description?: string;
+  blocks: ReportBlock[];
+  is_public: boolean;
+  access_code?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportAccess {
+  id: string;
+  shared_report_id: string;
+  user_id: string;
+  granted_by: string;
+  granted_at: string;
+  expires_at?: string;
+}
+
+export interface SharedReportWithAccess extends SharedReport {
+  access_list: Array<{
+    user_id: string;
+    email: string;
+    granted_at: string;
+    expires_at?: string;
+  }>;
+  access_count: number;
+}

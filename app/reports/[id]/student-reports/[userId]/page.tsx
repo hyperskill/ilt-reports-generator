@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Heading, Text, Button, TextArea, Badge } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { createClient } from '@/lib/supabase/client';
+import ShareReportButton from '../../../ShareReportButton';
 
 export default function StudentReportEditPage({ 
   params 
@@ -191,6 +192,15 @@ export default function StudentReportEditPage({
           <Flex gap="2" align="center">
             {studentReport?.is_published && (
               <Badge color="green">Published</Badge>
+            )}
+            {studentReport && (
+              <ShareReportButton
+                reportType="student"
+                sourceReportId={params.id}
+                userId={params.userId}
+                studentName={studentName}
+                isAdmin={isAdmin}
+              />
             )}
             <Button variant="soft" onClick={() => router.push(`/reports/${params.id}/student-reports`)}>
               ← Back to List
