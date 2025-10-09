@@ -2,7 +2,58 @@
 
 ## 2025-10-09: Module Activity Analytics and Group Statistics
 
-### Latest Update: Real Topic Names in LLM Context
+### Latest Update: Enhanced Manager Report System Prompt
+
+**Purpose**: Improve LLM-generated manager reports to focus on business value, ROI, and practical skill application for business managers who invested in their team's training.
+
+**Changes**:
+1. **Updated System Prompt** (`app/api/llm/generate-manager-report/route.ts`):
+   - Added detailed course description: "AI Foundations: Models, Prompts, and Agents"
+   - Added instructor information: Hyperskill platform details
+   - Emphasized business audience: managers who sent their team to training
+   - Added focus on ROI and business impact
+   - Instructed LLM to highlight student projects mentioned in expert comments
+   - Added guidance to map module names to acquired skills
+   - Changed tone to business-focused language (avoid jargon, focus on outcomes)
+   - Added explicit instruction: "Generate ALL content in English only"
+
+2. **Restructured Report Sections**:
+   - **Old structure**: Executive Summary → Group Dynamics → Learning Outcomes → Expert Observations → Opportunities
+   - **New structure**: Executive Summary → Skills Acquired → Team Engagement → Expert Observations & Project Highlights → Business Recommendations
+   - Changed field names in JSON output to match new structure
+
+3. **Updated UI** (`app/reports/[id]/manager-report/page.tsx`):
+   - Renamed state variables: `groupDynamics` → `teamEngagement`, `learningOutcomes` → `skillsAcquired`, `opportunities` → `recommendations`
+   - Updated section headings to match new structure
+   - Added fallback logic for backward compatibility with old report format
+   - Reordered sections to prioritize skills first, then engagement
+
+**Key Prompt Improvements**:
+- **Business Focus**: "Translate technical metrics into business outcomes"
+- **Project Emphasis**: "Pay special attention to comments that mention student projects"
+- **Skills Mapping**: "Connect module names to concrete skills acquired"
+- **ROI Language**: "Was this training valuable for their business?"
+- **Actionable**: "What should the manager do to help their team apply these skills?"
+
+**Example Guidance Added**:
+```
+Instead of: "78% completion rate"
+Say: "Team members completed most of the course, gaining practical 
+AI skills they can apply to automate workflows"
+```
+
+**Impact**:
+- ✅ Reports now speak business language, not technical jargon
+- ✅ Focus on practical skills and business value
+- ✅ Student projects are highlighted when mentioned by experts
+- ✅ Module progress is connected to real-world capabilities
+- ✅ Recommendations are actionable for business managers
+- ✅ All content generated in English
+- ✅ Backward compatible with old report format
+
+---
+
+### Previous Update: Real Topic Names in LLM Context
 
 **Purpose**: Provide LLM with real lesson names instead of synthetic "Topic 1, 2, 3..." for more accurate and specific report generation.
 

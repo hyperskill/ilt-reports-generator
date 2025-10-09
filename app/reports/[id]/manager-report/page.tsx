@@ -16,10 +16,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
   const [isAdmin, setIsAdmin] = useState(false);
   
   const [executiveSummary, setExecutiveSummary] = useState('');
-  const [groupDynamics, setGroupDynamics] = useState('');
-  const [learningOutcomes, setLearningOutcomes] = useState('');
+  const [skillsAcquired, setSkillsAcquired] = useState('');
+  const [teamEngagement, setTeamEngagement] = useState('');
   const [expertObservations, setExpertObservations] = useState('');
-  const [opportunities, setOpportunities] = useState('');
+  const [recommendations, setRecommendations] = useState('');
 
   useEffect(() => {
     checkAdminAndLoadReport();
@@ -60,10 +60,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
         setManagerReport(data);
         const content = data.edited_content || data.generated_content;
         setExecutiveSummary(content.executiveSummary || '');
-        setGroupDynamics(content.groupDynamics || '');
-        setLearningOutcomes(content.learningOutcomes || '');
+        setSkillsAcquired(content.skillsAcquired || content.learningOutcomes || ''); // Fallback for old format
+        setTeamEngagement(content.teamEngagement || content.groupDynamics || ''); // Fallback for old format
         setExpertObservations(content.expertObservations || '');
-        setOpportunities(content.opportunities || '');
+        setRecommendations(content.recommendations || content.opportunities || ''); // Fallback for old format
       }
     } catch (error) {
       console.error('Failed to load manager report:', error);
@@ -100,10 +100,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
       
       const editedContent = {
         executiveSummary,
-        groupDynamics,
-        learningOutcomes,
+        skillsAcquired,
+        teamEngagement,
         expertObservations,
-        opportunities,
+        recommendations,
       };
 
       const { error } = await supabase
@@ -186,10 +186,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
 
             <Card>
               <Flex direction="column" gap="4">
-                <Heading size="5">Group Dynamics & Engagement</Heading>
+                <Heading size="5">Skills Acquired & Learning Outcomes</Heading>
                 <TextArea
-                  value={groupDynamics}
-                  onChange={(e) => setGroupDynamics(e.target.value)}
+                  value={skillsAcquired}
+                  onChange={(e) => setSkillsAcquired(e.target.value)}
                   rows={6}
                   disabled={!isAdmin}
                 />
@@ -198,10 +198,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
 
             <Card>
               <Flex direction="column" gap="4">
-                <Heading size="5">Learning Outcomes & Projects</Heading>
+                <Heading size="5">Team Engagement & Dynamics</Heading>
                 <TextArea
-                  value={learningOutcomes}
-                  onChange={(e) => setLearningOutcomes(e.target.value)}
+                  value={teamEngagement}
+                  onChange={(e) => setTeamEngagement(e.target.value)}
                   rows={6}
                   disabled={!isAdmin}
                 />
@@ -210,7 +210,7 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
 
             <Card>
               <Flex direction="column" gap="4">
-                <Heading size="5">Expert Observations</Heading>
+                <Heading size="5">Expert Observations & Project Highlights</Heading>
                 <TextArea
                   value={expertObservations}
                   onChange={(e) => setExpertObservations(e.target.value)}
@@ -222,10 +222,10 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
 
             <Card>
               <Flex direction="column" gap="4">
-                <Heading size="5">Opportunities & Recommendations</Heading>
+                <Heading size="5">Business Recommendations & Next Steps</Heading>
                 <TextArea
-                  value={opportunities}
-                  onChange={(e) => setOpportunities(e.target.value)}
+                  value={recommendations}
+                  onChange={(e) => setRecommendations(e.target.value)}
                   rows={6}
                   disabled={!isAdmin}
                 />
