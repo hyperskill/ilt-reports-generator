@@ -81,6 +81,10 @@ export default function DynamicPreviewPage({ params }: { params: { id: string } 
         summary={report.dynamic_data} 
         series={report.dynamic_series || []}
         reportId={params.id}
+        submissions={report.submissions_data || []}
+        structure={report.structure_data || []}
+        courseId={report.structure_data?.[0]?.course_id || report.structure_data?.[0]?.courseid}
+        meetings={report.meetings_data || []}
       />
     </AppLayoutWithAuth>
   );

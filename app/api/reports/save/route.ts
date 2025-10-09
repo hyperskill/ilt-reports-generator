@@ -35,7 +35,8 @@ export async function POST(request: Request) {
       fileMetadata,
       studentComments,
       submissions,
-      structure
+      structure,
+      meetings
     } = body;
 
     if (!title || !performanceData || !dynamicData) {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
         excluded_user_ids: excludedUserIds || [],
         submissions_data: submissions || null,
         structure_data: structure || null,
+        meetings_data: meetings || null,
         grade_book_file_path: fileMetadata?.gradeBook || null,
         learners_file_path: fileMetadata?.learners || null,
         submissions_file_path: fileMetadata?.submissions || null,
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
 
     // Save student comments if provided
     if (studentComments && Object.keys(studentComments).length > 0) {
-      const commentsToInsert = Object.values(studentComments).map((comment: any) => ({
+      const commentsToUpsert = Object.values(studentComments).map((comment: any) => ({
         report_id: report.id,
         user_id: comment.userId,
         comment_program_expert: comment.comment_program_expert || null,
@@ -84,7 +86,9 @@ export async function POST(request: Request) {
 
       const { error: commentsError } = await supabase
         .from('student_comments')
-        .insert(commentsToInsert);
+        .upsert(commentsToUpsert, {
+          onConflict: 'report_id,user_id'
+        });
 
       if (commentsError) {
         console.error('Failed to save student comments:', commentsError);

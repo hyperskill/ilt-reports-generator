@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
-import { WeeklyActivityChart } from './WeeklyActivityChart';
+import { ModuleActivityChart } from './ModuleActivityChart';
 import { TableLegend } from './TableLegend';
 import { SegmentPieChart } from './SegmentPieChart';
 import styles from './DynamicResults.module.css';
@@ -13,9 +13,13 @@ interface Props {
   summary: DynamicSummaryRow[];
   series: DynamicSeriesRow[];
   reportId?: string | null;
+  submissions?: any[];
+  structure?: any[];
+  courseId?: number;
+  meetings?: any[];
 }
 
-export function DynamicResults({ summary, series, reportId }: Props) {
+export function DynamicResults({ summary, series, reportId, submissions, structure, courseId, meetings }: Props) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEasings, setSelectedEasings] = useState<Set<string>>(new Set());
@@ -252,10 +256,18 @@ export function DynamicResults({ summary, series, reportId }: Props) {
             </Box>
           </Grid>
 
-          <WeeklyActivityChart 
-            series={selectedUserSeries}
-            studentName={selectedUserData.name.split(' ')[0]}
-          />
+          {structure && courseId && submissions ? (
+            <ModuleActivityChart
+              userId={selectedUserId}
+              submissions={submissions}
+              structure={structure}
+              courseId={courseId}
+              meetings={meetings}
+              studentName={selectedUserData.name.split(' ')[0]}
+            />
+          ) : (
+            <Text size="2" color="gray">Module activity chart not available</Text>
+          )}
         </Card>
       )}
 

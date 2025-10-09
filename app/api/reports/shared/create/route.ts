@@ -1,13 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { ReportBlock } from '@/lib/types';
+import { processModuleAnalytics } from '@/lib/processors/module-analytics';
+import { getModuleNamesMapByIds } from '@/lib/utils/cogniterra-api';
 
 // Helper to convert LLM report content to blocks
-function convertToBlocks(
+async function convertToBlocks(
   content: any, 
   reportType: 'manager' | 'student',
   reportData: any
-): ReportBlock[] {
+): Promise<ReportBlock[]> {
   const blocks: ReportBlock[] = [];
   let order = 0;
 
@@ -420,6 +422,114 @@ function convertToBlocks(
         order: order++,
       });
     }
+
+    // Module progress table (if structure data available)
+    if (reportData.structure && reportData.submissions) {
+      try {
+        // Extract unique module IDs from structure
+        const moduleIdsSet = new Set<number>();
+        for (const row of reportData.structure) {
+          const moduleId = Number(row.module_id || row.moduleid || 0);
+          if (moduleId > 0) {
+            moduleIdsSet.add(moduleId);
+          }
+        }
+        
+        const moduleIds = Array.from(moduleIdsSet);
+        
+        if (moduleIds.length > 0) {
+          // Fetch module names from Cogniterra API
+          const moduleNamesMap = await getModuleNamesMapByIds(moduleIds);
+          
+          // Process module analytics
+          const moduleStats = processModuleAnalytics(
+            reportData.userId,
+            reportData.submissions,
+            reportData.structure,
+            moduleNamesMap,
+            reportData.meetings
+          );
+          
+          // Convert to table data
+          const moduleTableData = moduleStats.map(m => {
+            const data: any = {
+              module: m.module_name,
+              progress: `${m.completion_rate.toFixed(1)}% (${m.completed_steps}/${m.total_steps})`,
+              success_rate: `${m.success_rate.toFixed(1)}% (${m.correct_attempts}/${m.total_attempts})`,
+              attempts_per_step: m.avg_attempts_per_step.toFixed(1),
+              total_attempts: m.total_attempts,
+              meetings: m.meetings_attended,
+            };
+            
+            // Add period if available
+            if (m.first_activity_date && m.last_activity_date) {
+              const firstDate = new Date(m.first_activity_date);
+              const lastDate = new Date(m.last_activity_date);
+              data.period = `${firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            }
+            
+            return data;
+          });
+          
+          const columns = moduleTableData[0]?.period 
+            ? ['module', 'progress', 'success_rate', 'attempts_per_step', 'total_attempts', 'meetings', 'period']
+            : ['module', 'progress', 'success_rate', 'attempts_per_step', 'total_attempts', 'meetings'];
+          
+          blocks.push({
+            id: 'module-progress',
+            type: 'table',
+            title: 'Progress by Module',
+            content: '',
+            data: moduleTableData,
+            config: {
+              columns,
+            },
+            helpText: '<p>Track your progress and performance across different course modules.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - The course module name</li><li><strong>Progress</strong> - Completion percentage and steps completed</li><li><strong>Success Rate</strong> - How often you got things right</li><li><strong>Attempts/Step</strong> - Average attempts per exercise</li><li><strong>Total Attempts</strong> - Total submissions in this module</li><li><strong>Meetings</strong> - Live sessions attended during this module</li><li><strong>Period</strong> - When you worked on this module</li></ul><p><strong>Quick interpretation:</strong></p><ul><li><strong>High completion + high success</strong> = You mastered this module ✓</li><li><strong>Low completion</strong> = You might want to revisit this</li><li><strong>Many attempts/step</strong> = This module was challenging</li><li><strong>Meeting attendance</strong> = Shows engagement with live instruction</li></ul>',
+            order: order++,
+          });
+          
+          // Add module activity chart
+          blocks.push({
+            id: 'module-activity-chart',
+            type: 'bar-chart',
+            title: 'Activity by Module',
+            content: '',
+            data: moduleStats.map(m => ({
+              label: m.module_name,
+              completed_steps: m.completed_steps,
+              meetings_attended: m.meetings_attended,
+            })),
+            config: {
+              datasets: [
+                {
+                  label: 'Completed Steps',
+                  dataKey: 'completed_steps',
+                  backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                  borderColor: 'rgb(75, 192, 192)',
+                  yAxisID: 'y',
+                },
+                {
+                  label: 'Meetings Attended',
+                  dataKey: 'meetings_attended',
+                  backgroundColor: 'rgba(153, 102, 255, 0.8)',
+                  borderColor: 'rgb(153, 102, 255)',
+                  yAxisID: 'y1',
+                }
+              ],
+              scales: {
+                y: { title: 'Completed Steps', position: 'left' },
+                y1: { title: 'Meetings Attended', position: 'right' }
+              }
+            },
+            helpText: '<p><strong>Completed Steps</strong> (teal bars, left axis) - Number of successfully completed exercises in each module.</p><p><strong>Meetings Attended</strong> (purple bars, right axis) - Number of live sessions attended during each module\'s activity period.</p><p><strong>What to look for:</strong> Compare your progress across modules and see how meeting attendance correlates with learning activity.</p>',
+            order: order++,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create module progress block:', error);
+        // Skip module progress block if there's an error
+      }
+    }
   }
 
   return blocks;
@@ -623,11 +733,15 @@ export async function POST(request: Request) {
         activityTimeline: studentSeries,
         feedback: studentFeedback,
         submissionsAnalysis,
+        structure: baseReport.structure_data || [],
+        submissions: baseReport.submissions_data || [],
+        meetings: baseReport.meetings_data || [],
+        userId,
       };
     }
 
     // Convert content to blocks
-    const blocks = convertToBlocks(sourceContent, reportType, reportData);
+    const blocks = await convertToBlocks(sourceContent, reportType, reportData);
 
     // Create shared report
     const { data: sharedReport, error: createError } = await supabase

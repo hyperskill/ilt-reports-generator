@@ -6,7 +6,8 @@ import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator }
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
-import { WeeklyActivityChart } from '@/app/components/WeeklyActivityChart';
+import { ModuleActivityChart } from '@/app/components/ModuleActivityChart';
+import { ModuleAnalytics } from '@/app/components/ModuleAnalytics';
 import { StudentCommentsSection } from './StudentCommentsSection';
 import { createClient } from '@/lib/supabase/client';
 import styles from './student.module.css';
@@ -267,13 +268,83 @@ export default function StudentDetailPage({ params }: PageProps) {
             </Box>
           </Grid>
 
-          {report.series.length > 0 && (
-            <WeeklyActivityChart 
-              series={report.series}
-              studentName={report.student.name.split(' ')[0]}
-            />
-          )}
         </Card>
+
+        {/* Module Activity Chart */}
+        {savedReportData && savedReportData.structure_data && savedReportData.structure_data.length > 0 && (
+          (() => {
+            const courseId = savedReportData.structure_data[0]?.course_id || savedReportData.structure_data[0]?.courseid;
+            if (courseId) {
+              return (
+                <ModuleActivityChart
+                  userId={params.userId}
+                  submissions={savedReportData.submissions_data || []}
+                  structure={savedReportData.structure_data || []}
+                  courseId={Number(courseId)}
+                  meetings={savedReportData.meetings_data || []}
+                  studentName={report.student.name.split(' ')[0]}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {!savedReportData && files.structure && files.structure.data && files.structure.data.length > 0 && (
+          (() => {
+            const courseId = files.structure.data[0]?.course_id || files.structure.data[0]?.courseid;
+            if (courseId) {
+              return (
+                <ModuleActivityChart
+                  userId={params.userId}
+                  submissions={files.submissions?.data || []}
+                  structure={files.structure.data}
+                  courseId={Number(courseId)}
+                  meetings={files.meetings?.data || []}
+                  studentName={report.student.name.split(' ')[0]}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {/* Module Analytics */}
+        {savedReportData && savedReportData.structure_data && savedReportData.structure_data.length > 0 && (
+          (() => {
+            const courseId = savedReportData.structure_data[0]?.course_id || savedReportData.structure_data[0]?.courseid;
+            if (courseId) {
+              return (
+                <ModuleAnalytics
+                  userId={params.userId}
+                  submissions={savedReportData.submissions_data || []}
+                  structure={savedReportData.structure_data || []}
+                  courseId={Number(courseId)}
+                  meetings={savedReportData.meetings_data || []}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {!savedReportData && files.structure && files.structure.data && files.structure.data.length > 0 && (
+          (() => {
+            const courseId = files.structure.data[0]?.course_id || files.structure.data[0]?.courseid;
+            if (courseId) {
+              return (
+                <ModuleAnalytics
+                  userId={params.userId}
+                  submissions={files.submissions?.data || []}
+                  structure={files.structure.data}
+                  courseId={Number(courseId)}
+                  meetings={files.meetings?.data || []}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
 
         {/* Topics */}
         <Grid columns="2" gap="4">

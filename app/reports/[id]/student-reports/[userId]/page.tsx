@@ -166,6 +166,8 @@ export default function StudentReportEditPage({
           comment_program_expert: commentProgramExpert,
           comment_teaching_assistants: commentTeachingAssistants,
           comment_learning_support: commentLearningSupport,
+        }, {
+          onConflict: 'report_id,user_id'
         });
 
       if (commentsError) {

@@ -101,6 +101,8 @@ export default function CommentsPreviewPage({ params }: { params: { id: string }
           comment_teaching_assistants: comments.comment_teaching_assistants || '',
           comment_learning_support: comments.comment_learning_support || '',
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'report_id,user_id'
         });
 
       if (error) {

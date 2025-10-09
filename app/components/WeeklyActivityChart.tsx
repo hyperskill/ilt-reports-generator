@@ -11,10 +11,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import dayjs from 'dayjs';
-import isoWeek from 'dayjs/plugin/isoWeek';
-
-dayjs.extend(isoWeek);
 
 ChartJS.register(
   CategoryScale,
@@ -42,64 +38,57 @@ interface Props {
   studentName?: string;
 }
 
-interface WeekData {
-  weekLabel: string;
-  weekStart: string;
-  weekEnd: string;
+interface ActivityData {
+  label: string;
   platformActivity: number;
   meetingsActivity: number;
-  totalActivity: number;
 }
 
 export function WeeklyActivityChart({ series, studentName }: Props) {
-  const weeklyData = useMemo(() => {
+  const activityData = useMemo(() => {
     if (!series || series.length === 0) {
       return [];
     }
 
-    // Group by ISO week
-    const weekMap = new Map<string, WeekData>();
-
+    // Beta coefficient used in dynamic processor (meetings weight)
+    const BETA = 1.5;
+    
+    // Calculate totals
+    let totalPlatform = 0;
+    let totalMeetings = 0;
+    let daysWithActivity = 0;
+    
     series.forEach(row => {
-      const date = dayjs(row.date_iso);
-      if (!date.isValid()) return;
-
-      // Get ISO week number and year
-      const weekKey = `${date.isoWeekYear()}-W${String(date.isoWeek()).padStart(2, '0')}`;
+      const platform = row.activity_platform || 0;
+      const meetings = row.activity_meetings || 0;
       
-      if (!weekMap.has(weekKey)) {
-        const weekStart = date.startOf('isoWeek');
-        const weekEnd = date.endOf('isoWeek');
-        
-        weekMap.set(weekKey, {
-          weekLabel: `Week ${date.isoWeek()} (${weekStart.format('MMM D')} - ${weekEnd.format('MMM D')})`,
-          weekStart: weekStart.format('YYYY-MM-DD'),
-          weekEnd: weekEnd.format('YYYY-MM-DD'),
-          platformActivity: 0,
-          meetingsActivity: 0,
-          totalActivity: 0,
-        });
+      if (platform > 0 || meetings > 0) {
+        totalPlatform += platform;
+        totalMeetings += meetings / BETA;
+        daysWithActivity++;
       }
-
-      const weekData = weekMap.get(weekKey)!;
-      weekData.platformActivity += row.activity_platform || 0;
-      weekData.meetingsActivity += row.activity_meetings || 0;
-      weekData.totalActivity += row.activity_total || 0;
     });
-
-    // Sort by week start date
-    return Array.from(weekMap.values()).sort((a, b) => 
-      a.weekStart.localeCompare(b.weekStart)
-    );
+    
+    // If no activity, return empty
+    if (daysWithActivity === 0) {
+      return [];
+    }
+    
+    // Return simple summary
+    return [{
+      label: 'Course Period',
+      platformActivity: Math.round(totalPlatform),
+      meetingsActivity: Math.round(totalMeetings),
+    }];
   }, [series]);
 
   const chartData = useMemo(() => {
     return {
-      labels: weeklyData.map(w => w.weekLabel),
+      labels: activityData.map(d => d.label),
       datasets: [
         {
           label: 'Platform Activity (submissions)',
-          data: weeklyData.map(w => w.platformActivity),
+          data: activityData.map(d => d.platformActivity),
           backgroundColor: 'rgba(75, 192, 192, 0.7)',
           borderColor: 'rgb(75, 192, 192)',
           borderWidth: 1,
@@ -107,7 +96,7 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
         },
         {
           label: 'Meetings Attended',
-          data: weeklyData.map(w => w.meetingsActivity),
+          data: activityData.map(d => d.meetingsActivity),
           backgroundColor: 'rgba(153, 102, 255, 0.8)',
           borderColor: 'rgb(153, 102, 255)',
           borderWidth: 2,
@@ -115,7 +104,7 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
         },
       ],
     };
-  }, [weeklyData]);
+  }, [activityData]);
 
   const options = {
     responsive: true,
@@ -128,19 +117,18 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
       title: {
         display: true,
         text: studentName 
-          ? `${studentName}'s Weekly Activity` 
-          : 'Weekly Activity Overview',
+          ? `${studentName}'s Course Activity Summary` 
+          : 'Course Activity Summary',
         font: {
           size: 16,
         },
       },
       tooltip: {
         callbacks: {
-          footer: function(tooltipItems: any[]) {
-            if (tooltipItems.length === 0) return '';
-            const index = tooltipItems[0].dataIndex;
-            const week = weeklyData[index];
-            return `Total: ${week.totalActivity.toFixed(1)} activity points`;
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            return `${label}: ${value}`;
           }
         }
       }
@@ -149,12 +137,7 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
       x: {
         stacked: false,
         title: {
-          display: true,
-          text: 'Week',
-        },
-        ticks: {
-          maxRotation: 45,
-          minRotation: 45,
+          display: false,
         },
       },
       y: {
@@ -178,7 +161,7 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
         display: true,
         position: 'right' as const,
         beginAtZero: true,
-        max: Math.max(...weeklyData.map(w => w.meetingsActivity)) + 1 || 5,
+        max: Math.max(...activityData.map(d => d.meetingsActivity)) + 1 || 5,
         title: {
           display: true,
           text: 'Meetings Attended',
@@ -197,7 +180,7 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
     },
   };
 
-  if (weeklyData.length === 0) {
+  if (activityData.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
         No activity data available
@@ -225,29 +208,26 @@ export function WeeklyActivityChart({ series, studentName }: Props) {
         </div>
         
         <div style={{ marginBottom: '10px' }}>
-          <strong style={{ color: 'rgb(75, 192, 192)' }}>● Platform Activity</strong> (left axis, teal bars)
+          <strong style={{ color: 'rgb(75, 192, 192)' }}>● Platform Activity</strong> (left axis, teal bar)
           <br />
           <span style={{ color: '#666', fontSize: '13px' }}>
-            Shows how many exercises and tasks were submitted each week. Higher bars = more active learning.
+            Total number of exercises and tasks submitted during the entire course period.
           </span>
         </div>
         
         <div style={{ marginBottom: '10px' }}>
-          <strong style={{ color: 'rgb(153, 102, 255)' }}>● Meetings Attended</strong> (right axis, purple bars)
+          <strong style={{ color: 'rgb(153, 102, 255)' }}>● Meetings Attended</strong> (right axis, purple bar)
           <br />
           <span style={{ color: '#666', fontSize: '13px' }}>
-            Shows how many live sessions were attended each week. Each bar represents the number of meetings.
+            Total number of live sessions attended during the course.
           </span>
         </div>
         
         <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #d0d0d0' }}>
-          <strong>💡 What to Look For:</strong>
-          <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', color: '#666', fontSize: '13px' }}>
-            <li><strong>Consistent weeks</strong> - Regular activity shows steady learning progress</li>
-            <li><strong>Quiet periods</strong> - Low bars might indicate vacations, busy work weeks, or breaks</li>
-            <li><strong>Busy weeks</strong> - High teal bars show intensive learning periods</li>
-            <li><strong>Meeting participation</strong> - Purple bars show engagement with live instruction</li>
-          </ul>
+          <strong>💡 Summary:</strong>
+          <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>
+            This chart shows your overall engagement with the course - both through platform exercises and live meetings.
+          </span>
         </div>
       </div>
     </div>
