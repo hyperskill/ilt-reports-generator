@@ -174,6 +174,157 @@ async function convertToBlocks(
       });
     }
 
+    // Group module analytics (if structure data available)
+    if (reportData.structure && reportData.submissions && reportData.performanceData) {
+      try {
+        // Extract unique module IDs from structure
+        const moduleIdsSet = new Set<number>();
+        for (const row of reportData.structure) {
+          const moduleId = Number(row.module_id || row.moduleid || 0);
+          if (moduleId > 0) {
+            moduleIdsSet.add(moduleId);
+          }
+        }
+        
+        const moduleIds = Array.from(moduleIdsSet);
+        
+        if (moduleIds.length > 0) {
+          // Fetch module names from Cogniterra API
+          const moduleNamesMap = await getModuleNamesMapByIds(moduleIds);
+          
+          // Process module analytics for each student
+          const allStudentStats: any[][] = [];
+          
+          for (const student of reportData.performanceData) {
+            const userId = student.user_id || student.userid;
+            if (!userId) continue;
+            
+            const stats = processModuleAnalytics(
+              String(userId),
+              reportData.submissions,
+              reportData.structure,
+              moduleNamesMap,
+              reportData.meetings
+            );
+            allStudentStats.push(stats);
+          }
+          
+          // Calculate averages for each module
+          const moduleAverages = new Map<number, {
+            module_id: number;
+            module_name: string;
+            module_position: number;
+            avg_completion_rate: number;
+            avg_success_rate: number;
+            avg_attempts_per_step: number;
+            total_students: number;
+            avg_completed_steps: number;
+            avg_meetings_attended: number;
+          }>();
+          
+          for (const studentStats of allStudentStats) {
+            for (const stat of studentStats) {
+              if (!moduleAverages.has(stat.module_id)) {
+                moduleAverages.set(stat.module_id, {
+                  module_id: stat.module_id,
+                  module_name: stat.module_name,
+                  module_position: stat.module_position,
+                  avg_completion_rate: 0,
+                  avg_success_rate: 0,
+                  avg_attempts_per_step: 0,
+                  total_students: 0,
+                  avg_completed_steps: 0,
+                  avg_meetings_attended: 0,
+                });
+              }
+              
+              const avg = moduleAverages.get(stat.module_id)!;
+              avg.avg_completion_rate += stat.completion_rate;
+              avg.avg_success_rate += stat.success_rate;
+              avg.avg_attempts_per_step += stat.avg_attempts_per_step;
+              avg.avg_completed_steps += stat.completed_steps;
+              avg.avg_meetings_attended += stat.meetings_attended;
+              avg.total_students += 1;
+            }
+          }
+          
+          // Calculate final averages and convert to table data
+          const moduleTableData = Array.from(moduleAverages.values())
+            .map(avg => ({
+              module: avg.module_name,
+              avg_completion: `${(avg.avg_completion_rate / avg.total_students).toFixed(1)}%`,
+              avg_success_rate: `${(avg.avg_success_rate / avg.total_students).toFixed(1)}%`,
+              avg_attempts_per_step: (avg.avg_attempts_per_step / avg.total_students).toFixed(1),
+              avg_meetings: (avg.avg_meetings_attended / avg.total_students).toFixed(1),
+              students: avg.total_students,
+              _chartData: {
+                avg_completed_steps: avg.avg_completed_steps / avg.total_students,
+                avg_meetings_attended: avg.avg_meetings_attended / avg.total_students,
+              }
+            }))
+            .sort((a, b) => {
+              const posA = Array.from(moduleAverages.values()).find(m => m.module_name === a.module)?.module_position || 0;
+              const posB = Array.from(moduleAverages.values()).find(m => m.module_name === b.module)?.module_position || 0;
+              return posA - posB;
+            });
+          
+          // Add table block
+          blocks.push({
+            id: 'group-module-analytics-table',
+            type: 'table',
+            title: 'Group Performance by Module',
+            content: '',
+            data: moduleTableData,
+            config: {
+              columns: ['module', 'avg_completion', 'avg_success_rate', 'avg_attempts_per_step', 'avg_meetings', 'students'],
+            },
+            helpText: '<p>Average performance metrics across all students for each course module.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - Course module name</li><li><strong>Avg Completion</strong> - Average completion percentage</li><li><strong>Avg Success Rate</strong> - Average success rate on exercises</li><li><strong>Avg Attempts/Step</strong> - Average attempts needed per exercise</li><li><strong>Avg Meetings</strong> - Average meetings attended during this module</li><li><strong>Students</strong> - Number of students who worked on this module</li></ul><p><strong>What to look for:</strong></p><ul><li><strong>Low completion rates</strong> - Modules where students struggle to finish</li><li><strong>Low success rates</strong> - Challenging content that needs attention</li><li><strong>High attempts/step</strong> - Difficult exercises requiring multiple tries</li><li><strong>Meeting attendance patterns</strong> - Correlation between live sessions and performance</li></ul>',
+            order: order++,
+          });
+          
+          // Add chart block
+          blocks.push({
+            id: 'group-module-analytics-chart',
+            type: 'bar-chart',
+            title: 'Group Activity by Module',
+            content: '',
+            data: moduleTableData.map(m => ({
+              label: m.module,
+              avg_completed_steps: m._chartData.avg_completed_steps,
+              avg_meetings_attended: m._chartData.avg_meetings_attended,
+            })),
+            config: {
+              datasets: [
+                {
+                  label: 'Avg Completed Steps',
+                  dataKey: 'avg_completed_steps',
+                  backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                  borderColor: 'rgb(75, 192, 192)',
+                  yAxisID: 'y',
+                },
+                {
+                  label: 'Avg Meetings Attended',
+                  dataKey: 'avg_meetings_attended',
+                  backgroundColor: 'rgba(153, 102, 255, 0.8)',
+                  borderColor: 'rgb(153, 102, 255)',
+                  yAxisID: 'y1',
+                }
+              ],
+              scales: {
+                y: { title: 'Avg Completed Steps', position: 'left' },
+                y1: { title: 'Avg Meetings Attended', position: 'right' }
+              }
+            },
+            helpText: '<p>Visual representation of group activity across modules.</p><p><strong>Avg Completed Steps</strong> (teal bars, left axis) - Average number of successfully completed exercises per student in each module.</p><p><strong>Avg Meetings Attended</strong> (purple bars, right axis) - Average number of live sessions attended per student during each module\'s activity period.</p><p><strong>Insights:</strong> Compare activity levels across modules and identify patterns between meeting attendance and learning progress.</p>',
+            order: order++,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create group module analytics blocks:', error);
+        // Skip module analytics blocks if there's an error
+      }
+    }
+
     blocks.push(
       {
         id: 'learning-outcomes',
@@ -616,6 +767,9 @@ export async function POST(request: Request) {
       reportData = {
         performanceData: baseReport.performance_data || [],
         dynamicData: baseReport.dynamic_data || [],
+        structure: baseReport.structure_data || [],
+        submissions: baseReport.submissions_data || [],
+        meetings: baseReport.meetings_data || [],
         teamComments: {
           programExpert: teamComments?.comment_program_expert,
           teachingAssistants: teamComments?.comment_teaching_assistants,

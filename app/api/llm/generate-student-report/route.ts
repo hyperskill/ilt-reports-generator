@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getModuleStructureData, getStudentModuleAnalytics } from '@/lib/utils/llm-data-helpers';
 
 const openai = new OpenAI({
   apiKey: process.env.LITELLM_API_KEY,
@@ -115,6 +116,28 @@ export async function POST(request: Request) {
       ? getStudentSubmissionsStats(report.submissions_data, userId)
       : null;
 
+    // Get module structure data and student module analytics
+    let moduleStructure = null;
+    let studentModuleAnalytics = null;
+    
+    if (report.structure_data && report.structure_data.length > 0) {
+      try {
+        moduleStructure = await getModuleStructureData(report.structure_data);
+        
+        // Get student's individual module analytics
+        if (report.submissions_data) {
+          studentModuleAnalytics = await getStudentModuleAnalytics(
+            userId,
+            report.submissions_data,
+            report.structure_data,
+            report.meetings_data
+          );
+        }
+      } catch (error) {
+        console.error('Failed to fetch module data for student:', error);
+      }
+    }
+
     // Prepare data for LLM
     const promptData = {
       studentName: studentPerformance.name,
@@ -124,6 +147,10 @@ export async function POST(request: Request) {
       feedback: studentFeedback,
       // Add detailed topic-level insights
       submissionsAnalysis,
+      // NEW: Module structure with names and topics
+      moduleStructure,
+      // NEW: Student's individual module analytics
+      studentModuleAnalytics,
     };
 
     const systemPrompt = `You are an expert Learning Coach creating a personalized learning report for an individual student.
@@ -136,12 +163,20 @@ The data includes:
 - Overall performance metrics (grades, submissions, success rates)
 - Activity patterns over time (consistency, effort, engagement)
 - Topic-level performance (if submissionsAnalysis is provided, use it to identify strong and weak topics)
+- Module-level analytics (if studentModuleAnalytics is provided, showing performance in each course module)
 - Instructor feedback and observations
 
 If submissionsAnalysis is provided, pay special attention to:
 - Topics where the student has high success rates (strengths to celebrate)
 - Topics where the student has low success rates (areas needing attention)
 - Patterns across topics (consistent performer vs. variable performance)
+
+If studentModuleAnalytics is provided, use it to give specific feedback about:
+- Which modules the student completed successfully (high completion and success rates)
+- Which modules were challenging (low success rates, high attempts per step)
+- Meeting attendance patterns and their correlation with module performance
+- Activity periods showing when the student was most engaged
+- Specific module names (not just "Module 1, 2, 3") for personalized feedback
 
 Structure your report with these sections:
 

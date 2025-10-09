@@ -36,7 +36,6 @@ export function ModuleAnalytics({ userId, submissions, structure, courseId, meet
       }
       
       const moduleIds = Array.from(moduleIdsSet);
-      console.log('📋 Found module IDs in structure:', moduleIds);
 
       if (moduleIds.length === 0) {
         throw new Error('No module IDs found in structure data');
@@ -53,13 +52,9 @@ export function ModuleAnalytics({ userId, submissions, structure, courseId, meet
 
       const data = await response.json();
       const moduleNamesMap = data.modules;
-      
-      console.log('📚 Module names loaded:', moduleNamesMap);
-      console.log('📊 Processing analytics for', Object.keys(moduleNamesMap).length, 'modules');
 
       // Process module analytics
       const stats = processModuleAnalytics(userId, submissions, structure, moduleNamesMap, meetings);
-      console.log('✅ Module stats processed:', stats);
       setModuleStats(stats);
     } catch (err: any) {
       console.error('❌ Error loading module analytics:', err);

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getModuleStructureData, getGroupModuleAnalytics } from '@/lib/utils/llm-data-helpers';
 
 const openai = new OpenAI({
   apiKey: process.env.LITELLM_API_KEY,
@@ -80,6 +81,28 @@ export async function POST(request: Request) {
       .select('*')
       .eq('report_id', reportId);
 
+    // Get module structure data (module names and topics)
+    let moduleStructure = null;
+    let groupModuleAnalytics = null;
+    
+    if (report.structure_data && report.structure_data.length > 0) {
+      try {
+        moduleStructure = await getModuleStructureData(report.structure_data);
+        
+        // Get group average module analytics
+        if (report.performance_data && report.submissions_data) {
+          groupModuleAnalytics = await getGroupModuleAnalytics(
+            report.performance_data,
+            report.submissions_data,
+            report.structure_data,
+            report.meetings_data
+          );
+        }
+      } catch (error) {
+        console.error('Failed to fetch module data:', error);
+      }
+    }
+
     // Prepare data for LLM
     const promptData = {
       reportTitle: report.title,
@@ -104,6 +127,10 @@ export async function POST(request: Request) {
         totalTopics: getUniqueCount(report.structure_data, 'lesson_id'),
         totalSteps: getUniqueCount(report.structure_data, 'step_id'),
       } : null,
+      // NEW: Module structure with names and topics
+      moduleStructure,
+      // NEW: Group average module analytics
+      groupModuleAnalytics,
     };
 
     const systemPrompt = `You are an expert Learning Experience Designer creating a comprehensive group activity report for program managers.
@@ -113,6 +140,15 @@ Your task is to analyze the provided data about a cohort of learners and create 
 - Team dynamics and collaboration patterns
 - Project outcomes and practical applications
 - Areas of strength and opportunities for improvement
+- Module-specific performance patterns and challenges
+
+You have access to detailed module analytics including:
+- Module names and associated topics/lessons
+- Group average performance metrics per module (completion rates, success rates, attempts per step)
+- Meeting attendance patterns correlated with module activity
+- Individual student performance within each module
+
+Use this module-level data to provide specific, actionable insights about which parts of the course are working well and which need attention.
 
 Use a friendly, approachable tone while maintaining professionalism. Explain technical metrics in simple terms that non-technical managers can understand.
 

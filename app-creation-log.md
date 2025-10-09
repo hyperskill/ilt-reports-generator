@@ -1,5 +1,103 @@
 # App Creation Log
 
+## 2025-10-09: Module Activity Analytics and Group Statistics
+
+### Latest Update: Enhanced LLM Context with Module Data
+
+**Purpose**: Provide LLM with detailed module-level data for more accurate and specific report generation.
+
+**Changes**:
+1. **Created LLM Data Helpers** (`lib/utils/llm-data-helpers.ts`):
+   - `getModuleStructureData()` - extracts module names and associated topics/lessons
+   - `getGroupModuleAnalytics()` - calculates group average performance per module
+   - `getStudentModuleAnalytics()` - gets individual student performance per module
+   - All functions fetch real module names from Cogniterra API
+   - Returns structured data optimized for LLM consumption
+
+2. **Enhanced Manager Report Generation** (`app/api/llm/generate-manager-report/route.ts`):
+   - Added `moduleStructure` to prompt data (module names + topics)
+   - Added `groupModuleAnalytics` with group averages per module:
+     - Average completion rate, success rate, attempts per step
+     - Average meetings attended per module
+     - Number of students per module
+   - Updated system prompt to guide LLM on using module-specific data
+   - LLM now can provide specific feedback like "Module 3 (Python Basics) had low success rate"
+
+3. **Enhanced Student Report Generation** (`app/api/llm/generate-student-report/route.ts`):
+   - Added `moduleStructure` to prompt data
+   - Added `studentModuleAnalytics` with individual student performance per module:
+     - Completion rate, success rate, attempts per step per module
+     - Meetings attended during each module
+     - Activity period (first/last date) for each module
+   - Updated system prompt to guide LLM on using module-level insights
+   - LLM now can say "You excelled in Data Structures module" instead of generic "Module 2"
+
+**Benefits**:
+- ✅ LLM generates more specific, actionable feedback
+- ✅ Uses real module names (e.g., "Python Basics") instead of "Module 1"
+- ✅ Identifies challenging modules by name for targeted recommendations
+- ✅ Correlates meeting attendance with specific module performance
+- ✅ Provides context-aware insights based on actual course structure
+
+---
+
+### Previous Update: Group Module Analytics in Manager Shared Reports
+
+**Purpose**: Add group-level module analytics to manager shared reports constructor for comprehensive course analysis.
+
+**Changes**:
+1. **Added Group Module Analytics to Manager Shared Reports** (`app/api/reports/shared/create/route.ts`):
+   - Added two new blocks: `group-module-analytics-table` and `group-module-analytics-chart`
+   - Automatically generated when creating manager shared reports (if structure data available)
+   - Calculates averages across all students for each module:
+     - Average completion rate
+     - Average success rate
+     - Average attempts per step
+     - Average meetings attended
+     - Number of students per module
+   - Table block shows detailed metrics with helpful tooltips
+   - Chart block visualizes avg completed steps and avg meetings with dual Y-axes
+   - Positioned after "Student Performance Overview" table
+   - Includes comprehensive help text for managers
+
+2. **Updated reportData for Manager Reports**:
+   - Added `structure`, `submissions`, and `meetings` data to manager report context
+   - Enables module analytics processing for group-level insights
+
+### Previous Updates:
+
+**Group Module Analytics on Performance Page**:
+1. **Created `GroupModuleAnalytics` component** (`app/components/GroupModuleAnalytics.tsx`):
+   - Calculates average performance metrics across all students for each module
+   - Shows average completion rate, success rate, attempts per step, and meetings attended
+   - Displays both chart (bar chart with dual Y-axes) and detailed table
+   - Includes summary statistics (total modules, avg completion, avg success rate, total students)
+   - Color-coded badges for quick visual assessment
+
+2. **Updated Performance Preview Page** (`app/reports/[id]/preview/performance/page.tsx`):
+   - Added `GroupModuleAnalytics` component below the performance results table
+   - Passes all necessary data (students, submissions, structure, courseId, meetings)
+   - Conditionally renders only when structure data is available
+
+3. **Module Activity Chart in Shared Student Reports**:
+   - Added `module-activity-chart` block to shared student report constructor
+   - Automatically generated when creating shared student reports
+   - Shows completed steps and meetings attended per module
+
+4. **Module Activity Chart in Dynamic Results**:
+   - Replaced `WeeklyActivityChart` with `ModuleActivityChart` in the "View activity" popup
+   - Shows module-level activity instead of weekly activity
+   - Uses the same data structure as Module Analytics table
+
+**Benefits**:
+- ✅ Group-level insights for course coordinators
+- ✅ Identify challenging modules (low success rate, high attempts/step)
+- ✅ Track meeting attendance correlation with module performance
+- ✅ Compare individual student performance against group averages
+- ✅ Data-driven decisions for course improvements
+
+---
+
 ## 2025-10-09: PDF Export and User-Specific Sharing
 
 ### Major Changes: Removed Public/Publish, Added PDF Export and User-Specific Sharing
