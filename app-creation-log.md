@@ -2,7 +2,64 @@
 
 ## 2025-10-09: Module Activity Analytics and Group Statistics
 
-### Latest Update: Enhanced Manager Report System Prompt
+### Latest Update: Enhanced Student Report System Prompt
+
+**Purpose**: Improve LLM-generated student reports to focus on personal growth, transformation, and celebrating achievements while providing compassionate support for students.
+
+**Changes**:
+1. **Updated System Prompt** (`app/api/llm/generate-student-report/route.ts`):
+   - Added detailed course description: "AI Foundations: Models, Prompts, and Agents"
+   - Added instructor information: Hyperskill platform details
+   - Emphasized student audience: personal growth and transformation
+   - Added focus on celebrating victories and supporting struggles
+   - Instructed LLM to highlight student projects mentioned in expert comments
+   - Added guidance to map module names to acquired skills
+   - Changed tone to warm, friendly, and encouraging
+   - Added explicit instruction: "Generate ALL content in English only"
+
+2. **Key Tone Adjustments**:
+   - **For struggling students**: "Be extra compassionate. Acknowledge their effort, validate their challenges"
+   - **For high performers**: "Celebrate enthusiastically! Highlight their best moments"
+   - **Overall approach**: "Help them see how they've become a better version of themselves"
+
+3. **Enhanced Section Descriptions**:
+   - **Your Learning Journey**: Show transformation and growth using real module names
+   - **Your Strengths & Achievements**: Prominently highlight student projects if mentioned
+   - **Your Skills Development**: Map module progress to concrete skills acquired
+   - **Feedback from Your Instructors**: Prioritize project mentions and build confidence
+   - **Opportunities for Growth**: Frame as exciting opportunities, not criticisms
+   - **Next Steps & Recommendations**: Make students excited about what comes next
+
+**Key Prompt Improvements**:
+- **Growth Focus**: "Show them how they've become a better version of themselves"
+- **Project Emphasis**: "If they built projects, highlight them prominently!"
+- **Skills Mapping**: "Map their progress through modules to concrete skills"
+- **Compassionate Support**: "If the student struggled, be extra compassionate"
+- **Enthusiastic Celebration**: "If they excelled, celebrate enthusiastically!"
+
+**Example Guidance Added**:
+```
+For Skills Development:
+"By completing Prompt Engineering, you can now craft effective 
+AI prompts for various tasks"
+
+For Struggling Students:
+"Challenges are part of learning and you've already shown 
+courage by participating"
+```
+
+**Impact**:
+- ✅ Reports now celebrate personal growth and transformation
+- ✅ Struggling students receive compassionate support
+- ✅ High performers get enthusiastic recognition
+- ✅ Student projects are prominently featured
+- ✅ Module progress is connected to real-world skills
+- ✅ All feedback is encouraging and builds confidence
+- ✅ All content generated in English
+
+---
+
+### Previous Update: Enhanced Manager Report System Prompt
 
 **Purpose**: Improve LLM-generated manager reports to focus on business value, ROI, and practical skill application for business managers who invested in their team's training.
 
