@@ -210,7 +210,11 @@ function PieChartBlockViewer({ block }: { block: ReportBlock }) {
   };
 
   return (
-    <Box style={{ height: '350px', position: 'relative', padding: '16px 0' }}>
+    <Box 
+      style={{ height: '350px', position: 'relative', padding: '16px 0' }}
+      data-chart-type="pie"
+      data-chart-data={JSON.stringify(chartData)}
+    >
       <Pie data={chartData} options={options} />
     </Box>
   );
@@ -271,7 +275,11 @@ function LineChartBlockViewer({ block }: { block: ReportBlock }) {
   };
 
   return (
-    <Box style={{ height: '350px', position: 'relative', padding: '16px 0' }}>
+    <Box 
+      style={{ height: '350px', position: 'relative', padding: '16px 0' }}
+      data-chart-type="line"
+      data-chart-data={JSON.stringify(chartData)}
+    >
       <Line data={chartData} options={options} />
     </Box>
   );

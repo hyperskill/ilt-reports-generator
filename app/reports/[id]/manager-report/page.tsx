@@ -124,29 +124,6 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
     }
   };
 
-  const handlePublish = async () => {
-    if (!confirm('Are you sure you want to publish this report? It will be visible to managers.')) {
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      
-      const { error } = await supabase
-        .from('manager_reports')
-        .update({ is_published: true })
-        .eq('report_id', params.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      alert('Report published successfully!');
-      await loadReport();
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    }
-  };
 
   if (loading) {
     return (
@@ -167,9 +144,6 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
             <Text size="3" color="gray">AI-generated team performance summary</Text>
           </Box>
           <Flex gap="2" align="center">
-            {managerReport?.is_published && (
-              <Badge color="green">Published</Badge>
-            )}
             {managerReport && (
               <ShareReportButton
                 reportType="manager"
@@ -266,13 +240,6 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
                   </Button>
                   <Button onClick={handleSave} disabled={saving}>
                     {saving ? 'Saving...' : '💾 Save'}
-                  </Button>
-                  <Button 
-                    color="green" 
-                    onClick={handlePublish}
-                    disabled={managerReport.is_published}
-                  >
-                    {managerReport.is_published ? '✓ Published' : '📤 Publish'}
                   </Button>
                 </Flex>
               </Card>

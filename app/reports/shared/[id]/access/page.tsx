@@ -201,9 +201,6 @@ export default function SharedReportAccessPage() {
           </Flex>
 
           <Flex gap="2" align="center">
-            <Badge color={report.is_public ? 'orange' : 'gray'}>
-              {report.is_public ? '🌐 Public' : '🔒 Private'}
-            </Badge>
             <Text size="2" color="gray">
               {accessList.length} user{accessList.length !== 1 ? 's' : ''} with access
             </Text>

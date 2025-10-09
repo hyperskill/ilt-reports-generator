@@ -1,5 +1,135 @@
 # App Creation Log
 
+## 2025-10-09: PDF Export and User-Specific Sharing
+
+### Major Changes: Removed Public/Publish, Added PDF Export and User-Specific Sharing
+
+**Purpose**: Replace public/publish functionality with explicit user-based sharing and add PDF export capabilities.
+
+### Key Changes
+
+1. **Removed Public/Publish Functionality**:
+   - Removed `is_public` column from `shared_reports` table
+   - Removed `is_published` column from `manager_reports` and `student_reports` tables
+   - Updated RLS policies to use only explicit access via `report_access` table
+   - Removed all UI elements for "Make Public", "Make Private", and "Publish" buttons
+   - Updated API routes to remove `is_public` handling
+
+2. **Enhanced User-Specific Sharing**:
+   - Created `ShareReportDialog` component for managing report access
+   - Users can select specific users/managers/students to share reports with
+   - Visual checkbox interface showing all users with their roles
+   - Real-time access list display with current permissions
+   - Grant and revoke access functionality
+
+3. **PDF Export Functionality** (Updated):
+   - **Installed `html2pdf.js` library** - specialized library for HTML to PDF conversion
+   - Created `simple-pdf-generator.ts` utility using html2pdf.js
+   - **Key Features**:
+     - Captures charts and canvas elements correctly
+     - Maintains table formatting with proper borders
+     - Removes problematic Radix UI styles during PDF generation
+     - Applies clean, minimal styles for PDF output
+     - Proper A4 page formatting with margins
+     - Automatic page breaks for long content
+   - Added "Download PDF" button to shared report view pages
+   - Added PDF download functionality to user profiles for their shared reports
+   - **Fixed Issues**:
+     - Charts and graphs now appear in PDF
+     - Table formatting preserved without broken borders
+     - No layout changes to original page during PDF generation
+     - Proper scaling for A4 format
+
+4. **User Profile Enhancements**:
+   - Created `SharedReportsList` component for displaying accessible reports
+   - Users can now see all reports shared with them in their profile
+   - Each report shows: type badge, title, description, share date
+   - View and Download PDF buttons for each shared report
+   - Empty state message when no reports are shared
+
+5. **Admin Access Updates**:
+   - Admins can now manage ALL reports, not just their own
+   - Updated API routes to allow admin access to any shared report
+   - Simplified access management interface
+
+### Database Migration (`supabase/remove-public-add-sharing.sql`)
+
+**Changes**:
+- `ALTER TABLE shared_reports DROP COLUMN is_public`
+- `ALTER TABLE manager_reports DROP COLUMN is_published`
+- `ALTER TABLE student_reports DROP COLUMN is_published`
+- Updated RLS policies to enforce explicit access only
+- Added index for better query performance: `idx_report_access_user_report`
+
+### New Components
+
+1. **`ShareReportDialog.tsx`**:
+   - Modal dialog for managing report access
+   - User selection with checkboxes
+   - Role badges (admin/manager/student)
+   - Current access list display
+   - Save/Cancel functionality
+
+2. **`SharedReportsList.tsx`**:
+   - Client component for profile page
+   - Displays shared reports with metadata
+   - View and PDF download buttons
+   - Empty state handling
+
+3. **`lib/utils/pdf-generator.ts`**:
+   - Utility functions for PDF generation
+   - `generatePDFFromElement()` - Convert HTML element to PDF
+   - `generatePDFFromHTML()` - Convert HTML string to PDF
+   - Handles multi-page PDFs automatically
+
+### Updated Files
+
+- **UI Components**:
+  - `app/reports/shared/[id]/edit/page.tsx` - Added ShareReportDialog
+  - `app/reports/shared/[id]/view/page.tsx` - Added PDF download
+  - `app/profile/page.tsx` - Added shared reports section
+  - `app/reports/[id]/access/page.tsx` - Removed public toggle
+  - `app/reports/[id]/shared/page.tsx` - Removed status column
+  - `app/reports/shared/page.tsx` - Removed status column
+
+- **LLM Reports**:
+  - `app/reports/[id]/manager-report/page.tsx` - Removed publish button
+  - `app/reports/[id]/student-reports/[userId]/page.tsx` - Removed publish button
+  - `app/reports/[id]/student-reports/page.tsx` - Changed badges to "Generated"
+  - `app/reports/[id]/LLMReportButtons.tsx` - Updated status display
+
+- **API Routes**:
+  - `app/api/reports/shared/[id]/route.ts` - Removed `is_public` handling
+  - Access control routes remain unchanged (already supported user-specific sharing)
+
+### Access Control Flow
+
+1. **Admins**:
+   - Create shared reports
+   - Select specific users to share with
+   - Manage access for any report
+   - View all reports
+
+2. **Managers/Students**:
+   - View reports shared with them in profile
+   - Download PDF of shared reports
+   - No creation or management capabilities
+
+3. **Report Visibility**:
+   - Reports are ONLY visible to:
+     - Admins (all reports)
+     - Users with explicit access via `report_access` table
+   - No public access possible
+
+### Benefits
+
+- **Enhanced Security**: No accidental public exposure of reports
+- **Granular Control**: Precise control over who can access each report
+- **Better UX**: Users see only relevant reports in their profile
+- **Offline Access**: PDF export allows offline viewing
+- **Audit Trail**: Track who granted access and when
+- **Scalable**: Easy to add/remove users from report access
+
 ## 2025-10-08: Reports Sharing Feature
 
 ### Major Feature: Shareable Reports with Block Constructor
@@ -2668,4 +2798,548 @@ const fetchCommentsStatus = async () => {
 - **Informed Decisions**: Users can make better decisions about when to generate reports
 - **Efficiency**: No need to navigate to comments page to check status
 - **Professional Interface**: Clean, organized display of comment statistics
+
+---
+
+## 2025-10-09 (Evening): PDF Generation Improvements
+
+### Problem
+Initial PDF generation had multiple issues:
+1. Empty PDFs being generated
+2. Broken table layouts with unpredictable borders
+3. Page layout changes during PDF generation
+4. Charts and graphs not appearing in PDF output
+
+### Solution: Migrated to html2pdf.js
+
+**Installed**: `html2pdf.js` - a specialized library for HTML to PDF conversion
+
+**Implementation** (`lib/utils/simple-pdf-generator.ts`):
+
+```typescript
+import html2pdf from 'html2pdf.js';
+
+export async function generateSimplePDFFromElement(
+  element: HTMLElement,
+  filename: string
+): Promise<void> {
+  // Configuration
+  const options = {
+    margin: [10, 10, 10, 10] as [number, number, number, number],
+    filename: filename,
+    image: { type: 'jpeg' as const, quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      letterRendering: true,
+      onclone: (clonedDoc: Document) => {
+        // Remove Radix UI styles that cause issues
+        const radixStyles = clonedDoc.querySelectorAll('style[data-radix], link[href*="radix"]');
+        radixStyles.forEach(style => style.remove());
+        
+        // Apply clean, minimal styles
+        const cleanStyle = clonedDoc.createElement('style');
+        cleanStyle.textContent = `/* Clean styles for PDF */`;
+        clonedDoc.head.appendChild(cleanStyle);
+        
+        // Ensure canvas elements are visible
+        const canvases = clonedDoc.querySelectorAll('canvas');
+        canvases.forEach((canvas) => {
+          const htmlCanvas = canvas as HTMLCanvasElement;
+          htmlCanvas.style.display = 'block';
+          htmlCanvas.style.visibility = 'visible';
+          htmlCanvas.style.opacity = '1';
+        });
+      }
+    },
+    jsPDF: { 
+      unit: 'mm' as const, 
+      format: 'a4' as const, 
+      orientation: 'portrait' as const,
+      compress: true
+    },
+    pagebreak: { 
+      mode: ['avoid-all', 'css', 'legacy'],
+      avoid: ['canvas', 'img', 'table']
+    }
+  };
+  
+  await html2pdf().set(options).from(element).save();
+}
+```
+
+### Key Features
+
+1. **Chart Support**:
+   - Properly captures `<canvas>` elements
+   - Ensures charts are visible during PDF generation
+   - Maintains chart quality with high-resolution capture
+
+2. **Clean Styling**:
+   - Removes problematic Radix UI styles during cloning
+   - Applies minimal, clean styles for PDF output
+   - Prevents CSS `color()` function errors
+   - Removes unpredictable borders
+
+3. **Proper Formatting**:
+   - A4 page format with 10mm margins
+   - Automatic page breaks for long content
+   - Avoids breaking charts, images, and tables across pages
+   - High-quality JPEG output (98% quality)
+
+4. **No Layout Changes**:
+   - Works on cloned document, not original
+   - Original page layout remains unchanged
+   - No visible side effects during generation
+
+### Technical Details
+
+- **Library**: html2pdf.js (wrapper around html2canvas and jsPDF)
+- **Scale**: 2x for high-resolution output
+- **Format**: A4 portrait with 10mm margins
+- **Image Quality**: 98% JPEG compression
+- **Page Breaks**: Intelligent avoidance of breaking visual elements
+
+### Benefits
+
+✅ **Charts and graphs appear correctly**
+✅ **Tables maintain proper formatting**
+✅ **No layout changes to original page**
+✅ **Proper A4 scaling**
+✅ **Clean, professional PDF output**
+✅ **Automatic multi-page support**
+
+### Files Modified
+
+- `lib/utils/simple-pdf-generator.ts` - Complete rewrite using html2pdf.js
+- `package.json` - Added html2pdf.js dependency
+- `app-creation-log.md` - Updated documentation
+
+---
+
+## 2025-10-09 (Late Evening): PDF Customization
+
+### Requirements
+User requested specific customizations for PDF output:
+1. Remove "Manager Report" / "Student Report" badge from top
+2. Remove "Report ID" and "Manage Access" footer section
+3. Expand all accordions in PDF version
+
+### Implementation
+
+**Added data-attributes for PDF control** (`app/reports/shared/[id]/view/page.tsx`):
+```typescript
+// Hide badge in PDF
+<Flex gap="2" mb="2" align="center" data-pdf-hide>
+  <Badge color={report.report_type === 'manager' ? 'blue' : 'green'}>
+    {report.report_type === 'manager' ? '📊 Manager Report' : '👤 Student Report'}
+  </Badge>
+</Flex>
+
+// Hide footer in PDF
+<Card data-pdf-hide>
+  <Flex justify="between" align="center">
+    <Text size="2" color="gray">Report ID: {report.id}</Text>
+    {canEdit && <Button>Manage Access</Button>}
+  </Flex>
+</Card>
+```
+
+**Enhanced PDF generator** (`lib/utils/simple-pdf-generator.ts`):
+
+1. **Hide marked elements**:
+```typescript
+// STEP 5: Hide elements marked with data-pdf-hide
+const elementsToHide = clonedDoc.querySelectorAll('[data-pdf-hide]');
+elementsToHide.forEach(el => {
+  el.style.display = 'none';
+});
+```
+
+2. **Expand all accordions**:
+```typescript
+// STEP 6: Expand all accordions
+// Change data-state from "closed" to "open"
+const dataStateElements = clonedDoc.querySelectorAll('[data-state]');
+dataStateElements.forEach(el => {
+  if (el.getAttribute('data-state') === 'closed') {
+    el.setAttribute('data-state', 'open');
+  }
+  el.style.display = 'block';
+  el.style.height = 'auto';
+  el.style.maxHeight = 'none';
+  el.style.overflow = 'visible';
+});
+
+// Make accordion regions visible
+const accordionRegions = clonedDoc.querySelectorAll('[role="region"]');
+accordionRegions.forEach(region => {
+  region.style.display = 'block';
+  region.style.height = 'auto';
+  region.style.overflow = 'visible';
+});
+
+// Show all hidden elements (except those marked to hide)
+const hiddenElements = clonedDoc.querySelectorAll('[style*="display: none"]');
+hiddenElements.forEach(hidden => {
+  if (!hidden.hasAttribute('data-pdf-hide') && !hidden.closest('[data-pdf-hide]')) {
+    hidden.style.display = 'block';
+  }
+});
+```
+
+### Features
+
+✅ **Clean PDF header** - No type badges, just title and description
+✅ **No footer clutter** - Report ID and management buttons removed
+✅ **All content visible** - Accordions automatically expanded
+✅ **Selective hiding** - Uses `data-pdf-hide` attribute for control
+✅ **Detailed logging** - Console shows what's being hidden/expanded
+
+### Benefits
+
+- **Professional appearance** - PDF looks clean and focused on content
+- **Complete information** - All accordion content visible without interaction
+- **Easy maintenance** - Just add `data-pdf-hide` to any element to exclude from PDF
+- **Debugging friendly** - Console logs show exactly what's happening
+
+### Files Modified
+
+- `lib/utils/simple-pdf-generator.ts` - Added STEP 5 (hide elements) and STEP 6 (expand accordions)
+- `app/reports/shared/[id]/view/page.tsx` - Added `data-pdf-hide` attributes to badge and footer
+- `app-creation-log.md` - Updated documentation
+
+---
+
+## 2025-10-09 (Night): PDF Styling Improvements
+
+### Problem
+PDF output was functional but lacked proper styling and spacing:
+- No visual separation between sections
+- Tables looked plain
+- Accordions had no visual distinction
+- Overall appearance was too basic compared to web version
+
+### Solution: Enhanced CSS Styles for PDF
+
+**Key Improvements**:
+
+1. **Professional Typography**
+   - System fonts: `-apple-system, BlinkMacSystemFont, 'Segoe UI'`
+   - Proper heading hierarchy (h1: 28px, h2: 22px, h3: 18px, etc.)
+   - Better line-height (1.6) for readability
+   - Color scheme: `#1a1a1a` for text, `#000` for headings
+
+2. **Card-like Sections**
+   ```css
+   [class*="Card"], section {
+     background: white;
+     border: 1px solid #e0e0e0;
+     border-radius: 8px;
+     padding: 16px;
+     margin: 16px 0;
+     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+   }
+   ```
+
+3. **Enhanced Tables**
+   - Better borders: `#d0d0d0`
+   - Alternating row colors: `#fafafa`
+   - Header styling: `#f5f5f5` background
+   - Proper padding: `8px 10px`
+
+4. **Visual Accordion Distinction**
+   ```css
+   [role="region"] {
+     background: #fafafa;
+     border-left: 3px solid #0066cc;
+     border-radius: 4px;
+     padding: 12px;
+     margin: 12px 0;
+   }
+   ```
+
+5. **Canvas/Chart Styling**
+   - Border and padding for visual separation
+   - Border-radius for modern look
+   - Proper margins: `20px 0`
+
+6. **Radix UI Class Support**
+   - Preserved class names during cleanup
+   - Added selectors for Radix size utilities (`size-1` through `size-8`)
+   - Added selectors for spacing utilities (`mb-1` through `mb-5`, `mt-1` through `mt-5`)
+   - Added selectors for gap utilities (`gap-1` through `gap-5`)
+   - Color utilities (`color-gray`)
+
+7. **Page Break Control**
+   - Avoid breaking canvas, tables, and accordions
+   - Support for manual page breaks
+
+### Technical Implementation
+
+**STEP 2 Modified**: Preserve class names
+```typescript
+// Remove inline styles but keep class names for CSS selectors
+allElements.forEach(el => {
+  if (!isCanvas && !isAccordion) {
+    el.removeAttribute('style');
+    // Keep class names - commented out: el.removeAttribute('class');
+  }
+});
+```
+
+**STEP 3 Enhanced**: Comprehensive CSS
+- 180+ lines of carefully crafted CSS
+- Responsive to Radix UI class patterns
+- Professional spacing and typography
+- Print-optimized colors and borders
+
+### Benefits
+
+✅ **Professional appearance** - Looks similar to web version
+✅ **Clear section separation** - Cards with borders and shadows
+✅ **Readable tables** - Alternating rows, clear headers
+✅ **Visual hierarchy** - Proper heading sizes and spacing
+✅ **Accordion distinction** - Blue left border, gray background
+✅ **Chart presentation** - Bordered and padded for clarity
+✅ **Consistent spacing** - Margins and padding throughout
+✅ **Print-friendly** - Optimized colors and page breaks
+
+### Comparison
+
+**Before**: Plain text, no spacing, basic tables
+**After**: Professional document with clear structure, visual hierarchy, and proper formatting
+
+### Files Modified
+
+- `lib/utils/simple-pdf-generator.ts` - Enhanced CSS styles, preserved class names
+- `app-creation-log.md` - Updated documentation
+
+---
+
+## 2025-10-09 (Night): Page Break Control
+
+### Problem
+PDF generation had poor page break behavior:
+- Headings separated from their content (widows)
+- Sections split across pages awkwardly
+- No control over orphans and widows
+
+### Solution: Advanced Page Break CSS
+
+**Added comprehensive page break rules**:
+
+1. **Heading Protection**
+   ```css
+   h1, h2, h3, h4, h5, h6 {
+     page-break-after: avoid;
+     page-break-inside: avoid;
+   }
+   ```
+   - Prevents headings from appearing alone at bottom of page
+   - Keeps heading with its following content
+
+2. **Section Integrity**
+   ```css
+   canvas, table, [role="region"], [class*="Card"], section {
+     page-break-inside: avoid;
+   }
+   ```
+   - Prevents breaking cards/sections in the middle
+   - Keeps charts and tables intact
+   - Accordion regions stay together
+
+3. **Orphan and Widow Control**
+   ```css
+   body, p, div, li {
+     orphans: 3;
+     widows: 3;
+   }
+   ```
+   - `orphans: 3` - minimum 3 lines at bottom of page
+   - `widows: 3` - minimum 3 lines at top of page
+   - Prevents single lines separated from paragraph
+
+### Technical Details
+
+**Page Break Properties**:
+- `page-break-before: avoid` - Don't break before element
+- `page-break-after: avoid` - Don't break after element
+- `page-break-inside: avoid` - Don't break within element
+- `orphans: 3` - Minimum lines at end of page
+- `widows: 3` - Minimum lines at start of page
+
+**Applied to**:
+- All headings (h1-h6)
+- Cards and sections
+- Tables and charts
+- Accordion regions
+- Paragraphs and divs
+
+### Benefits
+
+✅ **No orphaned headings** - Headings stay with content
+✅ **Intact sections** - Cards don't split awkwardly
+✅ **Better readability** - No single lines separated
+✅ **Professional appearance** - Clean page breaks
+✅ **Preserved context** - Related content stays together
+
+### Example
+
+**Before**:
+```
+Page 1:
+  ...
+  Group Dynamics & Engagement
+  
+Page 2:
+  Students in this cohort exhibited...
+```
+
+**After**:
+```
+Page 1:
+  ...
+  
+Page 2:
+  Group Dynamics & Engagement
+  Students in this cohort exhibited...
+```
+
+### Files Modified
+
+- `lib/utils/simple-pdf-generator.ts` - Added page break control CSS
+- `app-creation-log.md` - Updated documentation
+
+---
+
+## 2025-10-09 (Late Night): Canvas to Image Conversion
+
+### Problem
+Despite all page break CSS rules, canvas elements (charts/graphs) were still being split across pages. This is a known limitation of `html2canvas` and PDF generation libraries - they don't reliably respect `page-break-inside: avoid` for canvas elements.
+
+### Solution: Convert Canvas to Images
+
+**Radical approach**: Convert all `<canvas>` elements to `<img>` elements BEFORE PDF generation.
+
+**Why this works**:
+- Images are better supported by PDF generators
+- `page-break-inside: avoid` works reliably for images
+- No canvas rendering issues in PDF
+- Better compatibility across browsers
+
+### Implementation
+
+**STEP 5 - Canvas to Image Conversion**:
+```typescript
+// Find all canvas elements
+const canvases = clonedDoc.querySelectorAll('canvas');
+
+canvases.forEach((canvas) => {
+  // Convert canvas to data URL
+  const dataURL = canvas.toDataURL('image/png');
+  
+  // Create image element
+  const img = document.createElement('img');
+  img.src = dataURL;
+  
+  // Create protective wrapper
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 30px 0 !important;
+    padding: 20px !important;
+    background: white !important;
+    border: 1px solid #e0e0e0 !important;
+  `;
+  
+  // Include heading if present
+  if (headingToInclude) {
+    wrapper.appendChild(headingToInclude);
+  }
+  
+  // Add image to wrapper
+  wrapper.appendChild(img);
+  
+  // Replace canvas with wrapper
+  parent.insertBefore(wrapper, canvas);
+  parent.removeChild(canvas);
+});
+```
+
+### Key Features
+
+1. **Canvas → PNG Conversion**
+   - Uses `canvas.toDataURL('image/png')`
+   - High quality image output
+   - Preserves all chart details
+
+2. **Protective Wrapper**
+   - Each image wrapped in div with `page-break-inside: avoid`
+   - Includes heading if found nearby
+   - Styled with border and padding
+
+3. **Heading Association**
+   - Searches for h1-h6 before canvas
+   - Includes heading in same wrapper
+   - Keeps title and chart together
+
+4. **Clean Replacement**
+   - Original canvas removed
+   - Image inserted in same position
+   - No layout shifts
+
+### Benefits
+
+✅ **Reliable page breaks** - Images don't split
+✅ **Heading protection** - Title stays with chart
+✅ **Better compatibility** - Works across all PDF generators
+✅ **High quality** - PNG format preserves details
+✅ **Visual consistency** - Same appearance as web version
+✅ **No canvas issues** - Eliminates canvas rendering problems
+
+### Technical Details
+
+**Image CSS**:
+```css
+img {
+  max-width: 100%;
+  height: auto;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  display: block;
+}
+```
+
+**Wrapper CSS** (inline):
+- `page-break-inside: avoid !important`
+- `break-inside: avoid !important`
+- `margin: 30px 0`
+- `padding: 20px`
+- `border: 1px solid #e0e0e0`
+
+### Console Output
+
+```
+📊 Found 2 canvas elements - converting to images
+📊 Canvas 1: { width: 600, height: 400, hasData: true }
+   Included heading "Activity Pattern Distribution..." with canvas 1
+   Converted canvas 1 to image and wrapped in protective div
+📊 Canvas 2: { width: 600, height: 400, hasData: true }
+   Converted canvas 2 to image and wrapped in protective div
+```
+
+### Result
+
+**Before**: Canvas elements split across pages
+**After**: Charts converted to images, stay intact on single page
+
+### Files Modified
+
+- `lib/utils/simple-pdf-generator.ts` - Added canvas to image conversion in STEP 5
+- `app-creation-log.md` - Updated documentation
 

@@ -223,9 +223,7 @@ export default function StudentReportsPage({ params }: { params: { id: string } 
                       <Table.Cell>
                         {studentReport ? (
                           <Flex gap="2">
-                            <Badge color={studentReport.is_published ? 'green' : 'yellow'}>
-                              {studentReport.is_published ? 'Published' : 'Draft'}
-                            </Badge>
+                            <Badge color="green">Generated</Badge>
                             {studentReport.edited_content && (
                               <Badge color="blue">Edited</Badge>
                             )}

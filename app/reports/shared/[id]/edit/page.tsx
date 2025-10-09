@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Box, Container, Heading, Text, Flex, Button, Spinner } from '@radix-ui/themes';
 import ReportBuilder from './ReportBuilder';
+import ShareReportDialog from './ShareReportDialog';
 import { SharedReport, ReportBlock } from '@/lib/types';
 
 export default function SharedReportEditPage() {
@@ -63,36 +64,6 @@ export default function SharedReportEditPage() {
     }
   };
 
-  const handlePublish = async () => {
-    if (!report) return;
-
-    const newPublicState = !report.is_public;
-    const confirmed = confirm(
-      newPublicState
-        ? 'Make this report public? Anyone with the link will be able to view it.'
-        : 'Make this report private? Only users with explicit access can view it.'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const response = await fetch(`/api/reports/shared/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_public: newPublicState }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update');
-      }
-
-      setReport(data.sharedReport);
-    } catch (err: any) {
-      console.error('Error updating public status:', err);
-    }
-  };
 
   if (loading) {
     return (
@@ -136,12 +107,10 @@ export default function SharedReportEditPage() {
             </Text>
           </Box>
           <Flex gap="2">
-            <Button
-              variant="soft"
-              onClick={() => router.push(`/reports/shared/${id}/access`)}
-            >
-              Manage Access
-            </Button>
+            <ShareReportDialog 
+              reportId={id}
+              reportTitle={report.title}
+            />
             <Button
               variant="soft"
               onClick={() => router.push(`/reports/shared/${id}/view`)}
@@ -163,8 +132,6 @@ export default function SharedReportEditPage() {
         reportTitle={report.title}
         reportDescription={report.description}
         onSave={handleSave}
-        onPublish={handlePublish}
-        isPublic={report.is_public}
       />
     </Container>
   );

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Box, Card, Flex, Heading, Text, Badge, Separator } from '@radix-ui/themes';
 import { UserNav } from '@/app/components/UserNav';
+import SharedReportsList from './SharedReportsList';
 import Link from 'next/link';
 
 export default async function ProfilePage() {
@@ -18,6 +19,24 @@ export default async function ProfilePage() {
     .select('*')
     .eq('id', user.id)
     .single();
+
+  // Fetch shared reports accessible to this user
+  const { data: sharedReports } = await supabase
+    .from('report_access')
+    .select(`
+      shared_report_id,
+      granted_at,
+      shared_reports (
+        id,
+        title,
+        description,
+        report_type,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('granted_at', { ascending: false });
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -149,6 +168,14 @@ export default async function ProfilePage() {
                 </Box>
               )}
             </Box>
+          </Flex>
+        </Card>
+
+        <Card>
+          <Flex direction="column" gap="4">
+            <Heading size="5">Shared Reports</Heading>
+            <Separator size="4" />
+            <SharedReportsList reports={sharedReports || []} />
           </Flex>
         </Card>
 

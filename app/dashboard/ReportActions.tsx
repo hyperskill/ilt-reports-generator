@@ -10,9 +10,10 @@ interface ReportActionsProps {
   reportDescription: string | null;
   isAdmin: boolean;
   isOwner: boolean;
+  isShared?: boolean; // Flag to indicate if this is a shared report
 }
 
-export function ReportActions({ reportId, reportTitle, reportDescription, isAdmin, isOwner }: ReportActionsProps) {
+export function ReportActions({ reportId, reportTitle, reportDescription, isAdmin, isOwner, isShared }: ReportActionsProps) {
   const router = useRouter();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -73,18 +74,22 @@ export function ReportActions({ reportId, reportTitle, reportDescription, isAdmi
   };
 
   const canModify = isAdmin || isOwner;
+  
+  // For shared reports, non-admins can only view (read-only)
+  const viewUrl = isShared ? `/reports/shared/${reportId}/view` : `/reports/${reportId}`;
+  const showActions = !isShared && canModify; // Only show edit/delete for base reports if user can modify
 
   return (
     <Flex gap="2">
       <Button 
         size="1" 
         variant="soft"
-        onClick={() => router.push(`/reports/${reportId}`)}
+        onClick={() => router.push(viewUrl)}
       >
         View
       </Button>
 
-      {canModify && (
+      {showActions && (
         <>
           <Dialog.Root open={showEditDialog} onOpenChange={setShowEditDialog}>
             <Dialog.Trigger>

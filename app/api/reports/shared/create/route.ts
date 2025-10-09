@@ -640,7 +640,6 @@ export async function POST(request: Request) {
         title,
         description: description || null,
         blocks,
-        is_public: false,
         created_by: user.id,
       })
       .select()

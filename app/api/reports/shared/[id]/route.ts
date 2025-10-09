@@ -32,7 +32,6 @@ export async function GET(
       .then(({ data }) => data?.role === 'admin');
 
     const isCreator = user && sharedReport.created_by === user.id;
-    const isPublic = sharedReport.is_public;
 
     // Check if user has explicit access
     const hasAccess = user && await supabase
@@ -43,7 +42,7 @@ export async function GET(
       .single()
       .then(({ data }) => !!data);
 
-    if (!isAdmin && !isCreator && !isPublic && !hasAccess) {
+    if (!isAdmin && !isCreator && !hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -125,7 +124,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { title, description, blocks, is_public } = body;
+    const { title, description, blocks } = body;
 
     // Validate blocks if provided
     if (blocks && !Array.isArray(blocks)) {
@@ -137,7 +136,6 @@ export async function PATCH(
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (blocks !== undefined) updateData.blocks = blocks;
-    if (is_public !== undefined) updateData.is_public = is_public;
 
     const { data: updatedReport, error: updateError } = await supabase
       .from('shared_reports')

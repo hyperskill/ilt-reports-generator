@@ -29,7 +29,7 @@ export function LLMReportButtons({ reportId, isAdmin }: LLMReportButtonsProps) {
       // Check manager report
       const { data: managerData } = await supabase
         .from('manager_reports')
-        .select('id, is_published')
+        .select('id')
         .eq('report_id', reportId)
         .single();
       
@@ -137,12 +137,7 @@ export function LLMReportButtons({ reportId, isAdmin }: LLMReportButtonsProps) {
                   >
                     📊 Manager Report
                   </Button>
-                  {managerReport.is_published && (
-                    <Badge color="green" size="1">Published</Badge>
-                  )}
-                  {!managerReport.is_published && (
-                    <Badge color="yellow" size="1">Draft</Badge>
-                  )}
+                  <Badge color="green" size="1">Generated</Badge>
                 </Flex>
               )}
 

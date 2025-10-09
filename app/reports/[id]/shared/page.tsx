@@ -729,7 +729,6 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                 <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Student</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
               </Table.Row>
@@ -756,11 +755,6 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                     ) : (
                       <Text size="2" color="gray">-</Text>
                     )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Badge color={sharedReport.is_public ? 'orange' : 'gray'}>
-                      {sharedReport.is_public ? 'Public' : 'Private'}
-                    </Badge>
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2">

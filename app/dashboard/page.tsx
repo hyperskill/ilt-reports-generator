@@ -26,13 +26,61 @@ export default async function DashboardPage() {
 
   const isAdmin = profile?.role === 'admin';
 
-  // Fetch recent reports
-  const { data: recentReports } = await supabase
-    .from('reports')
-    .select('id, title, description, created_at, created_by')
-    .eq('status', 'completed')
-    .order('created_at', { ascending: false })
-    .limit(5);
+  // Fetch recent reports based on role
+  let recentReports: any[] = [];
+  let managerReports: any[] = [];
+  let studentReports: any[] = [];
+  
+  if (isAdmin) {
+    // Admins see all base reports
+    const { data } = await supabase
+      .from('reports')
+      .select('id, title, description, created_at, created_by')
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    recentReports = data || [];
+  } else {
+    // Non-admins see only shared reports they have access to
+    const { data } = await supabase
+      .from('report_access')
+      .select(`
+        shared_report_id,
+        granted_at,
+        shared_reports (
+          id,
+          title,
+          description,
+          created_at,
+          created_by,
+          report_type
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('granted_at', { ascending: false });
+    
+    // Transform and separate by type
+    const allSharedReports = (data || [])
+      .map((access: any) => {
+        const report = Array.isArray(access.shared_reports) 
+          ? access.shared_reports[0] 
+          : access.shared_reports;
+        return report ? {
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          created_at: report.created_at,
+          created_by: report.created_by,
+          report_type: report.report_type,
+          isShared: true,
+        } : null;
+      })
+      .filter(Boolean);
+    
+    // Separate by report type
+    managerReports = allSharedReports.filter((r: any) => r.report_type === 'manager');
+    studentReports = allSharedReports.filter((r: any) => r.report_type === 'student');
+  }
 
   return (
     <Box p="6">
@@ -106,8 +154,8 @@ export default async function DashboardPage() {
           </Card>
         )}
 
-        {/* Recent Reports */}
-        {recentReports && recentReports.length > 0 && (
+        {/* Recent Reports for Admins */}
+        {isAdmin && recentReports && recentReports.length > 0 && (
           <Card>
             <Flex direction="column" gap="4">
               <Flex justify="between" align="center">
@@ -155,12 +203,151 @@ export default async function DashboardPage() {
                           reportDescription={report.description}
                           isAdmin={isAdmin}
                           isOwner={report.created_by === user.id}
+                          isShared={report.isShared || false}
                         />
                       </Table.Cell>
                     </Table.Row>
                   ))}
                 </Table.Body>
               </Table.Root>
+            </Flex>
+          </Card>
+        )}
+
+        {/* Manager Reports for Non-Admins */}
+        {!isAdmin && managerReports && managerReports.length > 0 && (
+          <Card>
+            <Flex direction="column" gap="4">
+              <Flex justify="between" align="center">
+                <Heading size="5">📊 Manager Reports</Heading>
+                <Link href="/reports">
+                  <Button variant="soft" size="2">
+                    View All
+                  </Button>
+                </Link>
+              </Flex>
+
+              <Table.Root variant="surface">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Shared</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {managerReports.map((report) => (
+                    <Table.Row key={report.id}>
+                      <Table.Cell>
+                        <Flex gap="2" align="center">
+                          <Text weight="bold">{report.title}</Text>
+                          <Badge size="1" color="blue">Manager</Badge>
+                        </Flex>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {report.description || '—'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {new Date(report.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <ReportActions
+                          reportId={report.id}
+                          reportTitle={report.title}
+                          reportDescription={report.description}
+                          isAdmin={isAdmin}
+                          isOwner={false}
+                          isShared={true}
+                        />
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Flex>
+          </Card>
+        )}
+
+        {/* Student Reports for Non-Admins */}
+        {!isAdmin && studentReports && studentReports.length > 0 && (
+          <Card>
+            <Flex direction="column" gap="4">
+              <Flex justify="between" align="center">
+                <Heading size="5">👤 Student Reports</Heading>
+                <Link href="/reports">
+                  <Button variant="soft" size="2">
+                    View All
+                  </Button>
+                </Link>
+              </Flex>
+
+              <Table.Root variant="surface">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Shared</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {studentReports.map((report) => (
+                    <Table.Row key={report.id}>
+                      <Table.Cell>
+                        <Flex gap="2" align="center">
+                          <Text weight="bold">{report.title}</Text>
+                          <Badge size="1" color="green">Student</Badge>
+                        </Flex>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {report.description || '—'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {new Date(report.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <ReportActions
+                          reportId={report.id}
+                          reportTitle={report.title}
+                          reportDescription={report.description}
+                          isAdmin={isAdmin}
+                          isOwner={false}
+                          isShared={true}
+                        />
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Flex>
+          </Card>
+        )}
+
+        {/* No reports message for non-admins */}
+        {!isAdmin && managerReports.length === 0 && studentReports.length === 0 && (
+          <Card>
+            <Flex direction="column" align="center" gap="3" p="6">
+              <Text size="5" weight="bold">No reports shared with you yet</Text>
+              <Text size="3" color="gray">
+                Reports will appear here once an administrator shares them with you.
+              </Text>
             </Flex>
           </Card>
         )}

@@ -11,8 +11,6 @@ interface ReportBuilderProps {
   reportTitle: string;
   reportDescription?: string;
   onSave: (blocks: ReportBlock[], title: string, description?: string) => Promise<boolean | void>;
-  onPublish?: () => Promise<void>;
-  isPublic?: boolean;
 }
 
 export default function ReportBuilder({
@@ -20,8 +18,6 @@ export default function ReportBuilder({
   reportTitle,
   reportDescription,
   onSave,
-  onPublish,
-  isPublic,
 }: ReportBuilderProps) {
   const [blocks, setBlocks] = useState<ReportBlock[]>(
     initialBlocks.sort((a, b) => a.order - b.order)
@@ -469,18 +465,6 @@ export default function ReportBuilder({
             >
               {isSaving ? 'Saving...' : 'Save All Changes'}
             </Button>
-            
-            {onPublish && (
-              <Button
-                size="3"
-                variant="soft"
-                color={isPublic ? 'orange' : 'green'}
-                onClick={onPublish}
-                disabled={isSaving}
-              >
-                {isPublic ? 'Make Private' : 'Make Public'}
-              </Button>
-            )}
             
             {editedBlocks.size > 0 && (
               <Text size="2" color="orange" weight="bold">

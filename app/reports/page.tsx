@@ -23,12 +23,54 @@ export default async function ReportsPage() {
 
   const isAdmin = profile?.role === 'admin';
 
-  // Fetch all completed reports
-  const { data: reports, error: reportsError } = await supabase
-    .from('reports')
-    .select('*')
-    .eq('status', 'completed')
-    .order('created_at', { ascending: false });
+  // Fetch reports based on role
+  let reports: any[] = [];
+  
+  if (isAdmin) {
+    // Admins see all base reports
+    const { data } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false });
+    reports = data || [];
+  } else {
+    // Non-admins see only shared reports they have access to
+    const { data } = await supabase
+      .from('report_access')
+      .select(`
+        shared_report_id,
+        granted_at,
+        shared_reports (
+          id,
+          title,
+          description,
+          created_at,
+          created_by,
+          report_type
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('granted_at', { ascending: false });
+    
+    // Transform to match the expected format
+    reports = (data || [])
+      .map((access: any) => {
+        const report = Array.isArray(access.shared_reports) 
+          ? access.shared_reports[0] 
+          : access.shared_reports;
+        return report ? {
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          created_at: report.created_at,
+          created_by: report.created_by,
+          report_type: report.report_type,
+          isShared: true, // Flag to identify shared reports
+        } : null;
+      })
+      .filter(Boolean);
+  }
 
   return (
     <Box p="6">
@@ -54,55 +96,67 @@ export default async function ReportsPage() {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {reports.map((report: any) => (
-                  <Table.Row key={report.id}>
-                    <Table.Cell>
-                      <Link href={`/reports/${report.id}`} style={{ textDecoration: 'none' }}>
-                        <Text weight="bold" style={{ color: 'var(--accent-11)' }}>
-                          {report.title}
-                        </Text>
-                      </Link>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text size="2" color="gray">
-                        {report.description || '—'}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text size="2" color="gray">
-                        {report.created_by === user.id ? 'You' : 'Admin'}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text size="2" color="gray">
-                        {new Date(report.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Flex gap="2">
-                        <Link href={`/reports/${report.id}`}>
-                          <Button size="1" variant="soft">
-                            View
-                          </Button>
+                {reports.map((report: any) => {
+                  const viewUrl = report.isShared ? `/reports/shared/${report.id}/view` : `/reports/${report.id}`;
+                  const showAdminActions = isAdmin && !report.isShared; // Only show edit/delete for base reports
+                  
+                  return (
+                    <Table.Row key={report.id}>
+                      <Table.Cell>
+                        <Link href={viewUrl} style={{ textDecoration: 'none' }}>
+                          <Flex gap="2" align="center">
+                            <Text weight="bold" style={{ color: 'var(--accent-11)' }}>
+                              {report.title}
+                            </Text>
+                            {report.isShared && (
+                              <Badge size="1" color={report.report_type === 'manager' ? 'blue' : 'green'}>
+                                {report.report_type === 'manager' ? 'Manager' : 'Student'}
+                              </Badge>
+                            )}
+                          </Flex>
                         </Link>
-                        {isAdmin && (
-                          <>
-                            <RenameReportButton 
-                              reportId={report.id} 
-                              currentTitle={report.title}
-                              currentDescription={report.description}
-                            />
-                            <DeleteReportButton reportId={report.id} reportTitle={report.title} />
-                          </>
-                        )}
-                      </Flex>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {report.description || '—'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {report.created_by === user.id ? 'You' : 'Admin'}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="2" color="gray">
+                          {new Date(report.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Flex gap="2">
+                          <Link href={viewUrl}>
+                            <Button size="1" variant="soft">
+                              View
+                            </Button>
+                          </Link>
+                          {showAdminActions && (
+                            <>
+                              <RenameReportButton 
+                                reportId={report.id} 
+                                currentTitle={report.title}
+                                currentDescription={report.description}
+                              />
+                              <DeleteReportButton reportId={report.id} reportTitle={report.title} />
+                            </>
+                          )}
+                        </Flex>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </Table.Body>
             </Table.Root>
           </Card>

@@ -11,7 +11,6 @@ interface SharedReport {
   title: string;
   report_type: 'manager' | 'student';
   user_id?: string;
-  is_public: boolean;
   created_at: string;
   created_by: string;
   profiles?: {
@@ -98,25 +97,6 @@ export default function AccessManagementPage({ params }: { params: { id: string 
     }
   };
 
-  const handleTogglePublic = async (reportId: string, isPublic: boolean) => {
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('shared_reports')
-        .update({ is_public: !isPublic })
-        .eq('id', reportId);
-
-      if (error) {
-        console.error('Error updating report:', error);
-        alert('Failed to update report access');
-      } else {
-        await loadSharedReports();
-      }
-    } catch (error) {
-      console.error('Error updating report:', error);
-      alert('Failed to update report access');
-    }
-  };
 
   if (loading) {
     return (
@@ -184,7 +164,6 @@ export default function AccessManagementPage({ params }: { params: { id: string 
                   <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Target User</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                 </Table.Row>
               </Table.Header>
@@ -207,26 +186,20 @@ export default function AccessManagementPage({ params }: { params: { id: string 
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      <Badge color={report.is_public ? 'green' : 'gray'}>
-                        {report.is_public ? 'Public' : 'Private'}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
                       <Flex gap="2">
-                        <Button
-                          size="1"
-                          variant="outline"
-                          color={report.is_public ? 'orange' : 'green'}
-                          onClick={() => handleTogglePublic(report.id, report.is_public)}
-                        >
-                          {report.is_public ? 'Make Private' : 'Make Public'}
-                        </Button>
                         <Button
                           size="1"
                           variant="outline"
                           onClick={() => router.push(`/reports/shared/${report.id}/view`)}
                         >
                           View
+                        </Button>
+                        <Button
+                          size="1"
+                          variant="outline"
+                          onClick={() => router.push(`/reports/shared/${report.id}/edit`)}
+                        >
+                          Edit
                         </Button>
                       </Flex>
                     </Table.Cell>

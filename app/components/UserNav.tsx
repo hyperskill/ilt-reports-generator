@@ -28,7 +28,6 @@ export function UserNav({ user, profile }: UserNavProps) {
     if (error) {
       console.error('Error refreshing session:', error);
     } else {
-      console.log('Session refreshed successfully');
       router.refresh();
     }
   };

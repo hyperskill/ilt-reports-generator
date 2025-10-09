@@ -20,7 +20,6 @@ interface SharedReportListItem {
   report_type: 'manager' | 'student';
   title: string;
   description?: string;
-  is_public: boolean;
   created_at: string;
   updated_at: string;
   access_count: number;
@@ -110,7 +109,6 @@ export default function SharedReportsListPage() {
                   <Table.Row>
                     <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Access</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Updated</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
@@ -130,11 +128,6 @@ export default function SharedReportsListPage() {
                       <Table.Cell>
                         <Badge color={report.report_type === 'manager' ? 'blue' : 'green'}>
                           {report.report_type === 'manager' ? '📊 Manager' : '👤 Student'}
-                        </Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge color={report.is_public ? 'orange' : 'gray'}>
-                          {report.is_public ? '🌐 Public' : '🔒 Private'}
                         </Badge>
                       </Table.Cell>
                       <Table.Cell>

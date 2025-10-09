@@ -181,30 +181,6 @@ export default function StudentReportEditPage({
     }
   };
 
-  const handlePublish = async () => {
-    if (!confirm('Are you sure you want to publish this report? It will be visible to the student.')) {
-      return;
-    }
-
-    try {
-      const supabase = createClient();
-      
-      const { error } = await supabase
-        .from('student_reports')
-        .update({ is_published: true })
-        .eq('report_id', params.id)
-        .eq('user_id', params.userId);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      alert('Report published successfully!');
-      await loadReport();
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    }
-  };
 
   if (loading) {
     return (
@@ -225,9 +201,6 @@ export default function StudentReportEditPage({
             <Text size="3" color="gray">AI-generated personalized feedback</Text>
           </Box>
           <Flex gap="2" align="center">
-            {studentReport?.is_published && (
-              <Badge color="green">Published</Badge>
-            )}
             {studentReport && (
               <ShareReportButton
                 reportType="student"
@@ -444,13 +417,6 @@ export default function StudentReportEditPage({
                   </Button>
                   <Button onClick={handleSave} disabled={saving}>
                     {saving ? 'Saving...' : '💾 Save'}
-                  </Button>
-                  <Button 
-                    color="green" 
-                    onClick={handlePublish}
-                    disabled={studentReport.is_published}
-                  >
-                    {studentReport.is_published ? '✓ Published' : '📤 Publish'}
                   </Button>
                 </Flex>
               </Card>

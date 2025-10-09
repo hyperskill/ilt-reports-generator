@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Box, Container, Heading, Text, Flex, Button, Card, Spinner, Badge } from '@radix-ui/themes';
 import { SharedReport } from '@/lib/types';
 import { BlockViewer } from './BlockViewer';
+import { generateSimplePDFFromElement } from '@/lib/utils/simple-pdf-generator';
 import styles from './view.module.css';
 
 export default function SharedReportViewPage() {
@@ -16,6 +17,8 @@ export default function SharedReportViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchReport();
@@ -36,6 +39,26 @@ export default function SharedReportViewPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!reportRef.current || !report) {
+      alert('Report content not ready. Please try again.');
+      return;
+    }
+    
+    setDownloadingPDF(true);
+    try {
+      const reportTypePrefix = report.report_type === 'manager' ? 'manager-report' : 'student-report';
+      const filename = `${reportTypePrefix}-${report.id}.pdf`;
+      await generateSimplePDFFromElement(reportRef.current, filename);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to generate PDF: ${errorMessage}\n\nPlease try again or contact support if the problem persists.`);
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -74,51 +97,54 @@ export default function SharedReportViewPage() {
   return (
     <Container size="3" py="6">
       <Flex direction="column" gap="5">
-        {/* Header */}
-        <Box>
-          <Flex justify="between" align="start" mb="3">
+        {/* Action Buttons - Outside PDF content */}
+        <Flex justify="end" gap="2">
+          <Button
+            variant="soft"
+            onClick={handleDownloadPDF}
+            disabled={downloadingPDF}
+          >
+            {downloadingPDF ? '⏳ Generating PDF... (please wait)' : '📄 Download PDF'}
+          </Button>
+          {canEdit && (
+            <Button
+              onClick={() => router.push(`/reports/shared/${id}/edit`)}
+            >
+              Edit Report
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+          >
+            Back
+          </Button>
+        </Flex>
+
+        {/* PDF Content */}
+        <div ref={reportRef} data-report-content>
+          <Flex direction="column" gap="5">
+            {/* Header */}
             <Box>
-              <Flex gap="2" mb="2" align="center">
+              <Flex gap="2" mb="2" align="center" data-pdf-hide>
                 <Badge color={report.report_type === 'manager' ? 'blue' : 'green'}>
                   {report.report_type === 'manager' ? '📊 Manager Report' : '👤 Student Report'}
                 </Badge>
-                {report.is_public && (
-                  <Badge color="orange">🌐 Public</Badge>
-                )}
               </Flex>
               <Heading size="8" mb="2">{report.title}</Heading>
               {report.description && (
                 <Text size="3" color="gray">{report.description}</Text>
               )}
+              <Text size="1" color="gray" mt="2">
+                Created: {new Date(report.created_at).toLocaleDateString()}
+                {report.updated_at !== report.created_at && (
+                  <> • Updated: {new Date(report.updated_at).toLocaleDateString()}</>
+                )}
+              </Text>
             </Box>
-            
-            <Flex gap="2">
-              {canEdit && (
-                <Button
-                  onClick={() => router.push(`/reports/shared/${id}/edit`)}
-                >
-                  Edit Report
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                Back
-              </Button>
-            </Flex>
-          </Flex>
 
-          <Text size="1" color="gray">
-            Created: {new Date(report.created_at).toLocaleDateString()}
-            {report.updated_at !== report.created_at && (
-              <> • Updated: {new Date(report.updated_at).toLocaleDateString()}</>
-            )}
-          </Text>
-        </Box>
-
-        {/* Report Blocks */}
-        <Flex direction="column" gap="4">
+          {/* Report Blocks */}
+          <Flex direction="column" gap="4">
           {sortedBlocks.map((block) => (
             <Card key={block.id} className={styles.block}>
               <Heading size="5" mb="3">{block.title}</Heading>
@@ -130,7 +156,7 @@ export default function SharedReportViewPage() {
         </Flex>
 
         {/* Footer */}
-        <Card>
+        <Card data-pdf-hide>
           <Flex justify="between" align="center">
             <Text size="2" color="gray">
               Report ID: {report.id}
@@ -146,6 +172,8 @@ export default function SharedReportViewPage() {
             )}
           </Flex>
         </Card>
+          </Flex>
+        </div>
       </Flex>
     </Container>
   );
