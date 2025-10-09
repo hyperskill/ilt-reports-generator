@@ -3,7 +3,7 @@
 import { Table, Text, Card, Box } from '@radix-ui/themes';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ReportBlock } from '@/lib/types';
-import { Pie, Line } from 'react-chartjs-2';
+import { Pie, Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -13,7 +13,12 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
 } from 'chart.js';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+
+dayjs.extend(isoWeek);
 
 ChartJS.register(
   ArcElement,
@@ -22,7 +27,8 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement
+  LineElement,
+  BarElement
 );
 
 interface BlockViewerProps {
@@ -88,6 +94,14 @@ export function BlockViewer({ block }: BlockViewerProps) {
       return (
         <>
           <LineChartBlockViewer block={block} />
+          {block.helpText && <HelpAccordion helpText={block.helpText} />}
+        </>
+      );
+
+    case 'bar-chart':
+      return (
+        <>
+          <BarChartBlockViewer block={block} />
           {block.helpText && <HelpAccordion helpText={block.helpText} />}
         </>
       );
@@ -283,6 +297,132 @@ function LineChartBlockViewer({ block }: { block: ReportBlock }) {
       <Line data={chartData} options={options} />
     </Box>
   );
+}
+
+function BarChartBlockViewer({ block }: { block: ReportBlock }) {
+  if (!block.data || !Array.isArray(block.data)) {
+    return <Text color="gray">No chart data</Text>;
+  }
+
+  // Group data by week if needed
+  const groupBy = block.config?.groupBy;
+  
+  if (groupBy === 'week') {
+    // Group by ISO week
+    const weekMap = new Map<string, { weekLabel: string; platformActivity: number; meetingsActivity: number }>();
+
+    block.data.forEach((row: any) => {
+      const date = dayjs(row.date_iso);
+      if (!date.isValid()) return;
+
+      const weekKey = `${date.isoWeekYear()}-W${String(date.isoWeek()).padStart(2, '0')}`;
+      
+      if (!weekMap.has(weekKey)) {
+        const weekStart = date.startOf('isoWeek');
+        const weekEnd = date.endOf('isoWeek');
+        weekMap.set(weekKey, {
+          weekLabel: `Week ${date.isoWeek()} (${weekStart.format('MMM D')} - ${weekEnd.format('MMM D')})`,
+          platformActivity: 0,
+          meetingsActivity: 0,
+        });
+      }
+
+      const weekData = weekMap.get(weekKey)!;
+      weekData.platformActivity += row.activity_platform || 0;
+      weekData.meetingsActivity += row.activity_meetings || 0;
+    });
+
+    // Sort by week
+    const sortedWeeks = Array.from(weekMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([_, data]) => data);
+
+    const chartData = {
+      labels: sortedWeeks.map(w => w.weekLabel),
+      datasets: [
+        {
+          label: 'Platform Activity',
+          data: sortedWeeks.map(w => w.platformActivity),
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgb(75, 192, 192)',
+          borderWidth: 1,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Meetings',
+          data: sortedWeeks.map(w => w.meetingsActivity),
+          backgroundColor: 'rgba(153, 102, 255, 0.8)',
+          borderColor: 'rgb(153, 102, 255)',
+          borderWidth: 2,
+          yAxisID: 'y1',
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: block.config?.showLegend !== false,
+        },
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Week',
+          },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 45,
+          },
+        },
+        y: {
+          type: 'linear' as const,
+          display: true,
+          position: 'left' as const,
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Platform Activity',
+            color: 'rgb(75, 192, 192)',
+          },
+        },
+        y1: {
+          type: 'linear' as const,
+          display: true,
+          position: 'right' as const,
+          beginAtZero: true,
+          max: Math.max(...sortedWeeks.map(w => w.meetingsActivity)) + 1 || 5,
+          title: {
+            display: true,
+            text: 'Meetings',
+            color: 'rgb(153, 102, 255)',
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+          ticks: {
+            stepSize: 1,
+          },
+        },
+      },
+    };
+
+    return (
+      <Box 
+        style={{ height: '400px', position: 'relative', padding: '16px 0' }}
+        data-chart-type="bar"
+        data-chart-data={JSON.stringify(chartData)}
+      >
+        <Bar data={chartData} options={options} />
+      </Box>
+    );
+  }
+
+  // Default bar chart (no grouping)
+  return <Text color="gray">Bar chart configuration not supported</Text>;
 }
 
 function HelpAccordion({ helpText }: { helpText: string }) {

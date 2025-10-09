@@ -310,7 +310,8 @@ export default function ReportBuilder({
                                 block.type === 'comments' ? '💬' :
                                 block.type === 'table' ? '📊' :
                                 block.type === 'pie-chart' ? '📈' :
-                                block.type === 'line-chart' ? '📉' : '📄';
+                                block.type === 'line-chart' ? '📉' :
+                                block.type === 'bar-chart' ? '📊' : '📄';
                               
                               return (
                                 <Select.Item key={block.id} value={block.id}>

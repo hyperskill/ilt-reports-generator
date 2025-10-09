@@ -107,11 +107,11 @@ export default function ExclusionsPage() {
           Back
         </Button>
         <Flex gap="2">
-          <Button variant="soft" onClick={() => router.push('/settings')}>
+          <Button variant="soft" onClick={() => router.push('/processing')}>
             Skip for now
           </Button>
-          <Button onClick={() => router.push('/settings')}>
-            Apply exclusions
+          <Button onClick={() => router.push('/processing')}>
+            Build results
           </Button>
         </Flex>
       </Flex>

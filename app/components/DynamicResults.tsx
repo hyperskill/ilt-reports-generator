@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
-import { EasingChart } from './EasingChart';
+import { WeeklyActivityChart } from './WeeklyActivityChart';
 import { TableLegend } from './TableLegend';
 import { SegmentPieChart } from './SegmentPieChart';
 import styles from './DynamicResults.module.css';
@@ -252,9 +252,9 @@ export function DynamicResults({ summary, series, reportId }: Props) {
             </Box>
           </Grid>
 
-          <EasingChart 
+          <WeeklyActivityChart 
             series={selectedUserSeries}
-            userData={selectedUserData}
+            studentName={selectedUserData.name.split(' ')[0]}
           />
         </Card>
       )}
@@ -317,7 +317,7 @@ export function DynamicResults({ summary, series, reportId }: Props) {
                         fontSize: '12px',
                       }}
                     >
-                      View curve
+                      View activity
                     </button>
                   </Table.Cell>
                 </Table.Row>

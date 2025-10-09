@@ -304,21 +304,20 @@ function convertToBlocks(
       });
     }
 
-    // Activity curve chart
+    // Weekly activity chart
     if (reportData.activityTimeline && reportData.activityTimeline.length > 0) {
       blocks.push({
-        id: 'activity-curve',
-        type: 'line-chart',
-        title: 'Your Activity Pattern Over Time',
+        id: 'weekly-activity',
+        type: 'bar-chart',
+        title: 'Your Weekly Activity',
         content: '',
         data: reportData.activityTimeline,
         config: {
-          chartType: 'line',
-          xField: 'x_norm',
-          yField: 'y_norm',
-          showLegend: false,
+          chartType: 'bar',
+          groupBy: 'week',
+          showLegend: true,
         },
-        helpText: '<p>This line shows when you did your work during the course.</p><p><strong>How to read this chart:</strong></p><ul><li><strong>Bottom to top</strong> - Shows how you went from 0% to 100% done</li><li><strong>Left to right</strong> - Time from course start to finish</li></ul><p><strong>What the curve shape tells you:</strong></p><ul><li><strong>Curve going up fast at the start</strong> - You got ahead early (great job!)</li><li><strong>Curve going up fast at the end</strong> - You left most work to the end</li><li><strong>Straight diagonal line</strong> - You worked at a steady pace</li><li><strong>Flat spots</strong> - Times when you took breaks</li></ul>',
+        helpText: '<p>This chart shows your learning activity week by week.</p><p><strong>What you\'re seeing:</strong></p><ul><li><strong>Platform Activity</strong> - Your submissions and exercises on the learning platform (teal bars)</li><li><strong>Meetings Attended</strong> - Live sessions you participated in (purple bars)</li></ul><p><strong>Why this matters:</strong></p><ul><li><strong>Consistent activity</strong> - Regular weekly engagement helps learning stick</li><li><strong>Busy weeks</strong> - High bars show when you were most active</li><li><strong>Quiet weeks</strong> - Low bars might indicate breaks, vacations, or busy periods in other areas</li><li><strong>Meeting attendance</strong> - Purple bars show when you joined live sessions with instructors</li></ul>',
         order: order++,
       });
     }

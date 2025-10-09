@@ -6,7 +6,7 @@ import { Box, Card, Flex, Grid, Heading, Text, Badge, Button, Table, Separator }
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
-import { EasingChart } from '@/app/components/EasingChart';
+import { WeeklyActivityChart } from '@/app/components/WeeklyActivityChart';
 import { StudentCommentsSection } from './StudentCommentsSection';
 import { createClient } from '@/lib/supabase/client';
 import styles from './student.module.css';
@@ -230,11 +230,11 @@ export default function StudentDetailPage({ params }: PageProps) {
           </Flex>
         </Card>
 
-        {/* Activity Curve */}
+        {/* Weekly Activity */}
         <Card>
-          <Heading size="5" mb="3">📈 {report.student.name.split(' ')[0]}'s Activity Over Time</Heading>
+          <Heading size="5" mb="3">📊 {report.student.name.split(' ')[0]}'s Weekly Activity</Heading>
           <Text size="2" color="gray" mb="3">
-            {report.curve.explain}
+            Track learning activity week by week, including platform submissions and meeting attendance.
           </Text>
 
           <Grid columns="4" gap="3" mb="4">
@@ -268,9 +268,9 @@ export default function StudentDetailPage({ params }: PageProps) {
           </Grid>
 
           {report.series.length > 0 && (
-            <EasingChart 
+            <WeeklyActivityChart 
               series={report.series}
-              userData={report.dynamic}
+              studentName={report.student.name.split(' ')[0]}
             />
           )}
         </Card>

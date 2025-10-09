@@ -159,7 +159,7 @@ export interface AppState {
 }
 
 // Shared Reports Feature
-export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'comments';
+export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments';
 
 export interface ReportBlock {
   id: string;
@@ -169,7 +169,10 @@ export interface ReportBlock {
   data?: any; // For 'table' and 'chart' types
   config?: {
     columns?: string[]; // For tables
-    chartType?: 'pie' | 'line'; // For charts
+    chartType?: 'pie' | 'line' | 'bar'; // For charts
+    groupBy?: 'week' | 'day' | 'month'; // For bar charts
+    xField?: string; // For line charts
+    yField?: string; // For line charts
     showLegend?: boolean;
     [key: string]: any;
   };

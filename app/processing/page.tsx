@@ -259,9 +259,9 @@ export default function ProcessingPage() {
                 {error}
               </Text>
               <Flex gap="2" mt="3">
-                <Box onClick={() => router.push('/settings')} style={{ cursor: 'pointer' }}>
+                <Box onClick={() => router.push('/exclusions')} style={{ cursor: 'pointer' }}>
                   <Text size="2" color="red" style={{ textDecoration: 'underline' }}>
-                    Go back to settings
+                    Go back to exclusions
                   </Text>
                 </Box>
               </Flex>
