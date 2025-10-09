@@ -456,23 +456,7 @@ async function convertToBlocks(
       });
     }
 
-    // Weekly activity chart
-    if (reportData.activityTimeline && reportData.activityTimeline.length > 0) {
-      blocks.push({
-        id: 'weekly-activity',
-        type: 'bar-chart',
-        title: 'Your Weekly Activity',
-        content: '',
-        data: reportData.activityTimeline,
-        config: {
-          chartType: 'bar',
-          groupBy: 'week',
-          showLegend: true,
-        },
-        helpText: '<p>This chart shows your learning activity week by week.</p><p><strong>What you\'re seeing:</strong></p><ul><li><strong>Platform Activity</strong> - Your submissions and exercises on the learning platform (teal bars)</li><li><strong>Meetings Attended</strong> - Live sessions you participated in (purple bars)</li></ul><p><strong>Why this matters:</strong></p><ul><li><strong>Consistent activity</strong> - Regular weekly engagement helps learning stick</li><li><strong>Busy weeks</strong> - High bars show when you were most active</li><li><strong>Quiet weeks</strong> - Low bars might indicate breaks, vacations, or busy periods in other areas</li><li><strong>Meeting attendance</strong> - Purple bars show when you joined live sessions with instructors</li></ul>',
-        order: order++,
-      });
-    }
+    // Weekly activity chart - REMOVED (replaced by module activity chart)
 
     blocks.push(
       {

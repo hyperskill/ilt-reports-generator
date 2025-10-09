@@ -274,7 +274,79 @@ function BarChartBlock({ block }: { block: ReportBlock }) {
   }
 
   const groupBy = block.config?.groupBy;
+  const datasets = block.config?.datasets;
   
+  // Module activity chart (with datasets configuration)
+  if (datasets && Array.isArray(datasets)) {
+    const labels = block.data.map((item: any) => item.label || '');
+    
+    const chartDatasets = datasets.map((ds: any) => ({
+      label: ds.label,
+      data: block.data.map((item: any) => item[ds.dataKey] || 0),
+      backgroundColor: ds.backgroundColor,
+      borderColor: ds.borderColor,
+      borderWidth: ds.borderWidth || 1,
+      yAxisID: ds.yAxisID || 'y',
+    }));
+
+    const scales: any = {
+      x: {
+        title: {
+          display: true,
+          text: 'Module',
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+        },
+      },
+    };
+
+    // Add Y axes from config
+    if (block.config?.scales) {
+      Object.entries(block.config.scales).forEach(([key, scaleConfig]: [string, any]) => {
+        scales[key] = {
+          type: 'linear' as const,
+          display: true,
+          position: scaleConfig.position || 'left',
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: scaleConfig.title || '',
+          },
+          ...(scaleConfig.position === 'right' ? {
+            grid: {
+              drawOnChartArea: false,
+            },
+          } : {}),
+        };
+      });
+    }
+
+    const chartData = {
+      labels,
+      datasets: chartDatasets,
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: block.config?.showLegend !== false,
+        },
+      },
+      scales,
+    };
+
+    return (
+      <Box style={{ height: '350px', position: 'relative' }}>
+        <Bar data={chartData} options={options} />
+      </Box>
+    );
+  }
+  
+  // Weekly activity chart (legacy)
   if (groupBy === 'week') {
     // Group by ISO week (same logic as BlockViewer)
     const weekMap = new Map<string, { weekLabel: string; platformActivity: number; meetingsActivity: number }>();
