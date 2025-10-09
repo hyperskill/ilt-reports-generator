@@ -177,6 +177,8 @@ export async function POST(request: Request) {
 
 **IMPORTANT: Generate ALL content in English only.**
 
+**TONE & STYLE**: Write in a friendly, warm, and approachable tone. Be professional but kind. Celebrate achievements genuinely, acknowledge challenges constructively, and provide encouragement. Think of yourself as a supportive advisor who wants the manager to feel confident about their team's development.
+
 ## About the Training Program
 
 **AI Foundations: Models, Prompts, and Agents** is a practical, hands-on training designed to help learners build a solid foundation in applied AI.
