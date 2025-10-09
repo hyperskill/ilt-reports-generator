@@ -114,7 +114,7 @@ export default function ReviewPage() {
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
-                      {preview.map((row, idx) => (
+                      {preview.map((row: any, idx: number) => (
                         <Table.Row key={idx}>
                           {Object.values(row).slice(0, 6).map((val: any, i) => (
                             <Table.Cell key={i}>

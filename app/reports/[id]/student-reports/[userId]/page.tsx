@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Card, Flex, Heading, Text, Button, TextArea, Badge } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { createClient } from '@/lib/supabase/client';
+import ShareReportButton from '../../../ShareReportButton';
 
 export default function StudentReportEditPage({ 
   params 
@@ -12,6 +13,7 @@ export default function StudentReportEditPage({
   params: { id: string; userId: string } 
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -25,6 +27,11 @@ export default function StudentReportEditPage({
   const [instructorFeedback, setInstructorFeedback] = useState('');
   const [growthOpportunities, setGrowthOpportunities] = useState('');
   const [nextSteps, setNextSteps] = useState('');
+  
+  // Expert comments
+  const [commentProgramExpert, setCommentProgramExpert] = useState('');
+  const [commentTeachingAssistants, setCommentTeachingAssistants] = useState('');
+  const [commentLearningSupport, setCommentLearningSupport] = useState('');
 
   useEffect(() => {
     checkAdminAndLoadReport();
@@ -84,6 +91,20 @@ export default function StudentReportEditPage({
         setGrowthOpportunities(content.growthOpportunities || '');
         setNextSteps(content.nextSteps || '');
       }
+
+      // Load expert comments
+      const { data: commentsData } = await supabase
+        .from('student_comments')
+        .select('*')
+        .eq('report_id', params.id)
+        .eq('user_id', params.userId)
+        .single();
+
+      if (commentsData) {
+        setCommentProgramExpert(commentsData.comment_program_expert || '');
+        setCommentTeachingAssistants(commentsData.comment_teaching_assistants || '');
+        setCommentLearningSupport(commentsData.comment_learning_support || '');
+      }
     } catch (error) {
       console.error('Failed to load student report:', error);
     } finally {
@@ -136,7 +157,22 @@ export default function StudentReportEditPage({
         throw new Error(error.message);
       }
 
-      alert('Report saved successfully!');
+      // Save expert comments
+      const { error: commentsError } = await supabase
+        .from('student_comments')
+        .upsert({
+          report_id: params.id,
+          user_id: params.userId,
+          comment_program_expert: commentProgramExpert,
+          comment_teaching_assistants: commentTeachingAssistants,
+          comment_learning_support: commentLearningSupport,
+        });
+
+      if (commentsError) {
+        throw new Error(commentsError.message);
+      }
+
+      alert('Report and comments saved successfully!');
       await loadReport();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -192,11 +228,79 @@ export default function StudentReportEditPage({
             {studentReport?.is_published && (
               <Badge color="green">Published</Badge>
             )}
-            <Button variant="soft" onClick={() => router.push(`/reports/${params.id}/student-reports`)}>
+            {studentReport && (
+              <ShareReportButton
+                reportType="student"
+                sourceReportId={params.id}
+                userId={params.userId}
+                studentName={studentName}
+                isAdmin={isAdmin}
+              />
+            )}
+            <Button 
+              variant="soft" 
+              onClick={() => {
+                const tab = searchParams.get('tab') || 'preview';
+                router.push(`/reports/${params.id}/student-reports?tab=${tab}`);
+              }}
+            >
               ← Back to List
             </Button>
           </Flex>
         </Flex>
+
+        {/* Expert Comments Information */}
+        <Card>
+          <Flex direction="column" gap="4">
+            <Box p="3" style={{ 
+              backgroundColor: 'var(--blue-2)',
+              borderRadius: 'var(--radius-2)',
+              border: '1px solid var(--blue-6)'
+            }}>
+              <Text size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                💡 Better Reports with Expert Comments
+              </Text>
+              <Text size="2" style={{ display: 'block' }}>
+                Student LLM reports are significantly improved when Program Experts, Teaching Assistants, and Learning Support provide personalized comments. These insights help create more accurate and valuable reports for each student.
+              </Text>
+            </Box>
+
+            {/* Comment Status */}
+            <Box>
+              <Text size="2" weight="bold" mb="3" style={{ display: 'block' }}>
+                Expert Comments Status for {studentName}
+              </Text>
+              <Flex gap="3" wrap="wrap">
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentProgramExpert ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentProgramExpert ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentProgramExpert ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Program Expert</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentTeachingAssistants ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentTeachingAssistants ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentTeachingAssistants ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Teaching Assistants</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentLearningSupport ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentLearningSupport ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentLearningSupport ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Learning Support</Text>
+                </Flex>
+              </Flex>
+            </Box>
+          </Flex>
+        </Card>
 
         {!studentReport && (
           <Card>
@@ -258,6 +362,55 @@ export default function StudentReportEditPage({
                 />
               </Flex>
             </Card>
+
+            {isAdmin && (
+              <Card>
+                <Flex direction="column" gap="4">
+                  <Heading size="5">Expert Comments</Heading>
+                  <Text size="2" color="gray" mb="2">
+                    Add individual comments from different expert roles for this student.
+                  </Text>
+                  
+                  <Flex direction="column" gap="3">
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Program Expert Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from the program expert..."
+                        value={commentProgramExpert}
+                        onChange={(e) => setCommentProgramExpert(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Teaching Assistants Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from teaching assistants..."
+                        value={commentTeachingAssistants}
+                        onChange={(e) => setCommentTeachingAssistants(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Learning Support Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from learning support..."
+                        value={commentLearningSupport}
+                        onChange={(e) => setCommentLearningSupport(e.target.value)}
+                        rows={4}
+                      />
+                    </Box>
+                  </Flex>
+                </Flex>
+              </Card>
+            )}
 
             <Card>
               <Flex direction="column" gap="4">

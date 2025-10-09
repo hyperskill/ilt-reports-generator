@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Heading, Text, Button, TextArea, Badge, Separator } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { createClient } from '@/lib/supabase/client';
+import ShareReportButton from '../../ShareReportButton';
 
 export default function ManagerReportPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -168,6 +169,13 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
           <Flex gap="2" align="center">
             {managerReport?.is_published && (
               <Badge color="green">Published</Badge>
+            )}
+            {managerReport && (
+              <ShareReportButton
+                reportType="manager"
+                sourceReportId={params.id}
+                isAdmin={isAdmin}
+              />
             )}
             <Button variant="soft" onClick={() => router.push(`/reports/${params.id}`)}>
               ← Back to Report
