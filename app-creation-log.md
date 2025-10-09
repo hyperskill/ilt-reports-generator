@@ -2,7 +2,119 @@
 
 ## 2025-10-09: Module Activity Analytics and Group Statistics
 
-### Latest Update: Enhanced LLM Context with Module Data
+### Latest Update: Real Topic Names in LLM Context
+
+**Purpose**: Provide LLM with real lesson names instead of synthetic "Topic 1, 2, 3..." for more accurate and specific report generation.
+
+**Changes**:
+1. **Updated Student Report LLM Generation** (`app/api/llm/generate-student-report/route.ts`):
+   - Modified `getStudentSubmissionsStats()` to accept `structure` and `lessonNamesMap` parameters
+   - Changed from synthetic topic grouping to real `lesson_id` grouping
+   - Added lesson names fetching using `getLessonNamesMapByIds()`
+   - `submissionsAnalysis.topicPerformance` now includes real lesson names
+   - Added `lessonId` field to each topic for reference
+
+2. **Updated Manager Report LLM Generation** (`app/api/llm/generate-manager-report/route.ts`):
+   - Modified `getTopicDistribution()` to accept `structure` and `lessonNamesMap` parameters
+   - Changed from synthetic topic grouping to real `lesson_id` grouping
+   - Added lesson names fetching using `getLessonNamesMapByIds()`
+   - `submissionsStats.topicDistribution` now uses real lesson names as keys
+
+**Impact**:
+- ✅ LLM now sees "Introduction to Python" instead of "Topic 1"
+- ✅ LLM can provide specific feedback like "You struggled with Data Structures" instead of generic "Topic 3 needs work"
+- ✅ Student reports are more personalized and actionable
+- ✅ Manager reports reference actual course content by name
+- ✅ Consistent with UI changes where topics show real names
+
+**Example LLM Data Before:**
+```json
+{
+  "topicPerformance": [
+    {"topic": "Topic 1", "attempts": 45, "correctRate": 0.78},
+    {"topic": "Topic 2", "attempts": 32, "correctRate": 0.65}
+  ]
+}
+```
+
+**Example LLM Data After:**
+```json
+{
+  "topicPerformance": [
+    {"topic": "Introduction to Python", "lessonId": 1001, "attempts": 45, "correctRate": 0.78},
+    {"topic": "Data Types and Variables", "lessonId": 1002, "attempts": 32, "correctRate": 0.65}
+  ]
+}
+```
+
+---
+
+### Previous Update: Data Consistency Verification and Fixes
+
+**Purpose**: Ensure all blocks in shared reports use the same data structures and formatting as their corresponding pages (performance, dynamic, student).
+
+**Issues Found and Fixed**:
+1. **Performance Metrics - Success Rate Bug**:
+   - **Issue**: `success_rate` was being multiplied by 100 twice in shared reports
+   - **Root cause**: `PerformanceRow.success_rate` is already a percentage (0-100) from the processor
+   - **Fix**: Removed extra `* 100` multiplication in shared report creation
+   - **Impact**: Success rate now displays correctly (e.g., 78.5% instead of 7850%)
+
+**Verification Completed**:
+- ✅ **Performance Metrics**: Uses same `PerformanceRow` data structure, correct formatting
+- ✅ **Activity Dynamics**: Uses same `DynamicSummaryRow` data, appropriate formatting for table context
+- ✅ **Topic Performance**: Uses same lesson-based grouping with real lesson names from Cogniterra API
+- ✅ **Module Analytics**: Uses identical `processModuleAnalytics()` processor as student page
+- ✅ **Module Activity Chart**: Uses same `moduleStats` data from `processModuleAnalytics()`
+
+**Result**: All shared report blocks now display data consistently with their source pages.
+
+---
+
+### Previous Update: Real Topic Names from Cogniterra API
+
+**Purpose**: Replace synthetic "Topic 1, 2, 3..." with real lesson names from Cogniterra API across all student reports.
+
+**Changes**:
+1. **Added Lesson API Support** (`lib/utils/cogniterra-api.ts`):
+   - Added `Lesson` interface and `LessonsResponse` type
+   - Created `fetchLesson(lessonId)` - fetch single lesson by ID
+   - Created `fetchLessonsByIds(lessonIds[])` - batch fetch lessons
+   - Created `getLessonNamesMapByIds(lessonIds[])` - get map of lesson IDs to titles
+
+2. **Created Lessons API Endpoint** (`app/api/cogniterra/lessons/route.ts`):
+   - New endpoint: `GET /api/cogniterra/lessons?lessonIds=1001,1002,1003`
+   - Returns map of lesson IDs to lesson titles
+   - Supports batch requests for multiple lessons
+
+3. **Updated Student Report Processor** (`lib/processors/student-report-processor.ts`):
+   - Changed from synthetic topic grouping (every 10 steps) to real lesson_id grouping
+   - Added `lessonNamesMap` parameter to `generateTopicTable()`
+   - Topics now use real lesson titles from Cogniterra API
+   - Fallback to `Topic ${lessonId}` if name not available
+
+4. **Updated Student Page** (`app/student/[userId]/page.tsx`):
+   - Added `lessonNamesMap` state
+   - Created `loadLessonNames()` function to fetch lesson names
+   - Automatically loads lesson names when structure data is available
+   - Passes `lessonNamesMap` to `generateStudentReport()`
+
+5. **Updated Shared Report Creator** (`app/api/reports/shared/create/route.ts`):
+   - Changed topic analysis from synthetic topics to real lesson_id grouping
+   - Fetches lesson names using `getLessonNamesMapByIds()`
+   - Topic performance table now shows real lesson titles
+   - Maintains lesson_id, unit_id, course_id for Cogniterra links
+
+**Impact**:
+- ✅ Student detail pages show real lesson names instead of "Topic 1, 2, 3"
+- ✅ Shared student reports show real lesson names in topic performance tables
+- ✅ Topic analysis uses actual course structure from Cogniterra
+- ✅ Links to Cogniterra lessons work correctly with real lesson IDs
+- ✅ Fallback to "Topic [ID]" if API fails or names unavailable
+
+---
+
+### Previous Update: Enhanced LLM Context with Module Data
 
 **Purpose**: Provide LLM with detailed module-level data for more accurate and specific report generation.
 

@@ -2,14 +2,20 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModuleStructureData, getStudentModuleAnalytics } from '@/lib/utils/llm-data-helpers';
+import { getLessonNamesMapByIds } from '@/lib/utils/cogniterra-api';
 
 const openai = new OpenAI({
   apiKey: process.env.LITELLM_API_KEY,
   baseURL: process.env.LITELLM_BASE_URL,
 });
 
-// Helper function to get student submissions stats
-function getStudentSubmissionsStats(submissions: any[], userId: string): any {
+// Helper function to get student submissions stats with real lesson names
+async function getStudentSubmissionsStats(
+  submissions: any[], 
+  userId: string, 
+  structure: any[] | undefined,
+  lessonNamesMap?: Record<number, string>
+): Promise<any> {
   const studentSubs = submissions.filter((s: any) => 
     String(s.user_id || s.userid || '').toLowerCase() === userId.toLowerCase()
   );
@@ -18,30 +24,53 @@ function getStudentSubmissionsStats(submissions: any[], userId: string): any {
     String(s.status || s.result || '').toLowerCase() === 'correct'
   );
   
-  const topicStats: Record<string, { attempts: number; correct: number; steps: Set<string> }> = {};
-  
-  for (const sub of studentSubs) {
-    const stepId = String(sub.step_id || sub.stepid || sub.step || '').trim();
-    if (stepId) {
-      const stepNum = parseInt(stepId.replace(/\D/g, '')) || 0;
-      const topicIndex = Math.floor(stepNum / 10);
-      const topicKey = `Topic ${topicIndex + 1}`;
-      
-      if (!topicStats[topicKey]) {
-        topicStats[topicKey] = { attempts: 0, correct: 0, steps: new Set() };
-      }
-      
-      topicStats[topicKey].attempts += 1;
-      topicStats[topicKey].steps.add(stepId);
-      if (String(sub.status || '').toLowerCase() === 'correct') {
-        topicStats[topicKey].correct += 1;
+  // Build structure map for linking steps to lessons
+  const structureMap: Record<string, { lesson_id?: number }> = {};
+  if (structure && Array.isArray(structure)) {
+    for (const item of structure) {
+      const stepId = String(item.step_id || '').trim();
+      if (stepId) {
+        structureMap[stepId] = {
+          lesson_id: item.lesson_id,
+        };
       }
     }
   }
   
-  // Convert to array with success rates
-  const topicArray = Object.entries(topicStats).map(([topic, stats]) => ({
-    topic,
+  // Group by lesson_id (real topics)
+  const topicStats: Record<number, { 
+    lessonId: number;
+    attempts: number; 
+    correct: number; 
+    steps: Set<string>;
+  }> = {};
+  
+  for (const sub of studentSubs) {
+    const stepId = String(sub.step_id || sub.stepid || sub.step || '').trim();
+    if (stepId && structureMap[stepId]?.lesson_id) {
+      const lessonId = structureMap[stepId].lesson_id!;
+      
+      if (!topicStats[lessonId]) {
+        topicStats[lessonId] = { 
+          lessonId,
+          attempts: 0, 
+          correct: 0, 
+          steps: new Set(),
+        };
+      }
+      
+      topicStats[lessonId].attempts += 1;
+      topicStats[lessonId].steps.add(stepId);
+      if (String(sub.status || '').toLowerCase() === 'correct') {
+        topicStats[lessonId].correct += 1;
+      }
+    }
+  }
+  
+  // Convert to array with success rates and real lesson names
+  const topicArray = Object.values(topicStats).map((stats) => ({
+    topic: lessonNamesMap?.[stats.lessonId] || `Topic ${stats.lessonId}`,
+    lessonId: stats.lessonId,
     attempts: stats.attempts,
     correctRate: stats.correct / stats.attempts,
     uniqueSteps: stats.steps.size,
@@ -111,9 +140,37 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .single();
 
-    // Get detailed submissions stats if available
+    // Get lesson names for topic performance
+    let lessonNamesMap: Record<number, string> = {};
+    
+    if (report.structure_data && report.structure_data.length > 0) {
+      try {
+        // Extract unique lesson IDs
+        const lessonIdsSet = new Set<number>();
+        for (const row of report.structure_data) {
+          const lessonId = Number(row.lesson_id || row.lessonid || 0);
+          if (lessonId > 0) {
+            lessonIdsSet.add(lessonId);
+          }
+        }
+        
+        const lessonIds = Array.from(lessonIdsSet);
+        if (lessonIds.length > 0) {
+          lessonNamesMap = await getLessonNamesMapByIds(lessonIds);
+        }
+      } catch (error) {
+        console.error('Failed to fetch lesson names:', error);
+      }
+    }
+
+    // Get detailed submissions stats with real lesson names
     const submissionsAnalysis = report.submissions_data 
-      ? getStudentSubmissionsStats(report.submissions_data, userId)
+      ? await getStudentSubmissionsStats(
+          report.submissions_data, 
+          userId, 
+          report.structure_data,
+          lessonNamesMap
+        )
       : null;
 
     // Get module structure data and student module analytics

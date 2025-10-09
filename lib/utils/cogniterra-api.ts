@@ -27,6 +27,18 @@ interface SectionsResponse {
   sections: Section[];
 }
 
+interface Lesson {
+  id: number;
+  title: string;
+  position: number;
+  steps: number[];
+  section: number;
+}
+
+interface LessonsResponse {
+  lessons: Lesson[];
+}
+
 let cachedToken: string | null = null;
 let tokenExpiry: number = 0;
 
@@ -184,5 +196,58 @@ export async function getModuleNamesMap(courseId: number): Promise<Record<number
  */
 export function getModuleName(moduleId: number, moduleNamesMap: Record<number, string>): string {
   return moduleNamesMap[moduleId] || `Module ${moduleId}`;
+}
+
+/**
+ * Fetch a single lesson by ID
+ */
+async function fetchLesson(lessonId: number): Promise<Lesson | null> {
+  const config = getConfig();
+  const token = await getAccessToken();
+
+  const response = await fetch(`${config.apiUrl}/api/lessons/${lessonId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    console.warn(`Lesson ${lessonId} not found`);
+    return null;
+  }
+
+  const data: LessonsResponse = await response.json();
+  return data.lessons && data.lessons.length > 0 ? data.lessons[0] : null;
+}
+
+/**
+ * Fetch multiple lessons by IDs (batch)
+ */
+export async function fetchLessonsByIds(lessonIds: number[]): Promise<Lesson[]> {
+  const lessons: Lesson[] = [];
+  const batchSize = 30; // Process in batches to avoid overwhelming the API
+  
+  for (let i = 0; i < lessonIds.length; i += batchSize) {
+    const batch = lessonIds.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(id => fetchLesson(id)));
+    lessons.push(...results.filter((l): l is Lesson => l !== null));
+  }
+  
+  return lessons;
+}
+
+/**
+ * Build a map of lesson_id -> lesson_title from a list of lesson IDs
+ */
+export async function getLessonNamesMapByIds(lessonIds: number[]): Promise<Record<number, string>> {
+  const lessons = await fetchLessonsByIds(lessonIds);
+  const map: Record<number, string> = {};
+  
+  for (const lesson of lessons) {
+    map[lesson.id] = lesson.title;
+  }
+  
+  return map;
 }
 

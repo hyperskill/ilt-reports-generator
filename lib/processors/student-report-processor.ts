@@ -17,6 +17,7 @@ interface ProcessorInput {
   submissions: any[];
   structure?: any[];
   excludedUserIds: string[];
+  lessonNamesMap?: Record<number, string>;
 }
 
 export function generateStudentReport({
@@ -27,6 +28,7 @@ export function generateStudentReport({
   submissions,
   structure,
   excludedUserIds,
+  lessonNamesMap,
 }: ProcessorInput): StudentReport | null {
   // Find student data
   const perfRow = performanceData.find(r => r.user_id === userId);
@@ -38,7 +40,7 @@ export function generateStudentReport({
   }
 
   // Generate topic table
-  const topicTable = generateTopicTable(userId, submissions, structure, excludedUserIds);
+  const topicTable = generateTopicTable(userId, submissions, structure, excludedUserIds, lessonNamesMap);
 
   // Extract signals
   const wins = extractWins(perfRow, dynRow, topicTable);
@@ -101,7 +103,13 @@ export function generateStudentReport({
   };
 }
 
-function generateTopicTable(userId: string, submissions: any[], structure: any[] | undefined, excludedUserIds: string[]): StudentTopic[] {
+function generateTopicTable(
+  userId: string, 
+  submissions: any[], 
+  structure: any[] | undefined, 
+  excludedUserIds: string[],
+  lessonNamesMap?: Record<number, string>
+): StudentTopic[] {
   const excluded = new Set(excludedUserIds.map(id => String(id).trim().toLowerCase()));
   
   // Build structure map: step_id -> {lesson_id, unit_id, course_id}
@@ -161,42 +169,39 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
     return [];
   }
 
-  // Group steps into synthetic topics (every 10 steps = 1 topic)
-  const topics = new Map<string, {
+  // Group steps by lesson_id (real topics from structure data)
+  const topics = new Map<number, {
+    lessonId: number;
     steps: string[];
     totalAttempts: number;
     firstPassCount: number;
     correctCount: number;
-    lessonsInTopic: Set<number>;
   }>();
 
   for (const [stepId, stats] of stepStats.entries()) {
-    // Extract numeric part from step_id if possible
-    const stepNum = parseInt(stepId.replace(/\D/g, '')) || 0;
-    const topicIndex = Math.floor(stepNum / 10);
-    const topicKey = `Topic ${topicIndex + 1}`;
+    const structInfo = structureMap.get(stepId);
+    const lessonId = structInfo?.lesson_id;
+    
+    if (!lessonId) {
+      // Skip steps without lesson_id (fallback to old behavior if needed)
+      continue;
+    }
 
-    if (!topics.has(topicKey)) {
-      topics.set(topicKey, {
+    if (!topics.has(lessonId)) {
+      topics.set(lessonId, {
+        lessonId,
         steps: [],
         totalAttempts: 0,
         firstPassCount: 0,
         correctCount: 0,
-        lessonsInTopic: new Set(),
       });
     }
 
-    const topic = topics.get(topicKey)!;
+    const topic = topics.get(lessonId)!;
     topic.steps.push(stepId);
     topic.totalAttempts += stats.attempts;
     if (stats.firstAttemptCorrect) topic.firstPassCount += 1;
     if (stats.anyCorrect) topic.correctCount += 1;
-    
-    // Track lessons in this topic
-    const structInfo = structureMap.get(stepId);
-    if (structInfo?.lesson_id) {
-      topic.lessonsInTopic.add(structInfo.lesson_id);
-    }
   }
 
   // Calculate overall stats for comparison (course average)
@@ -213,7 +218,7 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
 
   // Convert to StudentTopic format
   const result: StudentTopic[] = [];
-  for (const [topicTitle, data] of topics.entries()) {
+  for (const [lessonId, data] of topics.entries()) {
     const stepsAttempted = data.steps.length;
     const attemptsPerStep = stepsAttempted > 0 ? data.totalAttempts / stepsAttempted : 0;
     const firstPassRate = stepsAttempted > 0 ? data.firstPassCount / stepsAttempted : 0;
@@ -232,23 +237,18 @@ function generateTopicTable(userId: string, submissions: any[], structure: any[]
       label = 'Watch';
     }
 
-    // Find the first lesson in this topic
-    let lessonId: number | undefined;
+    // Get lesson title from lessonNamesMap, or fallback to "Topic [lessonId]"
+    const topicTitle = lessonNamesMap?.[lessonId] || `Topic ${lessonId}`;
+
+    // Get unit_id and course_id from any step in this lesson
     let unitId: number | undefined;
     let courseId: number | undefined;
     
-    if (data.lessonsInTopic.size > 0) {
-      // Get the smallest lesson_id (first lesson in sequence)
-      const sortedLessons = Array.from(data.lessonsInTopic).sort((a, b) => a - b);
-      lessonId = sortedLessons[0];
-      
-      // Get unit_id and course_id from any step in this lesson
-      for (const [stepId, structInfo] of structureMap.entries()) {
-        if (structInfo.lesson_id === lessonId) {
-          unitId = structInfo.unit_id;
-          courseId = structInfo.course_id;
-          break;
-        }
+    for (const [stepId, structInfo] of structureMap.entries()) {
+      if (structInfo.lesson_id === lessonId) {
+        unitId = structInfo.unit_id;
+        courseId = structInfo.course_id;
+        break;
       }
     }
 

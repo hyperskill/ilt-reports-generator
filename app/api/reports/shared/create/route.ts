@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { ReportBlock } from '@/lib/types';
 import { processModuleAnalytics } from '@/lib/processors/module-analytics';
-import { getModuleNamesMapByIds } from '@/lib/utils/cogniterra-api';
+import { getModuleNamesMapByIds, getLessonNamesMapByIds } from '@/lib/utils/cogniterra-api';
 
 // Helper to convert LLM report content to blocks
 async function convertToBlocks(
@@ -408,7 +408,7 @@ async function convertToBlocks(
     if (studentData) {
       const metricsRow = [{
         completion: `${studentData.total_pct?.toFixed(1) || 0}%`,
-        success_rate: `${((studentData.success_rate || 0) * 100).toFixed(1)}%`,
+        success_rate: `${(studentData.success_rate || 0).toFixed(1)}%`,
         submissions: studentData.submissions || 0,
         correct_submissions: studentData.correct_submissions || 0,
         active_days: studentData.active_days || 0,
@@ -811,7 +811,7 @@ export async function POST(request: Request) {
         );
         
         if (studentSubs.length > 0) {
-          // Build structure map for linking topics to Cogniterra
+          // Build structure map for linking steps to lessons
           const structureMap: Record<string, { lesson_id?: number; unit_id?: number; course_id?: number }> = {};
           if (baseReport.structure_data && Array.isArray(baseReport.structure_data)) {
             for (const item of baseReport.structure_data) {
@@ -826,51 +826,62 @@ export async function POST(request: Request) {
             }
           }
 
-          const topicStats: Record<string, { 
+          // Group by lesson_id (real topics)
+          const topicStats: Record<number, { 
+            lessonId: number;
             attempts: number; 
             correct: number; 
             steps: Set<string>;
-            firstStepId?: string;
+            unitId?: number;
+            courseId?: number;
           }> = {};
           
           for (const sub of studentSubs) {
             const stepId = String(sub.step_id || sub.stepid || sub.step || '').trim();
-            if (stepId) {
-              const stepNum = parseInt(stepId.replace(/\D/g, '')) || 0;
-              const topicIndex = Math.floor(stepNum / 10);
-              const topicKey = `Topic ${topicIndex + 1}`;
+            if (stepId && structureMap[stepId]?.lesson_id) {
+              const lessonId = structureMap[stepId].lesson_id!;
               
-              if (!topicStats[topicKey]) {
-                topicStats[topicKey] = { 
+              if (!topicStats[lessonId]) {
+                topicStats[lessonId] = { 
+                  lessonId,
                   attempts: 0, 
                   correct: 0, 
                   steps: new Set(),
-                  firstStepId: stepId, // Store first step ID for linking
+                  unitId: structureMap[stepId].unit_id,
+                  courseId: structureMap[stepId].course_id,
                 };
               }
               
-              topicStats[topicKey].attempts += 1;
-              topicStats[topicKey].steps.add(stepId);
+              topicStats[lessonId].attempts += 1;
+              topicStats[lessonId].steps.add(stepId);
               if (String(sub.status || '').toLowerCase() === 'correct') {
-                topicStats[topicKey].correct += 1;
+                topicStats[lessonId].correct += 1;
               }
             }
           }
           
-          const topicArray = Object.entries(topicStats).map(([topic, stats]) => {
+          // Fetch lesson names from Cogniterra API
+          const lessonIds = Object.keys(topicStats).map(id => parseInt(id, 10));
+          let lessonNamesMap: Record<number, string> = {};
+          
+          if (lessonIds.length > 0) {
+            try {
+              lessonNamesMap = await getLessonNamesMapByIds(lessonIds);
+            } catch (error) {
+              console.error('Failed to fetch lesson names:', error);
+            }
+          }
+          
+          const topicArray = Object.values(topicStats).map((stats) => {
             const topicData: any = {
-              topic,
+              topic: lessonNamesMap[stats.lessonId] || `Topic ${stats.lessonId}`,
               attempts: stats.attempts,
               correctRate: stats.correct / stats.attempts,
               uniqueSteps: stats.steps.size,
+              lesson_id: stats.lessonId,
+              unit_id: stats.unitId,
+              course_id: stats.courseId,
             };
-
-            // Add lesson_id if available from structure
-            if (stats.firstStepId && structureMap[stats.firstStepId]) {
-              topicData.lesson_id = structureMap[stats.firstStepId].lesson_id;
-              topicData.unit_id = structureMap[stats.firstStepId].unit_id;
-              topicData.course_id = structureMap[stats.firstStepId].course_id;
-            }
 
             return topicData;
           });
@@ -929,3 +940,4 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+

@@ -24,6 +24,7 @@ export default function StudentDetailPage({ params }: PageProps) {
   const [savedReportData, setSavedReportData] = useState<any>(null);
   const [loading, setLoading] = useState(!!reportId);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [lessonNamesMap, setLessonNamesMap] = useState<Record<number, string>>({});
 
   useEffect(() => {
     checkAdminStatus();
@@ -31,6 +32,10 @@ export default function StudentDetailPage({ params }: PageProps) {
       loadReportData(reportId);
     }
   }, [reportId]);
+
+  useEffect(() => {
+    loadLessonNames();
+  }, [savedReportData, files.structure]);
 
   const checkAdminStatus = async () => {
     const supabase = createClient();
@@ -61,6 +66,42 @@ export default function StudentDetailPage({ params }: PageProps) {
     }
   };
 
+  const loadLessonNames = async () => {
+    try {
+      // Get structure data from either saved report or context
+      const structureData = savedReportData?.structure_data || files.structure?.data;
+      
+      if (!structureData || structureData.length === 0) {
+        return;
+      }
+
+      // Extract unique lesson IDs
+      const lessonIdsSet = new Set<number>();
+      for (const row of structureData) {
+        const lessonId = Number(row.lesson_id || row.lessonid || 0);
+        if (lessonId > 0) {
+          lessonIdsSet.add(lessonId);
+        }
+      }
+
+      const lessonIds = Array.from(lessonIdsSet);
+      
+      if (lessonIds.length === 0) {
+        return;
+      }
+
+      // Fetch lesson names from API
+      const response = await fetch(`/api/cogniterra/lessons?lessonIds=${lessonIds.join(',')}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLessonNamesMap(data.lessons);
+      }
+    } catch (error) {
+      console.error('Failed to load lesson names:', error);
+    }
+  };
+
   const report = useMemo(() => {
     // If we have savedReportData, use it
     if (savedReportData) {
@@ -73,6 +114,7 @@ export default function StudentDetailPage({ params }: PageProps) {
         submissions: savedReportData.submissions_data || [],
         structure: savedReportData.structure_data || [],
         excludedUserIds: savedReportData.excluded_user_ids || [],
+        lessonNamesMap,
       });
     }
 
@@ -87,8 +129,9 @@ export default function StudentDetailPage({ params }: PageProps) {
       submissions: files.submissions.data,
       structure: files.structure?.data,
       excludedUserIds: [],
+      lessonNamesMap,
     });
-  }, [params.userId, results, files.submissions, files.structure, savedReportData]);
+  }, [params.userId, results, files.submissions, files.structure, savedReportData, lessonNamesMap]);
 
   if (loading) {
     return (

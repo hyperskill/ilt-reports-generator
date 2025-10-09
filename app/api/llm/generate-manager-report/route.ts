@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModuleStructureData, getGroupModuleAnalytics } from '@/lib/utils/llm-data-helpers';
+import { getLessonNamesMapByIds } from '@/lib/utils/cogniterra-api';
 
 const openai = new OpenAI({
   apiKey: process.env.LITELLM_API_KEY,
@@ -14,15 +15,31 @@ function getUniqueCount(data: any[], field: string): number {
   return unique.size;
 }
 
-// Helper function to get topic distribution from submissions
-function getTopicDistribution(submissions: any[]): Record<string, number> {
+// Helper function to get topic distribution from submissions with real lesson names
+function getTopicDistribution(
+  submissions: any[], 
+  structure: any[] | undefined,
+  lessonNamesMap?: Record<number, string>
+): Record<string, number> {
+  // Build structure map for linking steps to lessons
+  const structureMap: Record<string, { lesson_id?: number }> = {};
+  if (structure && Array.isArray(structure)) {
+    for (const item of structure) {
+      const stepId = String(item.step_id || '').trim();
+      if (stepId) {
+        structureMap[stepId] = {
+          lesson_id: item.lesson_id,
+        };
+      }
+    }
+  }
+  
   const distribution: Record<string, number> = {};
   for (const sub of submissions) {
     const stepId = String(sub.step_id || sub.stepid || sub.step || '').trim();
-    if (stepId) {
-      const stepNum = parseInt(stepId.replace(/\D/g, '')) || 0;
-      const topicIndex = Math.floor(stepNum / 10);
-      const topicKey = `Topic ${topicIndex + 1}`;
+    if (stepId && structureMap[stepId]?.lesson_id) {
+      const lessonId = structureMap[stepId].lesson_id!;
+      const topicKey = lessonNamesMap?.[lessonId] || `Topic ${lessonId}`;
       distribution[topicKey] = (distribution[topicKey] || 0) + 1;
     }
   }
@@ -81,6 +98,29 @@ export async function POST(request: Request) {
       .select('*')
       .eq('report_id', reportId);
 
+    // Get lesson names for topic distribution
+    let lessonNamesMap: Record<number, string> = {};
+    
+    if (report.structure_data && report.structure_data.length > 0) {
+      try {
+        // Extract unique lesson IDs
+        const lessonIdsSet = new Set<number>();
+        for (const row of report.structure_data) {
+          const lessonId = Number(row.lesson_id || row.lessonid || 0);
+          if (lessonId > 0) {
+            lessonIdsSet.add(lessonId);
+          }
+        }
+        
+        const lessonIds = Array.from(lessonIdsSet);
+        if (lessonIds.length > 0) {
+          lessonNamesMap = await getLessonNamesMapByIds(lessonIds);
+        }
+      } catch (error) {
+        console.error('Failed to fetch lesson names:', error);
+      }
+    }
+
     // Get module structure data (module names and topics)
     let moduleStructure = null;
     let groupModuleAnalytics = null;
@@ -120,8 +160,8 @@ export async function POST(request: Request) {
       submissionsStats: report.submissions_data ? {
         totalSubmissions: report.submissions_data.length,
         sampleSize: Math.min(100, report.submissions_data.length),
-        // Only send aggregated stats, not all raw data
-        topicDistribution: getTopicDistribution(report.submissions_data),
+        // Only send aggregated stats, not all raw data with real lesson names
+        topicDistribution: getTopicDistribution(report.submissions_data, report.structure_data, lessonNamesMap),
       } : null,
       courseStructure: report.structure_data ? {
         totalTopics: getUniqueCount(report.structure_data, 'lesson_id'),
