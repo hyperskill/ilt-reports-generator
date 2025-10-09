@@ -82,10 +82,18 @@ async function convertToBlocks(
     }
 
     blocks.push({
-      id: 'group-dynamics',
+      id: 'skills-acquired',
       type: 'section',
-      title: 'Group Dynamics & Engagement',
-      content: content.groupDynamics || '',
+      title: 'Skills Acquired & Learning Outcomes',
+      content: content.skillsAcquired || content.learningOutcomes || '', // Fallback for old format
+      order: order++,
+    });
+
+    blocks.push({
+      id: 'team-engagement',
+      type: 'section',
+      title: 'Team Engagement & Dynamics',
+      content: content.teamEngagement || content.groupDynamics || '', // Fallback for old format
       order: order++,
     });
 
@@ -325,22 +333,13 @@ async function convertToBlocks(
       }
     }
 
-    blocks.push(
-      {
-        id: 'learning-outcomes',
-        type: 'section',
-        title: 'Learning Outcomes & Projects',
-        content: content.learningOutcomes || '',
-        order: order++,
-      },
-      {
-        id: 'expert-observations',
-        type: 'section',
-        title: 'Expert Observations',
-        content: content.expertObservations || '',
-        order: order++,
-      }
-    );
+    blocks.push({
+      id: 'expert-observations',
+      type: 'section',
+      title: 'Expert Observations & Project Highlights',
+      content: content.expertObservations || '',
+      order: order++,
+    });
 
     // Team Comments after Expert Observations
     const teamComments = reportData.teamComments;
@@ -376,10 +375,10 @@ async function convertToBlocks(
     }
 
     blocks.push({
-      id: 'opportunities',
+      id: 'recommendations',
       type: 'section',
-      title: 'Opportunities & Recommendations',
-      content: content.opportunities || '',
+      title: 'Business Recommendations & Next Steps',
+      content: content.recommendations || content.opportunities || '', // Fallback for old format
       order: order++,
     });
   } else {
