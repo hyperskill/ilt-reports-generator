@@ -12,6 +12,8 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [savingComments, setSavingComments] = useState(false);
+  const [commentsJustSaved, setCommentsJustSaved] = useState(false);
   const [managerReport, setManagerReport] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   
@@ -20,6 +22,11 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
   const [teamEngagement, setTeamEngagement] = useState('');
   const [expertObservations, setExpertObservations] = useState('');
   const [recommendations, setRecommendations] = useState('');
+  
+  // Expert comments
+  const [commentProgramExpert, setCommentProgramExpert] = useState('');
+  const [commentTeachingAssistants, setCommentTeachingAssistants] = useState('');
+  const [commentLearningSupport, setCommentLearningSupport] = useState('');
 
   useEffect(() => {
     checkAdminAndLoadReport();
@@ -65,6 +72,19 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
         setExpertObservations(content.expertObservations || '');
         setRecommendations(content.recommendations || content.opportunities || ''); // Fallback for old format
       }
+
+      // Load program-level expert comments from reports table
+      const { data: reportData } = await supabase
+        .from('reports')
+        .select('comment_program_expert, comment_teaching_assistants, comment_learning_support')
+        .eq('id', params.id)
+        .single();
+
+      if (reportData) {
+        setCommentProgramExpert(reportData.comment_program_expert || '');
+        setCommentTeachingAssistants(reportData.comment_teaching_assistants || '');
+        setCommentLearningSupport(reportData.comment_learning_support || '');
+      }
     } catch (error) {
       console.error('Failed to load manager report:', error);
     } finally {
@@ -90,6 +110,35 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
       alert(`Error: ${error.message}`);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleSaveComments = async () => {
+    setSavingComments(true);
+    setCommentsJustSaved(false);
+    try {
+      const response = await fetch(`/api/reports/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          comment_program_expert: commentProgramExpert,
+          comment_teaching_assistants: commentTeachingAssistants,
+          comment_learning_support: commentLearningSupport,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save comments');
+      }
+
+      alert('Comments saved successfully! Consider regenerating the report to include these insights.');
+      setCommentsJustSaved(true);
+      await loadReport();
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSavingComments(false);
     }
   };
 
@@ -151,11 +200,67 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
                 isAdmin={isAdmin}
               />
             )}
-            <Button variant="soft" onClick={() => router.push(`/reports/${params.id}`)}>
-              ← Back to Report
+            <Button variant="outline" onClick={() => router.back()}>
+              ← Back
+            </Button>
+            <Button variant="soft" onClick={() => router.push(`/reports/${params.id}?tab=preview`)}>
+              Back to Report
             </Button>
           </Flex>
         </Flex>
+
+        {/* Expert Comments Information */}
+        <Card>
+          <Flex direction="column" gap="4">
+            <Box p="3" style={{ 
+              backgroundColor: 'var(--blue-2)',
+              borderRadius: 'var(--radius-2)',
+              border: '1px solid var(--blue-6)'
+            }}>
+              <Text size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                💡 Better Reports with Expert Comments
+              </Text>
+              <Text size="2" style={{ display: 'block' }}>
+                Manager LLM reports are significantly improved when Program Experts, Teaching Assistants, and Learning Support provide program-level comments. These insights help create more accurate and valuable reports for managers.
+              </Text>
+            </Box>
+
+            {/* Comment Status */}
+            <Box>
+              <Text size="2" weight="bold" mb="3" style={{ display: 'block' }}>
+                Program-Level Expert Comments Status
+              </Text>
+              <Flex gap="3" wrap="wrap">
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentProgramExpert ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentProgramExpert ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentProgramExpert ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Program Expert</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentTeachingAssistants ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentTeachingAssistants ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentTeachingAssistants ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Teaching Assistants</Text>
+                </Flex>
+                
+                <Flex align="center" gap="2" p="2" style={{
+                  backgroundColor: commentLearningSupport ? 'var(--green-2)' : 'var(--orange-2)',
+                  borderRadius: 'var(--radius-2)',
+                  border: `1px solid ${commentLearningSupport ? 'var(--green-6)' : 'var(--orange-6)'}`
+                }}>
+                  {commentLearningSupport ? '✅' : '❌'}
+                  <Text size="2" weight="medium">Learning Support</Text>
+                </Flex>
+              </Flex>
+            </Box>
+          </Flex>
+        </Card>
 
         {!managerReport && (
           <Card>
@@ -234,6 +339,76 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
 
             {isAdmin && (
               <Card>
+                <Flex direction="column" gap="4">
+                  <Heading size="5">Program-Level Expert Comments</Heading>
+                  <Text size="2" color="gray" mb="2">
+                    Add program-level comments from different expert roles. These will be included in the manager report generation.
+                  </Text>
+                  
+                  <Flex direction="column" gap="3">
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Program Expert Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from the program expert..."
+                        value={commentProgramExpert}
+                        onChange={(e) => {
+                          setCommentProgramExpert(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Teaching Assistants Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from teaching assistants..."
+                        value={commentTeachingAssistants}
+                        onChange={(e) => {
+                          setCommentTeachingAssistants(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
+                        rows={4}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        Learning Support Comments
+                      </Text>
+                      <TextArea
+                        placeholder="Enter comments from learning support..."
+                        value={commentLearningSupport}
+                        onChange={(e) => {
+                          setCommentLearningSupport(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
+                        rows={4}
+                      />
+                    </Box>
+                  </Flex>
+
+                  {/* Save Comments Button */}
+                  <Flex gap="3" justify="end">
+                    <Button onClick={handleSaveComments} disabled={savingComments} variant="soft">
+                      {savingComments ? 'Saving...' : '💾 Save Comments'}
+                    </Button>
+                    {commentsJustSaved && (
+                      <Button onClick={handleGenerate} disabled={generating} color="orange">
+                        {generating ? 'Regenerating...' : '🔄 Regenerate Report'}
+                      </Button>
+                    )}
+                  </Flex>
+                </Flex>
+              </Card>
+            )}
+
+            {isAdmin && (
+              <Card>
                 <Flex gap="3" justify="end">
                   <Button variant="soft" onClick={handleGenerate} disabled={generating}>
                     {generating ? 'Regenerating...' : '🔄 Regenerate'}
@@ -241,6 +416,11 @@ export default function ManagerReportPage({ params }: { params: { id: string } }
                   <Button onClick={handleSave} disabled={saving}>
                     {saving ? 'Saving...' : '💾 Save'}
                   </Button>
+                  <ShareReportButton
+                    reportType="manager"
+                    sourceReportId={params.id}
+                    isAdmin={isAdmin}
+                  />
                 </Flex>
               </Card>
             )}

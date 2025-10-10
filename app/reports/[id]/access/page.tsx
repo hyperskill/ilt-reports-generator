@@ -24,6 +24,14 @@ interface User {
   role: string;
 }
 
+interface AccessRecord {
+  user_id: string;
+  user?: {
+    email: string;
+    role: string;
+  } | null;
+}
+
 export default function AccessManagementPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,6 +40,7 @@ export default function AccessManagementPage({ params }: { params: { id: string 
   const [users, setUsers] = useState<User[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingSharedReports, setLoadingSharedReports] = useState(false);
+  const [reportAccessMap, setReportAccessMap] = useState<Record<string, AccessRecord[]>>({});
 
   useEffect(() => {
     checkAdminAndLoadData();
@@ -43,6 +52,29 @@ export default function AccessManagementPage({ params }: { params: { id: string 
       loadUsers();
     }
   }, [isAdmin, params.id]);
+
+  // Reload data when page becomes visible (e.g., after returning from access management)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isAdmin) {
+        loadSharedReports();
+      }
+    };
+
+    const handleFocus = () => {
+      if (isAdmin) {
+        loadSharedReports();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [isAdmin]);
 
   const checkAdminAndLoadData = async () => {
     const supabase = createClient();
@@ -75,6 +107,45 @@ export default function AccessManagementPage({ params }: { params: { id: string 
         console.error('Error loading shared reports:', error);
       } else {
         setSharedReports(data || []);
+        
+        // Load access info for each report
+        if (data && data.length > 0) {
+          const accessMap: Record<string, AccessRecord[]> = {};
+          
+          for (const report of data) {
+            // First, get all user_ids for this report
+            const { data: accessData, error: accessError } = await supabase
+              .from('report_access')
+              .select('user_id')
+              .eq('shared_report_id', report.id);
+            
+            if (accessError) {
+              console.error(`Error loading access for report ${report.id}:`, accessError);
+            }
+            
+            if (accessData && accessData.length > 0) {
+              // Then fetch user details for each user_id
+              const userIds = accessData.map((a: any) => a.user_id);
+              const { data: usersData } = await supabase
+                .from('profiles')
+                .select('id, email, role')
+                .in('id', userIds);
+              
+              // Map user data to access records
+              accessMap[report.id] = accessData.map((a: any) => {
+                const user = usersData?.find((u: any) => u.id === a.user_id);
+                return {
+                  user_id: a.user_id,
+                  user: user ? { email: user.email, role: user.role } : null
+                };
+              });
+            } else {
+              accessMap[report.id] = [];
+            }
+          }
+          
+          setReportAccessMap(accessMap);
+        }
       }
     } catch (error) {
       console.error('Error loading shared reports:', error);
@@ -131,6 +202,13 @@ export default function AccessManagementPage({ params }: { params: { id: string 
           <Flex gap="2" align="center">
             <Button 
               variant="soft" 
+              onClick={() => loadSharedReports()}
+              disabled={loadingSharedReports}
+            >
+              {loadingSharedReports ? '🔄 Refreshing...' : '🔄 Refresh'}
+            </Button>
+            <Button 
+              variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'access';
                 router.push(`/reports/${params.id}?tab=${tab}`);
@@ -163,91 +241,84 @@ export default function AccessManagementPage({ params }: { params: { id: string 
                 <Table.Row>
                   <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Target User</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Shared With</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {sharedReports.map((report) => (
-                  <Table.Row key={report.id}>
-                    <Table.Cell>
-                      <Text weight="bold">{report.title}</Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Badge color={report.report_type === 'manager' ? 'blue' : 'green'}>
-                        {report.report_type === 'manager' ? 'Manager' : 'Student'}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      {report.user_id ? (
-                        <Text size="2">{report.user_id}</Text>
-                      ) : (
-                        <Text size="2" color="gray">-</Text>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Flex gap="2">
-                        <Button
-                          size="1"
-                          variant="outline"
-                          onClick={() => router.push(`/reports/shared/${report.id}/view`)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="1"
-                          variant="outline"
-                          onClick={() => router.push(`/reports/shared/${report.id}/edit`)}
-                        >
-                          Edit
-                        </Button>
-                      </Flex>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                {sharedReports.map((report) => {
+                  const accessList = reportAccessMap[report.id] || [];
+                  
+                  return (
+                    <Table.Row key={report.id}>
+                      <Table.Cell>
+                        <Text weight="bold">{report.title}</Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge color={report.report_type === 'manager' ? 'blue' : 'green'}>
+                          {report.report_type === 'manager' ? 'Manager' : 'Student'}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {accessList.length > 0 ? (
+                          <Flex direction="column" gap="1" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                            {accessList.map((access) => (
+                              <Flex key={access.user_id} align="center" gap="2">
+                                <Text size="2">
+                                  {access.user?.email || access.user_id}
+                                </Text>
+                                <Badge 
+                                  color={
+                                    access.user?.role === 'admin' ? 'red' : 
+                                    access.user?.role === 'manager' ? 'blue' : 
+                                    'green'
+                                  } 
+                                  size="1"
+                                >
+                                  {access.user?.role || 'user'}
+                                </Badge>
+                              </Flex>
+                            ))}
+                          </Flex>
+                        ) : (
+                          <Text size="2" color="gray">No users yet</Text>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Flex gap="2">
+                          <Button
+                            size="1"
+                            variant="outline"
+                            onClick={() => router.push(`/reports/shared/${report.id}/view`)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            size="1"
+                            variant="outline"
+                            onClick={() => router.push(`/reports/shared/${report.id}/edit`)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="1"
+                            variant="soft"
+                            color="green"
+                            onClick={() => router.push(`/reports/shared/${report.id}/access`)}
+                          >
+                            📤 Manage Access
+                          </Button>
+                        </Flex>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </Table.Body>
             </Table.Root>
           )}
         </Flex>
       </Card>
 
-      <Card>
-        <Flex direction="column" gap="4">
-          <Heading size="5">User Management</Heading>
-          <Text size="2" color="gray" mb="3">
-            View all users in the system and their roles.
-          </Text>
-          
-          <Table.Root>
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>User ID</Table.ColumnHeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {users.map((user) => (
-                <Table.Row key={user.id}>
-                  <Table.Cell>
-                    <Text weight="bold">{user.email}</Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Badge color={user.role === 'admin' ? 'red' : 'blue'}>
-                      {user.role}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text size="1" style={{ fontFamily: 'monospace', color: 'var(--gray-11)' }}>
-                      {user.id}
-                    </Text>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
-        </Flex>
-      </Card>
     </AppLayoutWithAuth>
   );
 }

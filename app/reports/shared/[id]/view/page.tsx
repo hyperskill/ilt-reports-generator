@@ -107,18 +107,35 @@ export default function SharedReportViewPage() {
             {downloadingPDF ? '⏳ Generating PDF... (please wait)' : '📄 Download PDF'}
           </Button>
           {canEdit && (
-            <Button
-              onClick={() => router.push(`/reports/shared/${id}/edit`)}
-            >
-              Edit Report
-            </Button>
+            <>
+              <Button
+                onClick={() => router.push(`/reports/shared/${id}/edit`)}
+              >
+                Edit Report
+              </Button>
+              <Button
+                variant="soft"
+                color="green"
+                onClick={() => router.push(`/reports/shared/${id}/access`)}
+              >
+                📤 Manage Access
+              </Button>
+            </>
           )}
           <Button
             variant="outline"
             onClick={() => router.back()}
           >
-            Back
+            ← Back
           </Button>
+          {report.source_report_id && canEdit && (
+            <Button
+              variant="soft"
+              onClick={() => router.push(`/reports/${report.source_report_id}?tab=constructor`)}
+            >
+              Back to Report
+            </Button>
+          )}
         </Flex>
 
         {/* PDF Content */}

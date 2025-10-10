@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Heading, Text, Tabs, Card, Flex, Badge, Button, Separator } from '@radix-ui/themes';
+import { Box, Heading, Text, Tabs, Card, Flex, Badge, Button, Separator, AlertDialog } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { createClient } from '@/lib/supabase/client';
 
@@ -16,6 +16,8 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
   const [sharedReports, setSharedReports] = useState<any[]>([]);
   const [loadingSharedReports, setLoadingSharedReports] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -83,6 +85,39 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
     } finally {
       setLoadingSharedReports(false);
     }
+  };
+
+  const handleDeleteClick = (reportId: string) => {
+    setDeletingReportId(reportId);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingReportId) return;
+
+    try {
+      const response = await fetch(`/api/reports/shared/delete?id=${deletingReportId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete shared report');
+      }
+
+      // Reload shared reports after successful deletion
+      await loadSharedReports();
+      setShowDeleteDialog(false);
+      setDeletingReportId(null);
+    } catch (error: any) {
+      console.error('Error deleting shared report:', error);
+      alert('Failed to delete report: ' + error.message);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+    setDeletingReportId(null);
   };
 
   const handleTabChange = (value: string) => {
@@ -286,8 +321,8 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
                           {sharedReports.filter(r => r.report_type === 'manager').map((sharedReport) => (
                             <Flex key={sharedReport.id} justify="between" align="center" p="2" style={{ backgroundColor: 'var(--gray-2)', borderRadius: '6px' }}>
                               <Box>
-                                <Text size="2" weight="bold">{sharedReport.title}</Text>
-                                <Text size="1" color="gray">
+                                <Text size="2" weight="bold" style={{ display: 'block' }}>{sharedReport.title}</Text>
+                                <Text size="1" color="gray" style={{ display: 'block' }}>
                                   Created: {new Date(sharedReport.created_at).toLocaleDateString()}
                                 </Text>
                               </Box>
@@ -305,6 +340,22 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
                                   onClick={() => router.push(`/reports/shared/${sharedReport.id}/view`)}
                                 >
                                   View
+                                </Button>
+                                <Button 
+                                  size="1" 
+                                  variant="soft"
+                                  color="green"
+                                  onClick={() => router.push(`/reports/shared/${sharedReport.id}/access`)}
+                                >
+                                  📤 Share
+                                </Button>
+                                <Button 
+                                  size="1" 
+                                  variant="soft"
+                                  color="red"
+                                  onClick={() => handleDeleteClick(sharedReport.id)}
+                                >
+                                  Delete
                                 </Button>
                               </Flex>
                             </Flex>
@@ -336,8 +387,8 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
                           {sharedReports.filter(r => r.report_type === 'student').map((sharedReport) => (
                             <Flex key={sharedReport.id} justify="between" align="center" p="2" style={{ backgroundColor: 'var(--gray-2)', borderRadius: '6px' }}>
                               <Box>
-                                <Text size="2" weight="bold">{sharedReport.title}</Text>
-                                <Text size="1" color="gray">
+                                <Text size="2" weight="bold" style={{ display: 'block' }}>{sharedReport.title}</Text>
+                                <Text size="1" color="gray" style={{ display: 'block' }}>
                                   Student: {sharedReport.user_id} • Created: {new Date(sharedReport.created_at).toLocaleDateString()}
                                 </Text>
                               </Box>
@@ -355,6 +406,22 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
                                   onClick={() => router.push(`/reports/shared/${sharedReport.id}/view`)}
                                 >
                                   View
+                                </Button>
+                                <Button 
+                                  size="1" 
+                                  variant="soft"
+                                  color="green"
+                                  onClick={() => router.push(`/reports/shared/${sharedReport.id}/access`)}
+                                >
+                                  📤 Share
+                                </Button>
+                                <Button 
+                                  size="1" 
+                                  variant="soft"
+                                  color="red"
+                                  onClick={() => handleDeleteClick(sharedReport.id)}
+                                >
+                                  Delete
                                 </Button>
                               </Flex>
                             </Flex>
@@ -409,6 +476,30 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
           </Tabs.Content>
         </Box>
       </Tabs.Root>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog.Root open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialog.Content style={{ maxWidth: 450 }}>
+          <AlertDialog.Title>Delete Shared Report</AlertDialog.Title>
+          <AlertDialog.Description size="2">
+            Are you sure you want to delete this shared report? This action cannot be undone.
+            All access permissions for this report will also be removed.
+          </AlertDialog.Description>
+
+          <Flex gap="3" mt="4" justify="end">
+            <AlertDialog.Cancel>
+              <Button variant="soft" color="gray" onClick={handleDeleteCancel}>
+                Cancel
+              </Button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action>
+              <Button variant="solid" color="red" onClick={handleDeleteConfirm}>
+                Delete Report
+              </Button>
+            </AlertDialog.Action>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
     </AppLayoutWithAuth>
   );
 }

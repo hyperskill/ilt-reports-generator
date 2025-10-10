@@ -65,11 +65,6 @@ export function TableLegend({ mode }: LegendProps) {
                       <Table.Cell>Correct answers ÷ number of tasks</Table.Cell>
                     </Table.Row>
                     <Table.Row>
-                      <Table.Cell><Text weight="bold">Active Days</Text></Table.Cell>
-                      <Table.Cell>Number of days student accessed the platform</Table.Cell>
-                      <Table.Cell>Unique dates from submissions.csv</Table.Cell>
-                    </Table.Row>
-                    <Table.Row>
                       <Table.Cell><Text weight="bold">Consistency</Text></Table.Cell>
                       <Table.Cell>Study regularity (0-1, where 1 = every day)</Table.Cell>
                       <Table.Cell>Active days ÷ total learning period</Table.Cell>

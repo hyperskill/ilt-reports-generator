@@ -27,6 +27,8 @@ A comprehensive web application for analyzing student performance and dynamic ac
    - `submissions.csv` (Required): user_id, step_id, status, timestamp
    - `meetings.csv` (Optional): user_id, name, [dd.mm.yyyy] columns
    - `structure.csv` (Optional): course_id, module_id, lesson_id, step_id - enables clickable topic links to Cogniterra
+   
+   **Note**: CSV files can use either comma (`,`) or semicolon (`;`) as delimiter. The system automatically detects the correct delimiter.
 
 2. **Review** - Verify column recognition and preview data
 

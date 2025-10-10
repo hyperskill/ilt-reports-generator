@@ -1,8 +1,317 @@
 # App Creation Log
 
+## 2025-10-10: Performance Metrics Improvements
+
+### Latest Update: Reorganized Manager Report Block Order
+
+**Purpose**: Improve logical flow and readability of manager shared reports by reordering blocks to follow a more intuitive narrative structure.
+
+**New Block Order**:
+
+1. **Executive Summary** - High-level overview
+2. **Student Segmentation Distribution** (pie-chart) - Visual segment breakdown
+3. **Segmentation Statistics** (table) - Detailed segment analysis
+4. **Student Performance Overview** (table) - Complete student roster with metrics
+5. **Team Engagement & Dynamics** - Group dynamics narrative
+6. **Activity Pattern Distribution** (pie-chart) - Easing types visualization
+7. **Activity Pattern Statistics** (table) - Detailed pattern analysis
+8. **Skills Acquired & Learning Outcomes** - What students learned
+9. **Group Activity by Module** (chart) - Visual module activity
+10. **Group Performance by Module** (table) - Detailed module metrics
+11. **Expert Observations & Project Highlights** - Instructor insights
+12. **Program Expert Feedback** (if available) - Expert comments
+13. **Teaching Assistants Feedback** (if available) - TA comments
+14. **Learning Support Feedback** (if available) - Support comments
+15. **Business Recommendations & Next Steps** - Actionable recommendations
+
+**Rationale**:
+- **Data → Insights → Actions**: Flow from raw data (charts/tables) to analysis (narratives) to recommendations
+- **Performance First**: Student performance overview moved earlier (position 4) for immediate visibility
+- **Grouped Analytics**: All segmentation blocks together, all pattern blocks together, all module blocks together
+- **Skills Before Modules**: General outcomes before detailed module breakdown
+- **Comments Before Recommendations**: Expert feedback informs final recommendations
+
+**Changes Made**:
+- Moved "Student Performance Overview" from position 8 to position 4
+- Moved "Team Engagement & Dynamics" from position 5 to position 5 (no change, but now after performance table)
+- Moved "Skills Acquired & Learning Outcomes" from position 4 to position 8
+- Module analytics blocks (9-10) now come before expert observations
+- All blocks properly numbered with comments for clarity
+
+**Impact**:
+- More logical reading flow for managers
+- Key performance data visible earlier
+- Better narrative structure from data to insights to actions
+- Easier to understand report structure
+
+**Files Modified**:
+- `app/api/reports/shared/create/route.ts`: Reorganized manager report block creation order
+
+---
+
+### Previous Update: Added Color Coding for Activity Patterns (Easing Types)
+
+**Purpose**: Extend color coding system to Activity Pattern Distribution charts and tables, providing visual consistency across all report visualizations.
+
+**Implementation**:
+
+1. **Activity Pattern Colors** (Easing Types):
+   - **Green** (`rgba(34, 197, 94, 0.8)`) - "ease-out" (Early start, front-loaders)
+   - **Orange** (`rgba(249, 115, 22, 0.8)`) - "ease-in" (Late start)
+   - **Purple** (`rgba(168, 85, 247, 0.8)`) - "ease-in-out" (S-curve)
+   - **Blue** (`rgba(59, 130, 246, 0.8)`) - "ease" (Moderate, balanced)
+   - **Gray** (`rgba(156, 163, 175, 0.8)`) - "linear" (Steady pace)
+   - **Red** (`rgba(220, 38, 38, 0.8)`) - "no-activity" (No activity)
+
+2. **Updated Components**:
+   - Extended `getChartColor()` function to handle both segments and easing patterns
+   - Extended `getBadgeColor()` function to return appropriate colors for patterns
+   - Added Badge rendering for "pattern" column in tables
+   - Unified color logic across BlockRenderer and BlockViewer
+
+3. **Where Applied**:
+   - **Pie Chart**: "Activity Pattern Distribution (Easing Types)"
+   - **Table**: "Activity Pattern Statistics" - Pattern column now shows colored badges
+   - Both edit and view modes
+
+**Color Semantics**:
+- **Green (ease-out)**: Positive - students started strong
+- **Orange (ease-in)**: Caution - late starters, may need early engagement
+- **Purple (ease-in-out)**: Neutral - balanced S-curve pattern
+- **Blue (ease)**: Neutral - moderate, steady acceleration
+- **Gray (linear)**: Neutral - consistent pace throughout
+- **Red (no-activity)**: Alert - no activity detected
+
+**Impact**:
+- Visual consistency between Activity Pattern charts and tables
+- Instant recognition of work patterns
+- Easier to identify students who need early intervention (ease-in = orange)
+- Professional, cohesive appearance across all visualizations
+
+**Files Modified**:
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx`: Extended color logic for patterns
+- `app/reports/shared/[id]/view/BlockViewer.tsx`: Extended color logic for patterns
+
+---
+
+### Previous Update: Unified Segment Colors Across Charts and Tables
+
+**Purpose**: Ensure consistent color coding for student segments across all visualizations (pie charts and tables) in shared reports.
+
+**Problem**: 
+- Pie charts used generic colors (pink, blue, yellow, teal) that didn't match segment meanings
+- Tables used semantic colors (green for leaders, red for low engagement, etc.)
+- This inconsistency made it harder to quickly understand the data
+- Users had to mentally map different colors to the same segments
+
+**Solution**:
+Updated Pie Chart color generation to use semantic colors matching table badges:
+
+1. **Color Mapping**:
+   - **Green** (`rgba(34, 197, 94, 0.8)`) - "Leader" segments (Leader engaged, Leader efficient)
+   - **Red** (`rgba(239, 68, 68, 0.8)`) - "Low engagement" segments
+   - **Orange** (`rgba(249, 115, 22, 0.8)`) - "Hardworking" segments
+   - **Blue** (`rgba(59, 130, 246, 0.8)`) - "Engaged" segments (Balanced + engaged)
+   - **Gray** (`rgba(156, 163, 175, 0.8)`) - "Balanced middle" segments (neutral, no badge color in table)
+   - **Gray** (`rgba(156, 163, 175, 0.8)`) - Unknown/other segments
+
+2. **Implementation**:
+   - Added `getSegmentChartColor()` function to both BlockRenderer and BlockViewer
+   - Function analyzes segment name and returns appropriate color
+   - Colors are dynamically generated based on segment labels
+   - Works for any number of segments
+
+3. **Consistency**:
+   - Pie chart colors now match table badge colors exactly
+   - Same color logic used in both edit and view modes
+   - Visual consistency across all segment visualizations
+
+**Impact**:
+- **Before**: Pink slice in pie chart, green badge in table for same "Leader engaged" segment
+- **After**: Green slice in pie chart, green badge in table - instant visual consistency
+- Easier to scan and understand reports
+- Reduced cognitive load for users
+- Professional, cohesive appearance
+
+**Files Modified**:
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx`: Added segment color logic to PieChartBlock
+- `app/reports/shared/[id]/view/BlockViewer.tsx`: Added segment color logic to PieChartBlockViewer
+
+---
+
+### Previous Update: Added Color-Coded Segment Badges in Shared Reports
+
+**Purpose**: Improve visual clarity and readability of Student Performance Overview tables in shared reports by adding color-coded badges for student segments.
+
+**Implementation**:
+Added colored Badge components for the "segment" column in all shared report tables:
+
+1. **BlockRenderer.tsx** (Edit mode):
+   - Added `Badge` import from Radix UI
+   - Created `getSegmentColor()` helper function
+   - Modified TableBlock to render segment values as colored badges
+   - Color mapping:
+     - **Green**: "Leader" segments (Leader engaged, Leader efficient)
+     - **Red**: "Low engagement" segments
+     - **Orange**: "Hardworking" segments (Hardworking but struggling)
+     - **Blue**: "Engaged" segments (Balanced + engaged)
+     - **Gray**: Other segments (Balanced middle, etc.)
+
+2. **BlockViewer.tsx** (View mode):
+   - Same implementation as BlockRenderer for consistency
+   - Ensures colored badges appear in both edit and view modes
+
+**Visual Impact**:
+- **Before**: Plain text segment names (e.g., "Leader engaged")
+- **After**: Colored badges with same text (e.g., 🟢 "Leader engaged")
+
+**Benefits**:
+- Instant visual recognition of student performance categories
+- Easier to scan large tables and identify patterns
+- Consistent with segment colors used elsewhere in the app
+- Improves accessibility through color + text combination
+
+**Files Modified**:
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx`: Added Badge import and segment color logic
+- `app/reports/shared/[id]/view/BlockViewer.tsx`: Added Badge import and segment color logic
+
+---
+
+### Previous Update: Removed Active Days Metric from All Tables
+
+**Purpose**: Remove the Active Days metric from all Student Performance Overview tables and legends due to data quality issues and complexity in accurate calculation.
+
+**Problem**: 
+- Active Days calculation was unreliable due to varying data quality in submissions.csv
+- Difficult to accurately determine course period boundaries
+- Metric was confusing for users (absolute days vs. ratio)
+- Percentile-based filtering helped but didn't fully solve the issue
+
+**Solution**:
+Removed Active Days from all locations:
+
+1. **Manager Shared Report** (`app/api/reports/shared/create/route.ts`):
+   - Removed `active_days` field from Student Performance Overview table
+   - Updated columns config: removed `'active_days'` from columns array
+   - Updated helpText: removed Active Days description
+
+2. **Student Shared Report** (`app/api/reports/shared/create/route.ts`):
+   - Removed `active_days` and `active_days_ratio` fields from Your Performance Overview table
+   - Updated columns config: removed both metrics
+   - Updated helpText: removed both descriptions
+
+3. **Individual Student Page** (`app/student/[userId]/page.tsx`):
+   - Removed Active Days box from Detailed Statistics section
+   - Grid now shows: Submissions, Unique Steps, Persistence, Efficiency, Effort Index
+
+4. **Performance Results Legend** (`app/components/PerformanceResults.tsx`):
+   - Removed Active Days row from metrics explanation table
+
+5. **Table Legend Component** (`app/components/TableLegend.tsx`):
+   - Removed Active Days row from metrics explanation table
+
+**Remaining Metrics**:
+- **Consistency Index**: Still available (uses active_days_ratio internally but not displayed)
+- **Effort Index**: Combines submissions and activity patterns
+- **Meetings**: Clear, reliable metric
+- **Success Rate, Persistence, Efficiency**: Core performance metrics
+
+**Impact**:
+- Cleaner, more reliable tables
+- Focus on metrics that are accurately calculable
+- Reduced user confusion
+- Consistency metric still captures activity regularity
+
+**Files Modified**:
+- `app/api/reports/shared/create/route.ts`: Removed from both manager and student report blocks
+- `app/student/[userId]/page.tsx`: Removed from Detailed Statistics
+- `app/components/PerformanceResults.tsx`: Removed from legend
+- `app/components/TableLegend.tsx`: Removed from legend
+
+---
+
+### Previous Update: Auto-Detect CSV Delimiter (Comma vs Semicolon)
+
+**Purpose**: Support CSV files with different delimiters (comma `,` or semicolon `;`) to accommodate files from different sources (Excel exports, TeamCity, etc.).
+
+**Problem**: 
+- New meetings CSV file from TeamCity used semicolon (`;`) as delimiter
+- CSV parser only supported comma (`,`) delimiter by default
+- File was parsed as single column, showing all data in one field
+- Common issue when receiving CSV files from different systems/regions
+
+**Solution** (`lib/utils/csv-parser.ts`):
+1. **Auto-detect delimiter before parsing**:
+   - Count occurrences of commas and semicolons in first line
+   - Use semicolon if it appears more frequently than comma
+   - Default to comma if counts are equal
+
+2. **Pass detected delimiter to parser**:
+   - Use `delimiter` option in `csv-parse` library
+   - Ensures correct column separation regardless of source
+
+**Example**:
+- **Comma format**: `user_id,name,meeting1,meeting2`
+- **Semicolon format**: `user_id;name;meeting1;meeting2`
+- Both formats now work automatically
+
+**Impact**:
+- Supports CSV files from Excel (often uses semicolon in EU)
+- Supports CSV files from TeamCity and other systems
+- No manual conversion needed
+- Automatic detection is transparent to users
+
+**Files Modified**:
+- `lib/utils/csv-parser.ts`: Added delimiter auto-detection logic
+
+---
+
+### Previous Update: Fixed Active Days Calculation with Course Period Filter
+
+**Purpose**: Ensure Active Days metric accurately reflects student activity within the actual course period, preventing inflated values from submissions outside the course dates.
+
+**Problem**: 
+- Active Days was showing 95 days for a student when the course only lasted ~54 days
+- The metric was counting all unique submission dates without filtering by course period
+- This could include submissions made before course start or after course end
+
+**Solution**:
+1. **Added Percentile-Based Course Period Detection** (`lib/processors/performance-processor.ts`):
+   - Collect all submission timestamps in first pass
+   - Sort timestamps and use 5th-95th percentile to determine course period
+   - This automatically excludes outlier submissions (top 5% and bottom 5%)
+   - Calculate `courseStartDate`, `courseEndDate`, and `courseDurationDays` from percentiles
+
+2. **Added Submission Filtering**:
+   - In second pass, filter out submissions that fall outside the percentile-based course period
+   - Skip submissions where `ts.isBefore(courseStartDate) || ts.isAfter(courseEndDate)`
+   - Only count dates within the actual course period for `active_days`
+
+3. **Updated Active Days Ratio Calculation**:
+   - Changed from individual student span to course-wide duration
+   - Use `courseDurationDays` (from percentile range) instead of per-student `spanDays`
+   - More accurate representation of activity relative to course length
+
+**Why Percentile-Based Approach**:
+- Using min/max dates would include outliers (e.g., test submissions, late submissions)
+- 5th-95th percentile captures the main course period where 90% of activity occurred
+- Automatically adapts to different course structures and durations
+- Prevents single outlier submissions from inflating the course period
+
+**Impact**:
+- Active Days now shows realistic values (e.g., 45 days instead of 95 days)
+- Active Days Ratio is calculated against actual course duration
+- More accurate performance metrics for student engagement
+- Prevents outlier submissions from skewing statistics
+
+**Files Modified**:
+- `lib/processors/performance-processor.ts`: Added course period detection and filtering logic
+
+---
+
 ## 2025-10-09: Module Activity Analytics and Group Statistics
 
-### Latest Update: Enhanced Student Report System Prompt
+### Previous Update: Enhanced Student Report System Prompt
 
 **Purpose**: Improve LLM-generated student reports to focus on personal growth, transformation, and celebrating achievements while providing compassionate support for students.
 

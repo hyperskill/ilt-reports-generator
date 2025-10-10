@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Card, Flex, Spinner, Text, Heading, Table, Badge, Box } from '@radix-ui/themes';
+import * as Accordion from '@radix-ui/react-accordion';
 import { processModuleAnalytics } from '@/lib/processors/module-analytics';
 
 ChartJS.register(
@@ -370,6 +371,95 @@ export function GroupModuleAnalytics({
             </Text>
           </Box>
         </Flex>
+      </Box>
+      
+      {/* Help Accordion */}
+      <Box mt="3">
+        <Accordion.Root type="single" collapsible>
+          <Accordion.Item value="help" style={{ border: '1px solid var(--gray-6)', borderRadius: '6px' }}>
+            <Accordion.Trigger
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--gray-2)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '14px',
+                color: 'var(--gray-11)',
+                fontWeight: 500,
+                borderRadius: '6px',
+              }}
+            >
+              <span>ℹ️ How to read this data</span>
+              <span style={{ fontSize: '12px' }}>▼</span>
+            </Accordion.Trigger>
+            <Accordion.Content
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                lineHeight: 1.7,
+                color: 'var(--gray-12)',
+                backgroundColor: 'var(--gray-1)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                }}
+                className="help-content"
+              >
+                <p><strong>What this shows:</strong> Group performance across all course modules, helping you understand which parts of the course are working well and which need attention.</p>
+                
+                <p><strong>Table columns explained:</strong></p>
+                <ul>
+                  <li><strong>Module</strong> - The course section name</li>
+                  <li><strong>Avg Progress</strong> - Average completion percentage across all students</li>
+                  <li><strong>Avg Success Rate</strong> - How often students get exercises right on average</li>
+                  <li><strong>Avg Attempts/Step</strong> - How many tries students need per exercise</li>
+                  <li><strong>Total Attempts</strong> - Sum of all student attempts in this module</li>
+                  <li><strong>Meetings</strong> - Average number of live sessions attended during this module</li>
+                </ul>
+                
+                <p><strong>Chart interpretation:</strong></p>
+                <ul>
+                  <li><strong>Teal bars (left axis)</strong> - Average completed steps per module</li>
+                  <li><strong>Purple bars (right axis)</strong> - Average meetings attended per module</li>
+                </ul>
+                
+                <p><strong>What to look for:</strong></p>
+                <ul>
+                  <li><strong>High success rates</strong> - Module is well-designed and students understand it</li>
+                  <li><strong>Low success rates</strong> - Module may need more support or explanation</li>
+                  <li><strong>High attempts per step</strong> - Students are struggling with this content</li>
+                  <li><strong>Meeting correlation</strong> - Do students who attend meetings perform better?</li>
+                </ul>
+              </div>
+              <style jsx>{`
+                .help-content :global(p) {
+                  margin: 0 0 12px 0;
+                }
+                .help-content :global(p:last-child) {
+                  margin-bottom: 0;
+                }
+                .help-content :global(ul) {
+                  margin: 8px 0;
+                  padding-left: 20px;
+                }
+                .help-content :global(li) {
+                  margin: 4px 0;
+                }
+                .help-content :global(strong) {
+                  font-weight: 600;
+                  color: var(--gray-12);
+                }
+              `}</style>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
       </Box>
     </Card>
   );

@@ -8,9 +8,10 @@ interface StudentCommentsSectionProps {
   reportId: string | null;
   userId: string;
   isAdmin: boolean;
+  onCommentsSaved?: () => void;
 }
 
-export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCommentsSectionProps) {
+export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSaved }: StudentCommentsSectionProps) {
   const { studentComments, setStudentComment } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,6 +81,11 @@ export function StudentCommentsSection({ reportId, userId, isAdmin }: StudentCom
 
         const data = await response.json();
         setComments(data.comments);
+        
+        // Notify parent component to refresh status
+        if (onCommentsSaved) {
+          onCommentsSaved();
+        }
       } else {
         // Save to context if no reportId (current session)
         const newComment = {
