@@ -121,7 +121,13 @@ export default function SharedReportEditPage() {
               variant="outline"
               onClick={() => router.back()}
             >
-              Back
+              ← Back
+            </Button>
+            <Button
+              variant="soft"
+              onClick={() => router.push(`/reports/${report.source_report_id}?tab=constructor`)}
+            >
+              Back to Report
             </Button>
           </Flex>
         </Flex>

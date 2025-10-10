@@ -317,6 +317,18 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
       return;
     }
 
+    // Check if student has LLM report generated
+    if (formData.reportType === 'student' && formData.userId) {
+      const hasLLMReport = studentReportsStatus[formData.userId];
+      if (!hasLLMReport) {
+        // Redirect to LLM report generation page
+        if (confirm('This student does not have an AI-generated report yet. Would you like to generate it now?')) {
+          router.push(`/reports/${params.id}/student-reports/${formData.userId}`);
+        }
+        return;
+      }
+    }
+
     setCreating(true);
     try {
       const response = await fetch('/api/reports/shared/create', {
@@ -375,10 +387,10 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
   const getStudents = () => {
     if (!report?.performance_data) return [];
     return report.performance_data
-      .filter((student: any) => studentReportsStatus[student.user_id]) // Only students with generated LLM reports
       .map((student: any) => ({
         value: student.user_id,
-        label: student.name || student.user_id,
+        label: `${student.name || student.user_id}${studentReportsStatus[student.user_id] ? ' ✓' : ' (no AI report)'}`,
+        hasReport: studentReportsStatus[student.user_id],
       }));
   };
 
@@ -400,9 +412,9 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
     if (formData.reportType === 'manager') {
       return llmStatus.hasManagerReport && llmStatus.hasManagerComments;
     } else {
-      // For student reports, all students must have generated LLM reports
-      const reportsStatus = getStudentReportsStatus();
-      return reportsStatus.allComplete;
+      // For student reports, allow creation if a student is selected
+      // The system will redirect to LLM generation if needed
+      return formData.userId.trim().length > 0;
     }
   };
 
@@ -446,13 +458,19 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
           </Box>
           <Flex gap="2" align="center">
             <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              ← Back
+            </Button>
+            <Button 
               variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'constructor';
                 router.push(`/reports/${params.id}?tab=${tab}`);
               }}
             >
-              ← Back to Report
+              Back to Report
             </Button>
           </Flex>
         </Flex>

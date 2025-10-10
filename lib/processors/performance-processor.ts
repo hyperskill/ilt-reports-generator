@@ -51,6 +51,34 @@ export function processPerformanceSegmentation({
   }
 
   // Process submissions - collect dates and stats
+  // First pass: collect all submission timestamps to determine course period
+  const allTimestamps: dayjs.Dayjs[] = [];
+  
+  for (const row of submissions) {
+    const timestamp = getTimestamp(row);
+    const ts = dayjs(timestamp);
+    if (ts.isValid()) {
+      allTimestamps.push(ts);
+    }
+  }
+
+  // Sort timestamps to find percentile-based course period (exclude outliers)
+  allTimestamps.sort((a, b) => a.valueOf() - b.valueOf());
+  
+  let courseStartDate: dayjs.Dayjs | null = null;
+  let courseEndDate: dayjs.Dayjs | null = null;
+  let courseDurationDays = 0;
+  
+  if (allTimestamps.length > 0) {
+    // Use 5th and 95th percentile to exclude outliers
+    const startIndex = Math.floor(allTimestamps.length * 0.05);
+    const endIndex = Math.floor(allTimestamps.length * 0.95);
+    
+    courseStartDate = allTimestamps[startIndex];
+    courseEndDate = allTimestamps[endIndex];
+    courseDurationDays = courseEndDate.diff(courseStartDate, 'day') + 1;
+  }
+
   const submissionStats = new Map<string, {
     submissions: number;
     uniqueSteps: Set<string>;
@@ -71,6 +99,14 @@ export function processPerformanceSegmentation({
     const timestamp = getTimestamp(row);
     const ts = dayjs(timestamp);
     if (!ts.isValid()) continue;
+    
+    // Filter submissions to course period only
+    if (courseStartDate && courseEndDate) {
+      if (ts.isBefore(courseStartDate) || ts.isAfter(courseEndDate)) {
+        continue; // Skip submissions outside course period
+      }
+    }
+    
     const date = ts.format('YYYY-MM-DD');
 
     const stats = submissionStats.get(originalId) || {
@@ -149,10 +185,8 @@ export function processPerformanceSegmentation({
     const correctSubs = stats?.correctSubs || 0;
     const activeDays = stats?.dates.size || 0;
     
-    // Temporal coverage
-    const spanDays = stats?.minDate && stats?.maxDate 
-      ? Math.max(1, stats.maxDate.diff(stats.minDate, 'day') + 1)
-      : 1;
+    // Temporal coverage - use course duration instead of individual span
+    const spanDays = courseDurationDays > 0 ? courseDurationDays : 1;
     const activeDaysRatio = Number((activeDays / spanDays).toFixed(3));
 
     // Core KPIs

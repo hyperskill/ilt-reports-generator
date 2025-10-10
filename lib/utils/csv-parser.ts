@@ -11,12 +11,26 @@ export async function parseCSV(file: File): Promise<any[]> {
   });
   text = cleanedLines.join('\n');
   
+  // Auto-detect delimiter: check first line for comma or semicolon
+  let delimiter = ',';
+  if (cleanedLines.length > 0) {
+    const firstLine = cleanedLines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    
+    // Use semicolon if it appears more frequently than comma
+    if (semicolonCount > commaCount) {
+      delimiter = ';';
+    }
+  }
+  
   try {
     const records = parse(text, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
       relax_column_count: true, // Allow variable column counts
+      delimiter: delimiter, // Use detected delimiter
     });
     return records;
   } catch (error) {

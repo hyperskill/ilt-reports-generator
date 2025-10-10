@@ -134,13 +134,19 @@ export default function StudentReportsPage({ params }: { params: { id: string } 
           </Box>
           <Flex gap="2">
             <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              ← Back
+            </Button>
+            <Button 
               variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'preview';
                 router.push(`/reports/${params.id}?tab=${tab}`);
               }}
             >
-              ← Back to Report
+              Back to Report
             </Button>
             <Button onClick={handleGenerateAll} disabled={!!generating}>
               {generating === 'batch' ? 'Generating...' : '🤖 Generate All'}

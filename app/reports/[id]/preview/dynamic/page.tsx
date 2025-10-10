@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Heading, Text, Card, Flex, Button } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
 import { DynamicResults } from '@/app/components/DynamicResults';
+import { GroupModuleAnalytics } from '@/app/components/GroupModuleAnalytics';
 
 export default function DynamicPreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -65,17 +66,36 @@ export default function DynamicPreviewPage({ params }: { params: { id: string } 
           </Box>
           <Flex gap="2" align="center">
             <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              ← Back
+            </Button>
+            <Button 
               variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'preview';
                 router.push(`/reports/${params.id}?tab=${tab}`);
               }}
             >
-              ← Back to Report
+              Back to Report
             </Button>
           </Flex>
         </Flex>
       </Box>
+
+      {/* Group Module Analytics */}
+      {report.structure_data && report.structure_data.length > 0 && report.submissions_data && (
+        <Box mb="5">
+          <GroupModuleAnalytics
+            students={report.performance_data || []}
+            submissions={report.submissions_data || []}
+            structure={report.structure_data || []}
+            courseId={report.structure_data[0]?.course_id || report.structure_data[0]?.courseid}
+            meetings={report.meetings_data || []}
+          />
+        </Box>
+      )}
 
       <DynamicResults 
         summary={report.dynamic_data} 

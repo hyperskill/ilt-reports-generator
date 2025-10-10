@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
 import { ModuleActivityChart } from './ModuleActivityChart';
-import { TableLegend } from './TableLegend';
 import { SegmentPieChart } from './SegmentPieChart';
+import * as Accordion from '@radix-ui/react-accordion';
 import styles from './DynamicResults.module.css';
 
 interface Props {
@@ -111,9 +111,6 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
 
   return (
     <Flex direction="column" gap="4">
-      {/* Table Legend */}
-      <TableLegend mode="dynamic" />
-
       {/* Summary Cards */}
       <Grid columns="3" gap="3">
         <Card>
@@ -176,6 +173,168 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
           </Box>
         </Card>
       </Grid>
+
+      {/* Activity Chart Help Accordion */}
+      <Box>
+        <Accordion.Root type="single" collapsible>
+          <Accordion.Item value="help" style={{ border: '1px solid var(--gray-6)', borderRadius: '6px' }}>
+            <Accordion.Trigger
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--gray-2)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '14px',
+                color: 'var(--gray-11)',
+                fontWeight: 500,
+                borderRadius: '6px',
+              }}
+            >
+              <span>ℹ️ How to read this data</span>
+              <span style={{ fontSize: '12px' }}>▼</span>
+            </Accordion.Trigger>
+            <Accordion.Content
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                lineHeight: 1.7,
+                color: 'var(--gray-12)',
+                backgroundColor: 'var(--gray-1)',
+              }}
+            >
+              <Box
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                }}
+                className="help-content"
+              >
+                <Text size="2" weight="bold" mb="3" as="div">In plain language:</Text>
+                <Table.Root size="1" variant="surface">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell>Metric</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>What it means</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>How to understand it</Table.ColumnHeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Easing Label</Text></Table.Cell>
+                      <Table.Cell>Student's activity curve type</Table.Cell>
+                      <Table.Cell>Shows how activity was distributed over time</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Frontload Index</Text></Table.Cell>
+                      <Table.Cell>When the student was most active</Table.Cell>
+                      <Table.Cell>Positive = active early<br/>Negative = active late</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Consistency</Text></Table.Cell>
+                      <Table.Cell>How regularly the student studied</Table.Cell>
+                      <Table.Cell>From 0 to 1: closer to 1 = more regular</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Burstiness</Text></Table.Cell>
+                      <Table.Cell>How "bursty" the activity was</Table.Cell>
+                      <Table.Cell>Higher = worked in bursts, lower = evenly</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">t25/t50/t75</Text></Table.Cell>
+                      <Table.Cell>When 25%, 50%, 75% of work was completed</Table.Cell>
+                      <Table.Cell>Numbers from 0 to 1 show the time point</Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+
+                <Box mt="4">
+                  <Text size="2" weight="bold" mb="2" as="div">Activity Types (Easing Patterns):</Text>
+                  <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="green">📈 ease-out (Early start)</Text><br/>
+                      Student was very active at the beginning, then activity decreased
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="orange">📉 ease-in (Late start)</Text><br/>
+                      Student started slowly but became more active towards the end
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="gray">📊 linear (Steady)</Text><br/>
+                      Activity distributed evenly throughout the entire period
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="purple">〰️ ease-in-out (S-curve)</Text><br/>
+                      Slow start, active middle, fade at the end
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="blue">⚖️ ease (Moderate)</Text><br/>
+                      Slight acceleration then deceleration - balanced activity
+                    </Text>
+                    <Text as="p" mb="1">
+                      <Text weight="bold" color="red">❌ no-activity</Text><br/>
+                      No activity data for the student
+                    </Text>
+                  </Box>
+                </Box>
+
+                <Box mt="4">
+                  <Text size="2" weight="bold" mb="2" as="div">How to read Frontload Index:</Text>
+                  <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <Text as="p" mb="1">
+                      <Text weight="bold" color="green">+0.3 (strong early start):</Text> 80% of work done in first half of period
+                    </Text>
+                    <Text as="p" mb="1">
+                      <Text weight="bold" color="blue">0.0 (balanced):</Text> Half of work by middle of period
+                    </Text>
+                    <Text as="p" mb="1">
+                      <Text weight="bold" color="orange">-0.3 (late start):</Text> Main work in second half of period
+                    </Text>
+                  </Box>
+                </Box>
+
+                <Box mt="4" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+                  <Text size="2" weight="bold" mb="1" as="div">💡 How activity is calculated:</Text>
+                  <Text size="2" as="p" mb="1">
+                    <Text weight="bold">1. Activity from attempts:</Text> Each correct answer = 1 point, incorrect = 0.25 points
+                  </Text>
+                  <Text size="2" as="p" mb="1">
+                    <Text weight="bold">2. Activity from meetings:</Text> Each attended meeting = 1.5 points (if meetings.csv exists)
+                  </Text>
+                  <Text size="2" as="p" mb="1">
+                    <Text weight="bold">3. Accumulation:</Text> Points accumulate day by day, creating a growth curve
+                  </Text>
+                  <Text size="2" as="p">
+                    <Text weight="bold">4. Normalization:</Text> Curve is scaled from 0 to 1 for easy comparison
+                  </Text>
+                </Box>
+              </Box>
+              <style jsx>{`
+                .help-content :global(p) {
+                  margin: 0 0 12px 0;
+                }
+                .help-content :global(p:last-child) {
+                  margin-bottom: 0;
+                }
+                .help-content :global(ul) {
+                  margin: 8px 0;
+                  padding-left: 20px;
+                }
+                .help-content :global(li) {
+                  margin: 4px 0;
+                }
+                .help-content :global(strong) {
+                  font-weight: 600;
+                  color: var(--gray-12);
+                }
+              `}</style>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
+      </Box>
 
       {/* Easing Distribution */}
       <Card>

@@ -156,13 +156,19 @@ export default function CommentsPreviewPage({ params }: { params: { id: string }
           </Box>
           <Flex gap="2" align="center">
             <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              ← Back
+            </Button>
+            <Button 
               variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'preview';
                 router.push(`/reports/${params.id}?tab=${tab}`);
               }}
             >
-              ← Back to Report
+              Back to Report
             </Button>
           </Flex>
         </Flex>
@@ -273,11 +279,13 @@ function StudentCommentForm({
   onSave: (comments: any) => void; 
   saving: boolean; 
 }) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     comment_program_expert: comments.comment_program_expert || '',
     comment_teaching_assistants: comments.comment_teaching_assistants || '',
     comment_learning_support: comments.comment_learning_support || '',
   });
+  const [justSaved, setJustSaved] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -285,10 +293,18 @@ function StudentCommentForm({
       comment_teaching_assistants: comments.comment_teaching_assistants || '',
       comment_learning_support: comments.comment_learning_support || '',
     });
+    setJustSaved(false);
   }, [comments]);
 
-  const handleSave = () => {
-    onSave(formData);
+  const handleSave = async () => {
+    await onSave(formData);
+    setJustSaved(true);
+  };
+
+  const handleRegenerate = () => {
+    // Navigate to the student's LLM report page
+    const reportId = window.location.pathname.split('/')[2];
+    router.push(`/reports/${reportId}/student-reports/${student.user_id}`);
   };
 
   return (
@@ -299,7 +315,10 @@ function StudentCommentForm({
           <TextArea
             placeholder="Add comments from the program expert for this student..."
             value={formData.comment_program_expert}
-            onChange={(e) => setFormData(prev => ({ ...prev, comment_program_expert: e.target.value }))}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, comment_program_expert: e.target.value }));
+              setJustSaved(false);
+            }}
             rows={3}
           />
         </Box>
@@ -309,7 +328,10 @@ function StudentCommentForm({
           <TextArea
             placeholder="Add comments from teaching assistants for this student..."
             value={formData.comment_teaching_assistants}
-            onChange={(e) => setFormData(prev => ({ ...prev, comment_teaching_assistants: e.target.value }))}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, comment_teaching_assistants: e.target.value }));
+              setJustSaved(false);
+            }}
             rows={3}
           />
         </Box>
@@ -319,20 +341,33 @@ function StudentCommentForm({
           <TextArea
             placeholder="Add comments from learning support for this student..."
             value={formData.comment_learning_support}
-            onChange={(e) => setFormData(prev => ({ ...prev, comment_learning_support: e.target.value }))}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, comment_learning_support: e.target.value }));
+              setJustSaved(false);
+            }}
             rows={3}
           />
         </Box>
       </Flex>
 
-      <Flex justify="end">
+      <Flex justify="end" gap="3">
         <Button 
           onClick={handleSave} 
           disabled={saving}
           size="2"
+          variant="soft"
         >
-          {saving ? 'Saving...' : 'Save Comments'}
+          {saving ? 'Saving...' : '💾 Save Comments'}
         </Button>
+        {justSaved && (
+          <Button 
+            onClick={handleRegenerate}
+            size="2"
+            color="orange"
+          >
+            🔄 Regenerate Report
+          </Button>
+        )}
       </Flex>
     </Flex>
   );

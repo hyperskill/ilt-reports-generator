@@ -17,6 +17,8 @@ export default function StudentReportEditPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [savingComments, setSavingComments] = useState(false);
+  const [commentsJustSaved, setCommentsJustSaved] = useState(false);
   const [studentReport, setStudentReport] = useState<any>(null);
   const [studentName, setStudentName] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -133,6 +135,38 @@ export default function StudentReportEditPage({
     }
   };
 
+  const handleSaveComments = async () => {
+    setSavingComments(true);
+    setCommentsJustSaved(false);
+    try {
+      const supabase = createClient();
+      
+      const { error: commentsError } = await supabase
+        .from('student_comments')
+        .upsert({
+          report_id: params.id,
+          user_id: params.userId,
+          comment_program_expert: commentProgramExpert,
+          comment_teaching_assistants: commentTeachingAssistants,
+          comment_learning_support: commentLearningSupport,
+        }, {
+          onConflict: 'report_id,user_id'
+        });
+
+      if (commentsError) {
+        throw new Error(commentsError.message);
+      }
+
+      alert('Comments saved successfully! Consider regenerating the report to include these insights.');
+      setCommentsJustSaved(true);
+      await loadReport();
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSavingComments(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -157,24 +191,7 @@ export default function StudentReportEditPage({
         throw new Error(error.message);
       }
 
-      // Save expert comments
-      const { error: commentsError } = await supabase
-        .from('student_comments')
-        .upsert({
-          report_id: params.id,
-          user_id: params.userId,
-          comment_program_expert: commentProgramExpert,
-          comment_teaching_assistants: commentTeachingAssistants,
-          comment_learning_support: commentLearningSupport,
-        }, {
-          onConflict: 'report_id,user_id'
-        });
-
-      if (commentsError) {
-        throw new Error(commentsError.message);
-      }
-
-      alert('Report and comments saved successfully!');
+      alert('Report saved successfully!');
       await loadReport();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -213,13 +230,19 @@ export default function StudentReportEditPage({
               />
             )}
             <Button 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              ← Back
+            </Button>
+            <Button 
               variant="soft" 
               onClick={() => {
                 const tab = searchParams.get('tab') || 'preview';
                 router.push(`/reports/${params.id}/student-reports?tab=${tab}`);
               }}
             >
-              ← Back to List
+              Back to List
             </Button>
           </Flex>
         </Flex>
@@ -354,7 +377,10 @@ export default function StudentReportEditPage({
                       <TextArea
                         placeholder="Enter comments from the program expert..."
                         value={commentProgramExpert}
-                        onChange={(e) => setCommentProgramExpert(e.target.value)}
+                        onChange={(e) => {
+                          setCommentProgramExpert(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
                         rows={4}
                       />
                     </Box>
@@ -366,7 +392,10 @@ export default function StudentReportEditPage({
                       <TextArea
                         placeholder="Enter comments from teaching assistants..."
                         value={commentTeachingAssistants}
-                        onChange={(e) => setCommentTeachingAssistants(e.target.value)}
+                        onChange={(e) => {
+                          setCommentTeachingAssistants(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
                         rows={4}
                       />
                     </Box>
@@ -378,10 +407,25 @@ export default function StudentReportEditPage({
                       <TextArea
                         placeholder="Enter comments from learning support..."
                         value={commentLearningSupport}
-                        onChange={(e) => setCommentLearningSupport(e.target.value)}
+                        onChange={(e) => {
+                          setCommentLearningSupport(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
                         rows={4}
                       />
                     </Box>
+                  </Flex>
+
+                  {/* Save Comments Button */}
+                  <Flex gap="3" justify="end">
+                    <Button onClick={handleSaveComments} disabled={savingComments} variant="soft">
+                      {savingComments ? 'Saving...' : '💾 Save Comments'}
+                    </Button>
+                    {commentsJustSaved && (
+                      <Button onClick={handleGenerate} disabled={generating} color="orange">
+                        {generating ? 'Regenerating...' : '🔄 Regenerate Report'}
+                      </Button>
+                    )}
                   </Flex>
                 </Flex>
               </Card>
@@ -420,6 +464,13 @@ export default function StudentReportEditPage({
                   <Button onClick={handleSave} disabled={saving}>
                     {saving ? 'Saving...' : '💾 Save'}
                   </Button>
+                  <ShareReportButton
+                    reportType="student"
+                    sourceReportId={params.id}
+                    userId={params.userId}
+                    studentName={studentName}
+                    isAdmin={isAdmin}
+                  />
                 </Flex>
               </Card>
             )}

@@ -14,7 +14,7 @@ async function convertToBlocks(
   let order = 0;
 
   if (reportType === 'manager') {
-    // LLM-generated sections
+    // 1. Executive Summary
     blocks.push({
       id: 'executive-summary',
       type: 'section',
@@ -24,6 +24,8 @@ async function convertToBlocks(
     });
 
     // === SEGMENTATION ANALYSIS ===
+    // 2. Student Segmentation Distribution (pie-chart)
+    // 3. Segmentation Statistics (table)
     if (reportData.performanceData && reportData.performanceData.length > 0) {
       // Segment distribution pie chart
       const segments: Record<string, number> = {};
@@ -81,14 +83,40 @@ async function convertToBlocks(
       });
     }
 
-    blocks.push({
-      id: 'skills-acquired',
-      type: 'section',
-      title: 'Skills Acquired & Learning Outcomes',
-      content: content.skillsAcquired || content.learningOutcomes || '', // Fallback for old format
-      order: order++,
-    });
+    // 4. Student Performance Overview (table) - will be added later
+    // Store all students performance data for later
+    let allStudentsBlock: ReportBlock | null = null;
+    if (reportData.performanceData && reportData.performanceData.length > 0) {
+      const allStudents = [...reportData.performanceData]
+        .sort((a: any, b: any) => b.total_pct - a.total_pct)
+        .map((s: any) => ({
+          name: s.name,
+          completion: `${s.total_pct.toFixed(1)}%`,
+          success_rate: `${s.success_rate.toFixed(1)}%`,
+          meetings: `${s.meetings_attended || 0}/${s.meetings_attended_pct?.toFixed(0) || 0}%`,
+          segment: s.simple_segment,
+        }));
 
+      allStudentsBlock = {
+        id: 'all-students-performance',
+        type: 'table',
+        title: 'Student Performance Overview',
+        content: '',
+        data: allStudents,
+        config: {
+          columns: ['name', 'completion', 'success_rate', 'meetings', 'segment'],
+        },
+        helpText: '<p>A complete list of all your students with their key performance indicators.</p><p><strong>What you\'re seeing:</strong></p><ul><li><strong>Name</strong> - Student name</li><li><strong>Completion</strong> - How much of the course they finished</li><li><strong>Success Rate</strong> - How often they got things right</li><li><strong>Meetings</strong> - Sessions they attended</li><li><strong>Segment</strong> - Which performance group they\'re in</li></ul>',
+        order: order++,
+      };
+    }
+
+    // Add Student Performance Overview here (position 4)
+    if (allStudentsBlock) {
+      blocks.push(allStudentsBlock);
+    }
+
+    // 5. Team Engagement & Dynamics
     blocks.push({
       id: 'team-engagement',
       type: 'section',
@@ -98,6 +126,8 @@ async function convertToBlocks(
     });
 
     // === DYNAMIC/EASING ANALYSIS ===
+    // 6. Activity Pattern Distribution (pie-chart)
+    // 7. Activity Pattern Statistics (table)
     if (reportData.dynamicData && reportData.dynamicData.length > 0) {
       // Easing label distribution pie chart
       const easingLabels: Record<string, number> = {};
@@ -155,33 +185,18 @@ async function convertToBlocks(
       });
     }
 
-    // All students performance table
-    if (reportData.performanceData && reportData.performanceData.length > 0) {
-      const allStudents = [...reportData.performanceData]
-        .sort((a: any, b: any) => b.total_pct - a.total_pct)
-        .map((s: any) => ({
-          name: s.name,
-          completion: `${s.total_pct.toFixed(1)}%`,
-          success_rate: `${(s.success_rate * 100).toFixed(1)}%`,
-          active_days: s.active_days || 0,
-          meetings: `${s.meetings_attended || 0}/${s.meetings_attended_pct?.toFixed(0) || 0}%`,
-          segment: s.simple_segment,
-        }));
+    // 8. Skills Acquired & Learning Outcomes
+    blocks.push({
+      id: 'skills-acquired',
+      type: 'section',
+      title: 'Skills Acquired & Learning Outcomes',
+      content: content.skillsAcquired || content.learningOutcomes || '', // Fallback for old format
+      order: order++,
+    });
 
-      blocks.push({
-        id: 'all-students-performance',
-        type: 'table',
-        title: 'Student Performance Overview',
-        content: '',
-        data: allStudents,
-        config: {
-          columns: ['name', 'completion', 'success_rate', 'active_days', 'meetings', 'segment'],
-        },
-        helpText: '<p>A complete list of all your students with their key performance indicators.</p><p><strong>What you\'re seeing:</strong></p><ul><li><strong>Name</strong> - Student name</li><li><strong>Completion</strong> - How much of the course they finished</li><li><strong>Success Rate</strong> - How often they got things right</li><li><strong>Active Days</strong> - How many days they participated</li><li><strong>Meetings</strong> - Sessions they attended</li><li><strong>Segment</strong> - Which performance group they\'re in</li></ul>',
-        order: order++,
-      });
-    }
-
+    // === MODULE ANALYTICS ===
+    // 9. Group Activity by Module (chart)
+    // 10. Group Performance by Module (table)
     // Group module analytics (if structure data available)
     if (reportData.structure && reportData.submissions && reportData.performanceData) {
       try {
@@ -276,21 +291,7 @@ async function convertToBlocks(
               return posA - posB;
             });
           
-          // Add table block
-          blocks.push({
-            id: 'group-module-analytics-table',
-            type: 'table',
-            title: 'Group Performance by Module',
-            content: '',
-            data: moduleTableData,
-            config: {
-              columns: ['module', 'avg_completion', 'avg_success_rate', 'avg_attempts_per_step', 'avg_meetings', 'students'],
-            },
-            helpText: '<p>Average performance metrics across all students for each course module.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - Course module name</li><li><strong>Avg Completion</strong> - Average completion percentage</li><li><strong>Avg Success Rate</strong> - Average success rate on exercises</li><li><strong>Avg Attempts/Step</strong> - Average attempts needed per exercise</li><li><strong>Avg Meetings</strong> - Average meetings attended during this module</li><li><strong>Students</strong> - Number of students who worked on this module</li></ul><p><strong>What to look for:</strong></p><ul><li><strong>Low completion rates</strong> - Modules where students struggle to finish</li><li><strong>Low success rates</strong> - Challenging content that needs attention</li><li><strong>High attempts/step</strong> - Difficult exercises requiring multiple tries</li><li><strong>Meeting attendance patterns</strong> - Correlation between live sessions and performance</li></ul>',
-            order: order++,
-          });
-          
-          // Add chart block
+          // Add chart block first (position 9)
           blocks.push({
             id: 'group-module-analytics-chart',
             type: 'bar-chart',
@@ -326,6 +327,20 @@ async function convertToBlocks(
             helpText: '<p>Visual representation of group activity across modules.</p><p><strong>Avg Completed Steps</strong> (teal bars, left axis) - Average number of successfully completed exercises per student in each module.</p><p><strong>Avg Meetings Attended</strong> (purple bars, right axis) - Average number of live sessions attended per student during each module\'s activity period.</p><p><strong>Insights:</strong> Compare activity levels across modules and identify patterns between meeting attendance and learning progress.</p>',
             order: order++,
           });
+          
+          // Add table block second (position 10)
+          blocks.push({
+            id: 'group-module-analytics-table',
+            type: 'table',
+            title: 'Group Performance by Module',
+            content: '',
+            data: moduleTableData,
+            config: {
+              columns: ['module', 'avg_completion', 'avg_success_rate', 'avg_attempts_per_step', 'avg_meetings', 'students'],
+            },
+            helpText: '<p>Average performance metrics across all students for each course module.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - Course module name</li><li><strong>Avg Completion</strong> - Average completion percentage</li><li><strong>Avg Success Rate</strong> - Average success rate on exercises</li><li><strong>Avg Attempts/Step</strong> - Average attempts needed per exercise</li><li><strong>Avg Meetings</strong> - Average meetings attended during this module</li><li><strong>Students</strong> - Number of students who worked on this module</li></ul><p><strong>What to look for:</strong></p><ul><li><strong>Low completion rates</strong> - Modules where students struggle to finish</li><li><strong>Low success rates</strong> - Challenging content that needs attention</li><li><strong>High attempts/step</strong> - Difficult exercises requiring multiple tries</li><li><strong>Meeting attendance patterns</strong> - Correlation between live sessions and performance</li></ul>',
+            order: order++,
+          });
         }
       } catch (error) {
         console.error('Failed to create group module analytics blocks:', error);
@@ -333,6 +348,7 @@ async function convertToBlocks(
       }
     }
 
+    // 11. Expert Observations & Project Highlights
     blocks.push({
       id: 'expert-observations',
       type: 'section',
@@ -341,7 +357,7 @@ async function convertToBlocks(
       order: order++,
     });
 
-    // Team Comments after Expert Observations
+    // 12-14. Team Comments (if available)
     const teamComments = reportData.teamComments;
     
     if (teamComments?.programExpert) {
@@ -374,6 +390,7 @@ async function convertToBlocks(
       });
     }
 
+    // 15. Business Recommendations & Next Steps
     blocks.push({
       id: 'recommendations',
       type: 'section',
@@ -383,35 +400,28 @@ async function convertToBlocks(
     });
   } else {
     // Student report
+    // Order: Learning Journey, Performance Overview, Strengths, Module Chart, Module Table, 
+    // Skills, Topic Performance, Instructor Feedback, Expert Comments (3 types), Growth, Next Steps
+    
     const studentData = reportData.performance;
-    const dynamicData = reportData.dynamics;
+    const feedback = reportData.feedback;
 
-    blocks.push(
-      {
-        id: 'learning-journey',
-        type: 'section',
-        title: 'Your Learning Journey',
-        content: content.learningJourney || '',
-        order: order++,
-      },
-      {
-        id: 'strengths-achievements',
-        type: 'section',
-        title: 'Your Strengths & Achievements',
-        content: content.strengthsAchievements || '',
-        order: order++,
-      }
-    );
+    // 1. Your Learning Journey
+    blocks.push({
+      id: 'learning-journey',
+      type: 'section',
+      title: 'Your Learning Journey',
+      content: content.learningJourney || '',
+      order: 1,
+    });
 
-    // Performance metrics table - single row with all key indicators
+    // 2. Your Performance Overview
     if (studentData) {
       const metricsRow = [{
         completion: `${studentData.total_pct?.toFixed(1) || 0}%`,
         success_rate: `${(studentData.success_rate || 0).toFixed(1)}%`,
         submissions: studentData.submissions || 0,
         correct_submissions: studentData.correct_submissions || 0,
-        active_days: studentData.active_days || 0,
-        active_days_ratio: `${((studentData.active_days_ratio || 0) * 100).toFixed(1)}%`,
         meetings: `${studentData.meetings_attended || 0} (${studentData.meetings_attended_pct?.toFixed(1) || 0}%)`,
         segment: studentData.simple_segment || 'N/A',
       }];
@@ -423,109 +433,97 @@ async function convertToBlocks(
         content: '',
         data: metricsRow,
         config: {
-          columns: ['completion', 'success_rate', 'submissions', 'correct_submissions', 'active_days', 'active_days_ratio', 'meetings', 'segment'],
+          columns: ['completion', 'success_rate', 'submissions', 'correct_submissions', 'meetings', 'segment'],
         },
-        helpText: '<p>Here\'s a quick snapshot of how you did in the course!</p><p><strong>What these numbers mean:</strong></p><ul><li><strong>Completion</strong> - How much of the course you finished</li><li><strong>Success Rate</strong> - How often you got things right on the first try</li><li><strong>Submissions</strong> - Total times you tried exercises</li><li><strong>Correct Submissions</strong> - Times you got it right</li><li><strong>Active Days</strong> - Days you worked on the course</li><li><strong>Active Days Ratio</strong> - How regularly you participated</li><li><strong>Meetings</strong> - Sessions you joined</li><li><strong>Segment</strong> - Your overall performance category</li></ul>',
-        order: order++,
+        helpText: '<p>Here\'s a quick snapshot of how you did in the course!</p><p><strong>What these numbers mean:</strong></p><ul><li><strong>Completion</strong> - How much of the course you finished</li><li><strong>Success Rate</strong> - How often you got things right on the first try</li><li><strong>Submissions</strong> - Total times you tried exercises</li><li><strong>Correct Submissions</strong> - Times you got it right</li><li><strong>Meetings</strong> - Sessions you joined</li><li><strong>Segment</strong> - Your overall performance category</li></ul>',
+        order: 2,
       });
     }
 
-    // Activity dynamics table - single row with dynamic metrics
-    if (dynamicData) {
-      const dynamicsRow = [{
-        easing_pattern: dynamicData.easing_label || 'N/A',
-        frontload_index: (dynamicData.frontload_index || 0).toFixed(3),
-        t25: `${((dynamicData.t25 || 0) * 100).toFixed(0)}%`,
-        t50: `${((dynamicData.t50 || 0) * 100).toFixed(0)}%`,
-        t75: `${((dynamicData.t75 || 0) * 100).toFixed(0)}%`,
-        consistency: (dynamicData.consistency || 0).toFixed(3),
-        burstiness: (dynamicData.burstiness || 0).toFixed(3),
-      }];
+    // 3. Your Strengths & Achievements
+    blocks.push({
+      id: 'strengths-achievements',
+      type: 'section',
+      title: 'Your Strengths & Achievements',
+      content: content.strengthsAchievements || '',
+      order: 3,
+    });
 
-      blocks.push({
-        id: 'activity-dynamics',
-        type: 'table',
-        title: 'Your Activity Pattern Metrics',
-        content: '',
-        data: dynamicsRow,
-        config: {
-          columns: ['easing_pattern', 'frontload_index', 't25', 't50', 't75', 'consistency', 'burstiness'],
-        },
-        helpText: '<p>This shows <em>how</em> you approached your work throughout the course.</p><p><strong>Understanding your work style:</strong></p><ul><li><strong>Easing Pattern</strong> - Your overall pace (did you start strong or finish strong?)</li><li><strong>Frontload Index</strong> - Did you start early or wait?<ul><li>Positive = You started early ✓</li><li>Negative = You left it late</li></ul></li><li><strong>T25/T50/T75</strong> - When you hit 25%, 50%, and 75% done</li><li><strong>Consistency</strong> - How regular you were (higher is better)</li><li><strong>Burstiness</strong> - How much your activity varied day-to-day</li></ul>',
-        order: order++,
-      });
-    }
+    // 4. Activity by Module chart (order: 4) - will be added later in the code after module processing
+    // 5. Progress by Module table (order: 5) - will be added later in the code after module processing
 
-    // Weekly activity chart - REMOVED (replaced by module activity chart)
+    // 6. Your Skills Development
+    blocks.push({
+      id: 'skills-development',
+      type: 'section',
+      title: 'Your Skills Development',
+      content: content.skillsDevelopment || '',
+      order: 6,
+    });
 
-    blocks.push(
-      {
-        id: 'skills-development',
-        type: 'section',
-        title: 'Your Skills Development',
-        content: content.skillsDevelopment || '',
-        order: order++,
-      },
-      {
-        id: 'instructor-feedback',
-        type: 'section',
-        title: 'Feedback from Your Instructors',
-        content: content.instructorFeedback || '',
-        order: order++,
-      }
-    );
+    // 7. Performance by Topic (order: 7) - will be added later after topic processing
 
-    // Student comments after Instructor Feedback
-    const feedback = reportData.feedback;
-    
+    // 8. Feedback from Your Instructors
+    blocks.push({
+      id: 'instructor-feedback',
+      type: 'section',
+      title: 'Feedback from Your Instructors',
+      content: content.instructorFeedback || '',
+      order: 8,
+    });
+
+    // 9. Program Expert Feedback
     if (feedback?.comment_program_expert) {
       blocks.push({
         id: 'program-expert-comments',
         type: 'comments',
         title: 'Program Expert Feedback',
         content: feedback.comment_program_expert,
-        order: order++,
+        order: 9,
       });
     }
     
+    // 10. Teaching Assistants Feedback
     if (feedback?.comment_teaching_assistants) {
       blocks.push({
         id: 'teaching-assistants-comments',
         type: 'comments',
         title: 'Teaching Assistants Feedback',
         content: feedback.comment_teaching_assistants,
-        order: order++,
+        order: 10,
       });
     }
     
+    // 11. Learning Support Feedback
     if (feedback?.comment_learning_support) {
       blocks.push({
         id: 'learning-support-comments',
         type: 'comments',
         title: 'Learning Support Feedback',
         content: feedback.comment_learning_support,
-        order: order++,
+        order: 11,
       });
     }
 
-    blocks.push(
-      {
-        id: 'growth-opportunities',
-        type: 'section',
-        title: 'Opportunities for Growth',
-        content: content.growthOpportunities || '',
-        order: order++,
-      },
-      {
-        id: 'next-steps',
-        type: 'section',
-        title: 'Next Steps & Recommendations',
-        content: content.nextSteps || '',
-        order: order++,
-      }
-    );
+    // 12. Opportunities for Growth
+    blocks.push({
+      id: 'growth-opportunities',
+      type: 'section',
+      title: 'Opportunities for Growth',
+      content: content.growthOpportunities || '',
+      order: 12,
+    });
 
-    // Topic performance table (if available)
+    // 13. Next Steps & Recommendations
+    blocks.push({
+      id: 'next-steps',
+      type: 'section',
+      title: 'Next Steps & Recommendations',
+      content: content.nextSteps || '',
+      order: 13,
+    });
+
+    // 7. Topic performance table (if available)
     if (reportData.submissionsAnalysis?.topicPerformance) {
       const topicData = reportData.submissionsAnalysis.topicPerformance.map((t: any) => {
         const data: any = {
@@ -553,7 +551,7 @@ async function convertToBlocks(
           columns: ['topic', 'attempts', 'success_rate', 'steps'],
         },
         helpText: '<p>See how you did in each part of the course.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Topic</strong> - The course section or module</li><li><strong>Attempts</strong> - How many times you tried exercises in this topic</li><li><strong>Success Rate</strong> - How often you got things right</li><li><strong>Steps</strong> - How many exercises you tried</li></ul><p><strong>Quick interpretation:</strong></p><ul><li><strong>High success + few attempts</strong> = You found this easy ✓</li><li><strong>Low success or many attempts</strong> = This was challenging</li><li><strong>Low success rate</strong> = Might be worth reviewing</li></ul>',
-        order: order++,
+        order: 7,
       });
     }
 
@@ -609,6 +607,7 @@ async function convertToBlocks(
             ? ['module', 'progress', 'success_rate', 'attempts_per_step', 'total_attempts', 'meetings', 'period']
             : ['module', 'progress', 'success_rate', 'attempts_per_step', 'total_attempts', 'meetings'];
           
+          // 5. Progress by Module table
           blocks.push({
             id: 'module-progress',
             type: 'table',
@@ -619,10 +618,10 @@ async function convertToBlocks(
               columns,
             },
             helpText: '<p>Track your progress and performance across different course modules.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - The course module name</li><li><strong>Progress</strong> - Completion percentage and steps completed</li><li><strong>Success Rate</strong> - How often you got things right</li><li><strong>Attempts/Step</strong> - Average attempts per exercise</li><li><strong>Total Attempts</strong> - Total submissions in this module</li><li><strong>Meetings</strong> - Live sessions attended during this module</li><li><strong>Period</strong> - When you worked on this module</li></ul><p><strong>Quick interpretation:</strong></p><ul><li><strong>High completion + high success</strong> = You mastered this module ✓</li><li><strong>Low completion</strong> = You might want to revisit this</li><li><strong>Many attempts/step</strong> = This module was challenging</li><li><strong>Meeting attendance</strong> = Shows engagement with live instruction</li></ul>',
-            order: order++,
+            order: 5,
           });
           
-          // Add module activity chart
+          // 4. Activity by Module chart
           blocks.push({
             id: 'module-activity-chart',
             type: 'bar-chart',
@@ -656,7 +655,7 @@ async function convertToBlocks(
               }
             },
             helpText: '<p><strong>Completed Steps</strong> (teal bars, left axis) - Number of successfully completed exercises in each module.</p><p><strong>Meetings Attended</strong> (purple bars, right axis) - Number of live sessions attended during each module\'s activity period.</p><p><strong>What to look for:</strong> Compare your progress across modules and see how meeting attendance correlates with learning activity.</p>',
-            order: order++,
+            order: 4,
           });
         }
       } catch (error) {

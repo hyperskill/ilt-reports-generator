@@ -15,6 +15,8 @@ import {
   Table,
   Badge,
   IconButton,
+  Select,
+  Checkbox,
 } from '@radix-ui/themes';
 import { SharedReport } from '@/lib/types';
 
@@ -30,6 +32,13 @@ interface AccessRecord {
   };
 }
 
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  full_name?: string;
+}
+
 export default function SharedReportAccessPage() {
   const router = useRouter();
   const params = useParams();
@@ -37,13 +46,16 @@ export default function SharedReportAccessPage() {
 
   const [report, setReport] = useState<SharedReport | null>(null);
   const [accessList, setAccessList] = useState<AccessRecord[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [isGranting, setIsGranting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
+    fetchAllUsers();
   }, [id]);
 
   const fetchData = async () => {
@@ -76,28 +88,42 @@ export default function SharedReportAccessPage() {
     }
   };
 
+  const fetchAllUsers = async () => {
+    try {
+      const response = await fetch('/api/users/list');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setAllUsers(data.users || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+    }
+  };
+
+  const handleToggleUser = (userId: string) => {
+    const newSelected = new Set(selectedUserIds);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUserIds(newSelected);
+  };
+
   const handleGrantAccess = async () => {
-    if (!newUserEmail.trim()) {
-      alert('Please enter a user email');
+    if (selectedUserIds.size === 0) {
+      alert('Please select at least one user');
       return;
     }
 
     setIsGranting(true);
     try {
-      // First, find user by email
-      const userResponse = await fetch(`/api/users/search?email=${encodeURIComponent(newUserEmail)}`);
-      const userData = await userResponse.json();
-
-      if (!userResponse.ok || !userData.user) {
-        throw new Error('User not found with this email');
-      }
-
-      // Grant access
       const response = await fetch(`/api/reports/shared/${id}/access`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userIds: [userData.user.id],
+          userIds: Array.from(selectedUserIds),
         }),
       });
 
@@ -107,9 +133,9 @@ export default function SharedReportAccessPage() {
         throw new Error(data.error || 'Failed to grant access');
       }
 
-      setNewUserEmail('');
+      setSelectedUserIds(new Set());
       await fetchData();
-      alert('Access granted successfully!');
+      alert(`Access granted to ${selectedUserIds.size} user(s) successfully!`);
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -195,8 +221,16 @@ export default function SharedReportAccessPage() {
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Back
+                ← Back
               </Button>
+              {report.source_report_id && (
+                <Button
+                  variant="soft"
+                  onClick={() => router.push(`/reports/${report.source_report_id}?tab=constructor`)}
+                >
+                  Back to Report
+                </Button>
+              )}
             </Flex>
           </Flex>
 
@@ -211,21 +245,98 @@ export default function SharedReportAccessPage() {
         <Card>
           <Heading size="4" mb="3">Grant Access</Heading>
           <Text size="2" color="gray" mb="3">
-            Add users by email address to give them access to this report
+            Select users from the list below to give them access to this report
           </Text>
-          <Flex gap="2">
-            <TextField.Root
-              placeholder="user@example.com"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleGrantAccess()}
-              style={{ flex: 1 }}
-            />
+          
+          {/* Search */}
+          <TextField.Root
+            placeholder="Search users by email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            mb="3"
+          />
+
+          {/* User List */}
+          <Box 
+            style={{ 
+              maxHeight: '400px', 
+              overflowY: 'auto', 
+              border: '1px solid var(--gray-6)', 
+              borderRadius: '6px',
+              padding: '12px'
+            }}
+            mb="3"
+          >
+            {allUsers
+              .filter(user => {
+                // Filter out users who already have access
+                const hasAccess = accessList.some(a => a.user_id === user.id);
+                if (hasAccess) return false;
+                
+                // Filter by search query
+                if (searchQuery) {
+                  const query = searchQuery.toLowerCase();
+                  return user.email.toLowerCase().includes(query) || 
+                         user.full_name?.toLowerCase().includes(query);
+                }
+                return true;
+              })
+              .map(user => (
+                <Flex 
+                  key={user.id} 
+                  align="center" 
+                  gap="2" 
+                  p="2"
+                  style={{ 
+                    borderBottom: '1px solid var(--gray-4)',
+                    cursor: 'pointer',
+                    backgroundColor: selectedUserIds.has(user.id) ? 'var(--accent-2)' : 'transparent'
+                  }}
+                  onClick={() => handleToggleUser(user.id)}
+                >
+                  <Checkbox
+                    checked={selectedUserIds.has(user.id)}
+                    onCheckedChange={() => handleToggleUser(user.id)}
+                  />
+                  <Box style={{ flex: 1 }}>
+                    <Text size="2" weight="medium">{user.email}</Text>
+                    {user.full_name && (
+                      <Text size="1" color="gray" style={{ display: 'block' }}>
+                        {user.full_name}
+                      </Text>
+                    )}
+                  </Box>
+                  <Badge color={user.role === 'admin' ? 'red' : user.role === 'manager' ? 'blue' : 'green'} size="1">
+                    {user.role}
+                  </Badge>
+                </Flex>
+              ))}
+            
+            {allUsers.filter(user => {
+              const hasAccess = accessList.some(a => a.user_id === user.id);
+              if (hasAccess) return false;
+              if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                return user.email.toLowerCase().includes(query) || 
+                       user.full_name?.toLowerCase().includes(query);
+              }
+              return true;
+            }).length === 0 && (
+              <Text size="2" color="gray" align="center" style={{ display: 'block', padding: '20px' }}>
+                {searchQuery ? 'No users found matching your search' : 'All users already have access'}
+              </Text>
+            )}
+          </Box>
+
+          <Flex justify="between" align="center">
+            <Text size="2" color="gray">
+              {selectedUserIds.size} user(s) selected
+            </Text>
             <Button
               onClick={handleGrantAccess}
-              disabled={isGranting || !newUserEmail.trim()}
+              disabled={isGranting || selectedUserIds.size === 0}
             >
-              {isGranting ? 'Granting...' : 'Grant Access'}
+              {isGranting ? 'Granting...' : `Grant Access to ${selectedUserIds.size} User(s)`}
             </Button>
           </Flex>
         </Card>

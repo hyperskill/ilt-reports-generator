@@ -25,11 +25,17 @@ export default function StudentDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(!!reportId);
   const [isAdmin, setIsAdmin] = useState(false);
   const [lessonNamesMap, setLessonNamesMap] = useState<Record<number, string>>({});
+  const [hasExpertComment, setHasExpertComment] = useState(false);
+  const [hasTAComment, setHasTAComment] = useState(false);
+  const [hasSupportComment, setHasSupportComment] = useState(false);
+  const [hasLLMReport, setHasLLMReport] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
     if (reportId) {
       loadReportData(reportId);
+      loadCommentsStatus();
+      loadLLMReportStatus();
     }
   }, [reportId]);
 
@@ -49,6 +55,54 @@ export default function StudentDetailPage({ params }: PageProps) {
         .single();
       
       setIsAdmin(profile?.role === 'admin');
+    }
+  };
+
+  const loadCommentsStatus = async () => {
+    if (!reportId) return;
+    
+    try {
+      const supabase = createClient();
+      const { data: comment } = await supabase
+        .from('student_comments')
+        .select('comment_program_expert, comment_teaching_assistants, comment_learning_support')
+        .eq('report_id', reportId)
+        .eq('user_id', params.userId)
+        .single();
+      
+      if (comment) {
+        setHasExpertComment(!!comment.comment_program_expert);
+        setHasTAComment(!!comment.comment_teaching_assistants);
+        setHasSupportComment(!!comment.comment_learning_support);
+      } else {
+        setHasExpertComment(false);
+        setHasTAComment(false);
+        setHasSupportComment(false);
+      }
+    } catch (error) {
+      console.error('Failed to load comments status:', error);
+      setHasExpertComment(false);
+      setHasTAComment(false);
+      setHasSupportComment(false);
+    }
+  };
+
+  const loadLLMReportStatus = async () => {
+    if (!reportId) return;
+    
+    try {
+      const supabase = createClient();
+      const { data: report } = await supabase
+        .from('student_llm_reports')
+        .select('id')
+        .eq('report_id', reportId)
+        .eq('user_id', params.userId)
+        .single();
+      
+      setHasLLMReport(!!report);
+    } catch (error) {
+      // Report doesn't exist, that's ok
+      setHasLLMReport(false);
     }
   };
 
@@ -185,6 +239,44 @@ export default function StudentDetailPage({ params }: PageProps) {
   return (
     <AppLayoutWithAuth>
       <Box className={styles.container}>
+        {/* Status Indicators */}
+        {reportId && (
+          <Card size="1" style={{ padding: '12px 16px' }}>
+            <Flex align="center" gap="4" wrap="wrap">
+              <Text size="1" weight="bold" color="gray">Status:</Text>
+              <Flex align="center" gap="2">
+                {hasExpertComment ? (
+                  <Badge color="green" size="1">✓ Expert</Badge>
+                ) : (
+                  <Badge color="gray" size="1" variant="soft">Expert</Badge>
+                )}
+              </Flex>
+              <Flex align="center" gap="2">
+                {hasTAComment ? (
+                  <Badge color="green" size="1">✓ TA</Badge>
+                ) : (
+                  <Badge color="gray" size="1" variant="soft">TA</Badge>
+                )}
+              </Flex>
+              <Flex align="center" gap="2">
+                {hasSupportComment ? (
+                  <Badge color="green" size="1">✓ Support</Badge>
+                ) : (
+                  <Badge color="gray" size="1" variant="soft">Support</Badge>
+                )}
+              </Flex>
+              <Box style={{ width: '1px', height: '16px', backgroundColor: 'var(--gray-6)' }} />
+              <Flex align="center" gap="2">
+                {hasLLMReport ? (
+                  <Badge color="green" size="1">✓ AI Report</Badge>
+                ) : (
+                  <Badge color="gray" size="1" variant="soft">AI Report</Badge>
+                )}
+              </Flex>
+            </Flex>
+          </Card>
+        )}
+
         {/* Header */}
         <Card>
           <Flex justify="between" align="start" mb="3">
@@ -192,19 +284,27 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="7" mb="2">{report.student.name}</Heading>
               <Text size="2" color="gray">User ID: {report.student.user_id}</Text>
             </Box>
-            <Button 
-              variant="soft" 
-              onClick={() => {
-                if (reportId) {
-                  const tab = searchParams.get('tab') || 'preview';
-                  router.push(`/reports/${reportId}?tab=${tab}`);
-                } else {
-                  router.push('/results');
-                }
-              }}
-            >
-              ← {reportId ? 'Back to Report' : 'Back to Results'}
-            </Button>
+            <Flex gap="2">
+              <Button 
+                variant="outline" 
+                onClick={() => router.back()}
+              >
+                ← Back
+              </Button>
+              <Button 
+                variant="soft" 
+                onClick={() => {
+                  if (reportId) {
+                    const tab = searchParams.get('tab') || 'preview';
+                    router.push(`/reports/${reportId}?tab=${tab}`);
+                  } else {
+                    router.push('/results');
+                  }
+                }}
+              >
+                {reportId ? 'Back to Report' : 'Back to Results'}
+              </Button>
+            </Flex>
           </Flex>
 
           <Grid columns="4" gap="3">
@@ -229,88 +329,6 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Text as="div" size="5" weight="bold">{report.performance.success_rate}%</Text>
             </Box>
           </Grid>
-        </Card>
-
-        {/* Highlights */}
-        <Card>
-          <Heading size="5" mb="3">📋 {report.student.name.split(' ')[0]}'s Progress Highlights</Heading>
-          <Flex direction="column" gap="2">
-            {report.highlights.map((highlight, idx) => (
-              <Box 
-                key={idx}
-                p="3"
-                style={{
-                  backgroundColor: highlight.type === 'win' ? 'var(--green-a2)' : 'var(--orange-a2)',
-                  borderRadius: 'var(--radius-2)',
-                  borderLeft: `3px solid ${highlight.type === 'win' ? 'var(--green-9)' : 'var(--orange-9)'}`,
-                }}
-              >
-                <Text size="3">
-                  {highlight.type === 'win' ? '✅ ' : '🎯 '}
-                  {highlight.text}
-                </Text>
-              </Box>
-            ))}
-          </Flex>
-        </Card>
-
-        {/* Overall Engagement */}
-        <Card>
-          <Flex align="center" gap="3">
-            <Box style={{ fontSize: '2rem' }}>
-              {report.engagement.level === 'High' && '🔥'}
-              {report.engagement.level === 'Medium' && '📊'}
-              {report.engagement.level === 'Low' && '💤'}
-            </Box>
-            <Box style={{ flex: 1 }}>
-              <Flex align="center" gap="2" mb="1">
-                <Text size="4" weight="bold">Overall Engagement</Text>
-                <Badge color={getEngagementColor(report.engagement.level)} size="1">
-                  {report.engagement.level}
-                </Badge>
-              </Flex>
-              <Text size="2" color="gray">{report.engagement.description}</Text>
-            </Box>
-          </Flex>
-        </Card>
-
-        {/* Weekly Activity */}
-        <Card>
-          <Heading size="5" mb="3">📊 {report.student.name.split(' ')[0]}'s Weekly Activity</Heading>
-          <Text size="2" color="gray" mb="3">
-            Track learning activity week by week, including platform submissions and meeting attendance.
-          </Text>
-
-          <Grid columns="4" gap="3" mb="4">
-            <Box>
-              <Text as="div" size="2" color="gray" mb="1">Frontload Index</Text>
-              <Text as="div" size="4" weight="bold" color={report.curve.fi > 0 ? 'green' : 'orange'} mb="1">
-                {report.curve.fi.toFixed(3)}
-              </Text>
-              <Text as="div" size="1" color="gray">
-                {report.curve.fi > 0 ? 'Early loading' : report.curve.fi < 0 ? 'Late loading' : 'Balanced'}
-              </Text>
-            </Box>
-            <Box>
-              <Text as="div" size="2" color="gray" mb="1">Consistency</Text>
-              <Text as="div" size="4" weight="bold" mb="1">{(report.curve.consistency * 100).toFixed(0)}%</Text>
-              <Text as="div" size="1" color="gray">Active days / total days</Text>
-            </Box>
-            <Box>
-              <Text as="div" size="2" color="gray" mb="1">Burstiness</Text>
-              <Text as="div" size="4" weight="bold" mb="1">{report.curve.burstiness.toFixed(2)}</Text>
-              <Text as="div" size="1" color="gray">{report.curve.burstiness > 0.6 ? 'Bursty' : 'Steady'}</Text>
-            </Box>
-            <Box>
-              <Text as="div" size="2" color="gray" mb="1">Progress Points</Text>
-              <Text as="div" size="2">
-                25%: {(report.curve.t25 * 100).toFixed(0)}%<br/>
-                50%: {(report.curve.t50 * 100).toFixed(0)}%<br/>
-                75%: {(report.curve.t75 * 100).toFixed(0)}%
-              </Text>
-            </Box>
-          </Grid>
-
         </Card>
 
         {/* Module Activity Chart */}
@@ -390,14 +408,14 @@ export default function StudentDetailPage({ params }: PageProps) {
         )}
 
         {/* Topics */}
-        <Grid columns="2" gap="4">
+        <Flex direction="column" gap="4">
           {/* Going Well */}
           {report.topics.wins.length > 0 && (
             <Card>
               <Heading size="4" mb="3" style={{ color: 'var(--green-11)' }}>
                 ✨ Going Well
               </Heading>
-              <Flex direction="column" gap="2">
+              <Flex direction="row" gap="2" wrap="wrap">
                 {report.topics.wins.map((topic, idx) => (
                   <Box 
                     key={idx}
@@ -405,6 +423,8 @@ export default function StudentDetailPage({ params }: PageProps) {
                     style={{
                       backgroundColor: 'var(--green-a2)',
                       borderRadius: 'var(--radius-2)',
+                      flex: '1 1 calc(33.333% - 8px)',
+                      minWidth: '250px',
                     }}
                   >
                     <Text as="div" size="3" weight="bold" mb="1">{topic.title}</Text>
@@ -421,7 +441,7 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Heading size="4" mb="3" style={{ color: 'var(--orange-11)' }}>
                 🎯 Focus Areas
               </Heading>
-              <Flex direction="column" gap="2">
+              <Flex direction="row" gap="2" wrap="wrap">
                 {report.topics.focus.map((topic, idx) => (
                   <Box 
                     key={idx}
@@ -429,6 +449,8 @@ export default function StudentDetailPage({ params }: PageProps) {
                     style={{
                       backgroundColor: 'var(--orange-a2)',
                       borderRadius: 'var(--radius-2)',
+                      flex: '1 1 calc(33.333% - 8px)',
+                      minWidth: '250px',
                     }}
                   >
                     <Text as="div" size="3" weight="bold" mb="1">{topic.title}</Text>
@@ -443,7 +465,7 @@ export default function StudentDetailPage({ params }: PageProps) {
               </Flex>
             </Card>
           )}
-        </Grid>
+        </Flex>
 
         {/* Detailed Stats */}
         <Card>
@@ -470,11 +492,6 @@ export default function StudentDetailPage({ params }: PageProps) {
               <Text as="div" size="1" color="gray">Correct per step</Text>
             </Box>
             <Box>
-              <Text as="div" size="2" color="gray" mb="1">Active Days</Text>
-              <Text as="div" size="4" weight="bold" mb="1">{report.performance.active_days}</Text>
-              <Text as="div" size="1" color="gray">{(report.performance.active_days_ratio * 100).toFixed(0)}% of period</Text>
-            </Box>
-            <Box>
               <Text as="div" size="2" color="gray" mb="1">Effort Index</Text>
               <Text as="div" size="4" weight="bold" color={report.performance.effort_index > 0 ? 'green' : 'orange'} mb="1">
                 {report.performance.effort_index.toFixed(2)}
@@ -499,6 +516,29 @@ export default function StudentDetailPage({ params }: PageProps) {
               </Grid>
             </>
           )}
+        </Card>
+
+        {/* Highlights */}
+        <Card>
+          <Heading size="5" mb="3">📋 {report.student.name.split(' ')[0]}'s Progress Highlights</Heading>
+          <Flex direction="column" gap="2">
+            {report.highlights.map((highlight, idx) => (
+              <Box 
+                key={idx}
+                p="3"
+                style={{
+                  backgroundColor: highlight.type === 'win' ? 'var(--green-a2)' : 'var(--orange-a2)',
+                  borderRadius: 'var(--radius-2)',
+                  borderLeft: `3px solid ${highlight.type === 'win' ? 'var(--green-9)' : 'var(--orange-9)'}`,
+                }}
+              >
+                <Text size="3">
+                  {highlight.type === 'win' ? '✅ ' : '🎯 '}
+                  {highlight.text}
+                </Text>
+              </Box>
+            ))}
+          </Flex>
         </Card>
 
         {/* Topic Analysis Table */}
@@ -625,6 +665,7 @@ export default function StudentDetailPage({ params }: PageProps) {
           reportId={reportId}
           userId={params.userId}
           isAdmin={isAdmin}
+          onCommentsSaved={loadCommentsStatus}
         />
 
         {/* AI Report Link for Admins */}

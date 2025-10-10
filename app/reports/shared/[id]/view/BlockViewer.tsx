@@ -1,6 +1,6 @@
 'use client';
 
-import { Table, Text, Card, Box } from '@radix-ui/themes';
+import { Table, Text, Card, Box, Badge } from '@radix-ui/themes';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ReportBlock } from '@/lib/types';
 import { Pie, Line, Bar } from 'react-chartjs-2';
@@ -118,6 +118,28 @@ function TableBlockViewer({ block }: { block: ReportBlock }) {
 
   const columns = block.config?.columns || Object.keys(block.data[0] || {});
 
+  // Helper function to get badge color for segments or patterns
+  const getBadgeColor = (value: string): any => {
+    if (!value) return 'gray';
+    const valueLower = value.toLowerCase();
+    
+    // Easing patterns
+    if (valueLower.includes('ease-out')) return 'green';
+    if (valueLower.includes('ease-in-out')) return 'purple';
+    if (valueLower.includes('ease-in')) return 'orange';
+    if (valueLower === 'ease') return 'blue';
+    if (valueLower.includes('linear')) return 'gray';
+    if (valueLower.includes('no-activity')) return 'red';
+    
+    // Segments
+    if (valueLower.includes('leader')) return 'green';
+    if (valueLower.includes('low engagement')) return 'red';
+    if (valueLower.includes('hardworking')) return 'orange';
+    if (valueLower.includes('engaged')) return 'blue';
+    
+    return 'gray';
+  };
+
   return (
     <Box style={{ overflowX: 'auto' }}>
       <Table.Root variant="surface">
@@ -159,6 +181,28 @@ function TableBlockViewer({ block }: { block: ReportBlock }) {
                   );
                 }
                 
+                // Add colored badge for segment column
+                if (col === 'segment' && cellValue) {
+                  return (
+                    <Table.Cell key={col}>
+                      <Badge color={getBadgeColor(cellValue)} size="1">
+                        {cellValue}
+                      </Badge>
+                    </Table.Cell>
+                  );
+                }
+                
+                // Add colored badge for pattern column (easing types)
+                if (col === 'pattern' && cellValue) {
+                  return (
+                    <Table.Cell key={col}>
+                      <Badge color={getBadgeColor(cellValue)} size="1">
+                        {cellValue}
+                      </Badge>
+                    </Table.Cell>
+                  );
+                }
+                
                 return (
                   <Table.Cell key={col}>
                     {cellValue !== undefined ? String(cellValue) : '-'}
@@ -181,20 +225,60 @@ function PieChartBlockViewer({ block }: { block: ReportBlock }) {
   const labels = Object.keys(block.data);
   const values = Object.values(block.data) as number[];
 
+  // Helper function to get color for segments or easing patterns
+  const getChartColor = (label: string): string => {
+    if (!label) return 'rgba(156, 163, 175, 0.8)'; // gray
+    const labelLower = label.toLowerCase();
+    
+    // Check if this is an easing pattern (activity pattern)
+    if (labelLower.includes('ease-out')) {
+      return 'rgba(34, 197, 94, 0.8)'; // green-500 - early start
+    }
+    if (labelLower.includes('ease-in-out')) {
+      return 'rgba(168, 85, 247, 0.8)'; // purple-500 - S-curve
+    }
+    if (labelLower.includes('ease-in')) {
+      return 'rgba(249, 115, 22, 0.8)'; // orange-500 - late start
+    }
+    if (labelLower === 'ease') {
+      return 'rgba(59, 130, 246, 0.8)'; // blue-500 - moderate
+    }
+    if (labelLower.includes('linear')) {
+      return 'rgba(156, 163, 175, 0.8)'; // gray-400 - steady
+    }
+    if (labelLower.includes('no-activity')) {
+      return 'rgba(220, 38, 38, 0.8)'; // red-600 - no activity
+    }
+    
+    // Segment colors (for segmentation charts)
+    if (labelLower.includes('leader')) {
+      return 'rgba(34, 197, 94, 0.8)'; // green-500
+    }
+    if (labelLower.includes('low engagement')) {
+      return 'rgba(239, 68, 68, 0.8)'; // red-500
+    }
+    if (labelLower.includes('hardworking')) {
+      return 'rgba(249, 115, 22, 0.8)'; // orange-500
+    }
+    if (labelLower.includes('engaged')) {
+      return 'rgba(59, 130, 246, 0.8)'; // blue-500
+    }
+    if (labelLower.includes('balanced')) {
+      return 'rgba(156, 163, 175, 0.8)'; // gray-400
+    }
+    
+    return 'rgba(156, 163, 175, 0.8)'; // gray as fallback
+  };
+
+  // Generate colors based on labels
+  const backgroundColors = labels.map(label => getChartColor(label));
+
   const chartData = {
     labels,
     datasets: [
       {
         data: values,
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.8)',
-          'rgba(54, 162, 235, 0.8)',
-          'rgba(255, 206, 86, 0.8)',
-          'rgba(75, 192, 192, 0.8)',
-          'rgba(153, 102, 255, 0.8)',
-          'rgba(255, 159, 64, 0.8)',
-          'rgba(99, 255, 132, 0.8)',
-        ],
+        backgroundColor: backgroundColors,
         borderColor: 'rgba(255, 255, 255, 1)',
         borderWidth: 2,
       },

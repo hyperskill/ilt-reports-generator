@@ -76,7 +76,7 @@ export default function ShareReportButton({
     <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
       <Dialog.Trigger>
         <Button variant="soft" color="green">
-          📤 Share Report
+          📝 Continue in Constructor
         </Button>
       </Dialog.Trigger>
 

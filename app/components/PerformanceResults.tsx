@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { PerformanceRow } from '@/lib/types';
-import { TableLegend } from './TableLegend';
 import { SegmentPieChart } from './SegmentPieChart';
+import * as Accordion from '@radix-ui/react-accordion';
 import styles from './PerformanceResults.module.css';
 
 interface Props {
@@ -94,9 +94,6 @@ export function PerformanceResults({ data, reportId }: Props) {
 
   return (
     <Flex direction="column" gap="4">
-      {/* Table Legend */}
-      <TableLegend mode="performance" />
-
       {/* Summary Cards */}
       <Grid columns="4" gap="3">
         <Card>
@@ -143,6 +140,185 @@ export function PerformanceResults({ data, reportId }: Props) {
           </Box>
         </Card>
       </Grid>
+
+      {/* Performance Help Accordion */}
+      <Box>
+        <Accordion.Root type="single" collapsible>
+          <Accordion.Item value="help" style={{ border: '1px solid var(--gray-6)', borderRadius: '6px' }}>
+            <Accordion.Trigger
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--gray-2)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '14px',
+                color: 'var(--gray-11)',
+                fontWeight: 500,
+                borderRadius: '6px',
+              }}
+            >
+              <span>ℹ️ How to read this data</span>
+              <span style={{ fontSize: '12px' }}>▼</span>
+            </Accordion.Trigger>
+            <Accordion.Content
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                lineHeight: 1.7,
+                color: 'var(--gray-12)',
+                backgroundColor: 'var(--gray-1)',
+              }}
+            >
+              <Box
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                }}
+                className="help-content"
+              >
+                <Text size="2" weight="bold" mb="3" as="div">In plain language:</Text>
+                <Table.Root size="1" variant="surface">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell>Column</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>What it means</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Where it comes from</Table.ColumnHeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">User ID</Text></Table.Cell>
+                      <Table.Cell>Unique student identifier</Table.Cell>
+                      <Table.Cell>From your files</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Name</Text></Table.Cell>
+                      <Table.Cell>Student's first and last name</Table.Cell>
+                      <Table.Cell>From learners.csv</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Score %</Text></Table.Cell>
+                      <Table.Cell>Percentage of maximum score in the group</Table.Cell>
+                      <Table.Cell>From grade_book.csv</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Submissions</Text></Table.Cell>
+                      <Table.Cell>Total number of attempts by the student</Table.Cell>
+                      <Table.Cell>Calculated from submissions.csv</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Success Rate</Text></Table.Cell>
+                      <Table.Cell>Percentage of correct answers on first attempt</Table.Cell>
+                      <Table.Cell>Correct answers ÷ all attempts × 100</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Persistence</Text></Table.Cell>
+                      <Table.Cell>Average attempts per task<br/>(higher = more effort)</Table.Cell>
+                      <Table.Cell>All attempts ÷ number of tasks</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Efficiency</Text></Table.Cell>
+                      <Table.Cell>Number of tasks solved correctly<br/>(higher = better)</Table.Cell>
+                      <Table.Cell>Correct answers ÷ number of tasks</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Consistency</Text></Table.Cell>
+                      <Table.Cell>Study regularity (0-1, where 1 = every day)</Table.Cell>
+                      <Table.Cell>Active days ÷ total learning period</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Effort Index</Text></Table.Cell>
+                      <Table.Cell>How active compared to the group<br/>(above average = positive number)</Table.Cell>
+                      <Table.Cell>Considers attempts and active days</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Struggle Index</Text></Table.Cell>
+                      <Table.Cell>Indicator of learning difficulties<br/>(higher = more problems)</Table.Cell>
+                      <Table.Cell>High persistence + low success</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Meetings %</Text></Table.Cell>
+                      <Table.Cell>Percentage of webinars/meetings attended</Table.Cell>
+                      <Table.Cell>From meetings.csv (if available)</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell><Text weight="bold">Segment</Text></Table.Cell>
+                      <Table.Cell>Which group the student belongs to</Table.Cell>
+                      <Table.Cell>Automatically determined by rules below</Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+
+                <Box mt="4">
+                  <Text size="2" weight="bold" mb="2" as="div">Student Groups (Segments):</Text>
+                  <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="green">🏆 Leader engaged</Text><br/>
+                      Leaders active in meetings: Score ≥80% AND meeting attendance ≥70%
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="green">⚡ Leader efficient</Text><br/>
+                      Efficient leaders: Score ≥80% AND few retry attempts (≤3) AND regular study
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="blue">👥 Balanced + engaged</Text><br/>
+                      Average level, active: Score 30-80% AND attend meetings (≥60%) AND consistency ≥0.4
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="orange">💪 Hardworking but struggling</Text><br/>
+                      Trying hard but with difficulties: High effort AND struggle index ≥0.6
+                    </Text>
+                    <Text as="p" mb="2">
+                      <Text weight="bold" color="red">😴 Low engagement</Text><br/>
+                      Low involvement: Few attempts (&lt;20) OR very low activity
+                    </Text>
+                    <Text as="p" mb="1">
+                      <Text weight="bold" color="gray">📊 Balanced middle</Text><br/>
+                      Average level: All other students
+                    </Text>
+                  </Box>
+                </Box>
+
+                <Box mt="4" p="3" style={{ background: 'var(--blue-a2)', borderRadius: 'var(--radius-2)' }}>
+                  <Text size="2" weight="bold" mb="1" as="div">💡 Important to know:</Text>
+                  <Text size="2" as="p" mb="1">
+                    • All activity metrics are automatically calculated from your submissions
+                  </Text>
+                  <Text size="2" as="p" mb="1">
+                    • Correct answer = 1 activity point, incorrect = 0.25 points
+                  </Text>
+                  <Text size="2" as="p">
+                    • Higher Consistency means more regular study habits
+                  </Text>
+                </Box>
+              </Box>
+              <style jsx>{`
+                .help-content :global(p) {
+                  margin: 0 0 12px 0;
+                }
+                .help-content :global(p:last-child) {
+                  margin-bottom: 0;
+                }
+                .help-content :global(ul) {
+                  margin: 8px 0;
+                  padding-left: 20px;
+                }
+                .help-content :global(li) {
+                  margin: 4px 0;
+                }
+                .help-content :global(strong) {
+                  font-weight: 600;
+                  color: var(--gray-12);
+                }
+              `}</style>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
+      </Box>
 
       {/* Segment Distribution */}
       <Card>
