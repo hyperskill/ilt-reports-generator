@@ -46,6 +46,7 @@ export function CommentsSection({
       if (onUpdate) {
         onUpdate();
       }
+      alert('Comments saved successfully!');
     } catch (error: any) {
       alert(`Failed to save comments: ${error.message}`);
     } finally {

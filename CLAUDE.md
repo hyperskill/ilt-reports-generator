@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+IMPORTANT! DON'T DO GIT COMMANDS
+
+0. Ask human before performing any git commands
+1. Use Next.js as a main framework
+2. Use Radix UI for design. Here is doc docs/RADIX_UI_DOCUMENTATION.md
+3. Use React Charts to draw charts. Here is doc docs/REACT_CHARTJS_DOCUMENTATION.md
+4. Don't use Tailwind. Use CSS Modules
+5. Log key actions of Agent in app-creation-log.md
+6. Create app in app/ directory

@@ -224,6 +224,13 @@ You have access to:
 - **Expert Comments**: Observations from program experts, teaching assistants, and learning support
 - **Student Feedback**: Comments about individual student progress and projects
 - **Topic Distribution**: Which course topics received the most engagement
+- **Project Comments**: Individual feedback for each student's project work (provided in student comments)
+- **Final Demo Participation**: Data about who participated in the final project demonstration (check meetings data for "demo" or "final" entries)
+
+When analyzing team performance:
+1. Look for project comments in the format "Student Name - Comment" and highlight notable achievements
+2. Check meetings data for participation in final demonstrations - this is a significant achievement worth highlighting as it shows the student's confidence and readiness to share their work
+3. Mention both project quality and final demo participation in the Executive Summary and Expert Observations sections
 
 ## Report Structure
 

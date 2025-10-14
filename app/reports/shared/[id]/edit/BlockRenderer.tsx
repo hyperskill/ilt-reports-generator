@@ -63,6 +63,20 @@ export function BlockRenderer({ block, isEditing, onContentChange }: BlockRender
           />
         </Card>
       );
+      
+    case 'student-project-comment':
+      return (
+        <Card style={{ backgroundColor: 'var(--blue-2)', borderLeft: '4px solid var(--blue-9)' }}>
+          <TextArea
+            value={block.content}
+            onChange={(e) => onContentChange(e.target.value)}
+            rows={6}
+            placeholder="Student's project work comment..."
+            disabled={!isEditing}
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </Card>
+      );
 
     case 'table':
       return (

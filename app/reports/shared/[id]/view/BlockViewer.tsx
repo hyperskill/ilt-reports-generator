@@ -106,6 +106,21 @@ export function BlockViewer({ block }: BlockViewerProps) {
         </>
       );
 
+    case 'student-project-comment':
+      return (
+        <Card style={{ backgroundColor: 'var(--blue-2)', borderLeft: '4px solid var(--blue-9)' }}>
+          <Box>
+            {block.content.split('\n').map((line, idx) => (
+              line.trim() ? (
+                <Text key={idx} as="p" size="3" mb="2" style={{ lineHeight: 1.7 }}>
+                  {line}
+                </Text>
+              ) : null
+            ))}
+          </Box>
+        </Card>
+      );
+
     default:
       return <Text color="red">Unknown block type: {block.type}</Text>;
   }

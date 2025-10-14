@@ -143,6 +143,7 @@ export interface StudentReport {
 // App State
 export interface StudentComment {
   userId: string;
+  project_comment?: string; // Student's project work comment
   comment_program_expert?: string;
   comment_teaching_assistants?: string;
   comment_learning_support?: string;
@@ -159,7 +160,7 @@ export interface AppState {
 }
 
 // Shared Reports Feature
-export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments';
+export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments' | 'student-project-comment';
 
 export interface ReportBlock {
   id: string;

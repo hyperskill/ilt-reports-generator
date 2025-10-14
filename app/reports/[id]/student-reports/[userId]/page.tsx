@@ -30,7 +30,8 @@ export default function StudentReportEditPage({
   const [growthOpportunities, setGrowthOpportunities] = useState('');
   const [nextSteps, setNextSteps] = useState('');
   
-  // Expert comments
+  // Project comment + expert comments
+  const [projectComment, setProjectComment] = useState('');
   const [commentProgramExpert, setCommentProgramExpert] = useState('');
   const [commentTeachingAssistants, setCommentTeachingAssistants] = useState('');
   const [commentLearningSupport, setCommentLearningSupport] = useState('');
@@ -94,7 +95,7 @@ export default function StudentReportEditPage({
         setNextSteps(content.nextSteps || '');
       }
 
-      // Load expert comments
+      // Load project and expert comments
       const { data: commentsData } = await supabase
         .from('student_comments')
         .select('*')
@@ -103,6 +104,7 @@ export default function StudentReportEditPage({
         .single();
 
       if (commentsData) {
+        setProjectComment(commentsData.project_comment || '');
         setCommentProgramExpert(commentsData.comment_program_expert || '');
         setCommentTeachingAssistants(commentsData.comment_teaching_assistants || '');
         setCommentLearningSupport(commentsData.comment_learning_support || '');
@@ -146,6 +148,7 @@ export default function StudentReportEditPage({
         .upsert({
           report_id: params.id,
           user_id: params.userId,
+          project_comment: projectComment,
           comment_program_expert: commentProgramExpert,
           comment_teaching_assistants: commentTeachingAssistants,
           comment_learning_support: commentLearningSupport,
@@ -247,7 +250,7 @@ export default function StudentReportEditPage({
           </Flex>
         </Flex>
 
-        {/* Expert Comments Information */}
+        {/* Project & Expert Comments Information */}
         <Card>
           <Flex direction="column" gap="4">
             <Box p="3" style={{ 
@@ -256,10 +259,10 @@ export default function StudentReportEditPage({
               border: '1px solid var(--blue-6)'
             }}>
               <Text size="2" weight="bold" mb="2" style={{ display: 'block' }}>
-                💡 Better Reports with Expert Comments
+                💡 Better Reports with Project & Expert Comments
               </Text>
               <Text size="2" style={{ display: 'block' }}>
-                Student LLM reports are significantly improved when Program Experts, Teaching Assistants, and Learning Support provide personalized comments. These insights help create more accurate and valuable reports for each student.
+                Student LLM reports are improved when students and experts provide personalized comments about project work and learning journey. These comments help make reports more accurate and useful.
               </Text>
             </Box>
 
@@ -277,7 +280,6 @@ export default function StudentReportEditPage({
                   {commentProgramExpert ? '✅' : '❌'}
                   <Text size="2" weight="medium">Program Expert</Text>
                 </Flex>
-                
                 <Flex align="center" gap="2" p="2" style={{
                   backgroundColor: commentTeachingAssistants ? 'var(--green-2)' : 'var(--orange-2)',
                   borderRadius: 'var(--radius-2)',
@@ -286,7 +288,6 @@ export default function StudentReportEditPage({
                   {commentTeachingAssistants ? '✅' : '❌'}
                   <Text size="2" weight="medium">Teaching Assistants</Text>
                 </Flex>
-                
                 <Flex align="center" gap="2" p="2" style={{
                   backgroundColor: commentLearningSupport ? 'var(--green-2)' : 'var(--orange-2)',
                   borderRadius: 'var(--radius-2)',
@@ -368,8 +369,21 @@ export default function StudentReportEditPage({
                   <Text size="2" color="gray" mb="2">
                     Add individual comments from different expert roles for this student.
                   </Text>
-                  
                   <Flex direction="column" gap="3">
+                    <Box>
+                      <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+                        📝 Student Project Comment
+                      </Text>
+                      <TextArea
+                        placeholder="Comment about project work, its essence, results, value for the student and others..."
+                        value={projectComment}
+                        onChange={(e) => {
+                          setProjectComment(e.target.value);
+                          setCommentsJustSaved(false);
+                        }}
+                        rows={4}
+                      />
+                    </Box>
                     <Box>
                       <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Program Expert Comments
@@ -384,7 +398,6 @@ export default function StudentReportEditPage({
                         rows={4}
                       />
                     </Box>
-
                     <Box>
                       <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Teaching Assistants Comments
@@ -399,7 +412,6 @@ export default function StudentReportEditPage({
                         rows={4}
                       />
                     </Box>
-
                     <Box>
                       <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
                         Learning Support Comments
@@ -415,7 +427,6 @@ export default function StudentReportEditPage({
                       />
                     </Box>
                   </Flex>
-
                   {/* Save Comments Button */}
                   <Flex gap="3" justify="end">
                     <Button onClick={handleSaveComments} disabled={savingComments} variant="soft">

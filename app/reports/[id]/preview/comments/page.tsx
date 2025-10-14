@@ -97,6 +97,7 @@ export default function CommentsPreviewPage({ params }: { params: { id: string }
         .upsert({
           report_id: params.id,
           user_id: userId,
+          project_comment: comments.project_comment || '',
           comment_program_expert: comments.comment_program_expert || '',
           comment_teaching_assistants: comments.comment_teaching_assistants || '',
           comment_learning_support: comments.comment_learning_support || '',
@@ -117,6 +118,7 @@ export default function CommentsPreviewPage({ params }: { params: { id: string }
             ...comments
           }
         }));
+        alert('Comments saved successfully!');
       }
     } catch (error) {
       console.error('Error saving student comments:', error);
@@ -281,6 +283,7 @@ function StudentCommentForm({
 }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    project_comment: comments.project_comment || '',
     comment_program_expert: comments.comment_program_expert || '',
     comment_teaching_assistants: comments.comment_teaching_assistants || '',
     comment_learning_support: comments.comment_learning_support || '',
@@ -289,6 +292,7 @@ function StudentCommentForm({
 
   useEffect(() => {
     setFormData({
+      project_comment: comments.project_comment || '',
       comment_program_expert: comments.comment_program_expert || '',
       comment_teaching_assistants: comments.comment_teaching_assistants || '',
       comment_learning_support: comments.comment_learning_support || '',
@@ -301,74 +305,62 @@ function StudentCommentForm({
     setJustSaved(true);
   };
 
-  const handleRegenerate = () => {
-    // Navigate to the student's LLM report page
-    const reportId = window.location.pathname.split('/')[2];
-    router.push(`/reports/${reportId}/student-reports/${student.user_id}`);
-  };
-
   return (
-    <Flex direction="column" gap="4">
+    <Box mb="4">
+      <Text weight="bold" size="4" mb="2">{student.name}</Text>
+      <Text size="2" color="gray" mb="3">User ID: {student.user_id}</Text>
       <Flex direction="column" gap="3">
         <Box>
-          <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '8px' }}>Program Expert Comments</Text>
+          <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+            📝 Student Project Comment
+          </Text>
           <TextArea
-            placeholder="Add comments from the program expert for this student..."
+            value={formData.project_comment}
+            onChange={(e) => setFormData(f => ({ ...f, project_comment: e.target.value }))}
+            placeholder="Comment about project work, its essence, results, value for the student and others..."
+            rows={3}
+          />
+        </Box>
+        <Box>
+          <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+            💼 Program Expert
+          </Text>
+          <TextArea
             value={formData.comment_program_expert}
-            onChange={(e) => {
-              setFormData(prev => ({ ...prev, comment_program_expert: e.target.value }));
-              setJustSaved(false);
-            }}
+            onChange={(e) => setFormData(f => ({ ...f, comment_program_expert: e.target.value }))}
+            placeholder="Comment from program expert..."
             rows={3}
           />
         </Box>
-
         <Box>
-          <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '8px' }}>Teaching Assistants Comments</Text>
+          <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+            👨‍🏫 Teaching Assistants
+          </Text>
           <TextArea
-            placeholder="Add comments from teaching assistants for this student..."
             value={formData.comment_teaching_assistants}
-            onChange={(e) => {
-              setFormData(prev => ({ ...prev, comment_teaching_assistants: e.target.value }));
-              setJustSaved(false);
-            }}
+            onChange={(e) => setFormData(f => ({ ...f, comment_teaching_assistants: e.target.value }))}
+            placeholder="Comment from teaching assistants..."
             rows={3}
           />
         </Box>
-
         <Box>
-          <Text size="2" weight="bold" style={{ display: 'block', marginBottom: '8px' }}>Learning Support Comments</Text>
+          <Text as="label" size="2" weight="bold" mb="2" style={{ display: 'block' }}>
+            🎓 Learning Support
+          </Text>
           <TextArea
-            placeholder="Add comments from learning support for this student..."
             value={formData.comment_learning_support}
-            onChange={(e) => {
-              setFormData(prev => ({ ...prev, comment_learning_support: e.target.value }));
-              setJustSaved(false);
-            }}
+            onChange={(e) => setFormData(f => ({ ...f, comment_learning_support: e.target.value }))}
+            placeholder="Comment from learning support..."
             rows={3}
           />
         </Box>
       </Flex>
-
-      <Flex justify="end" gap="3">
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          size="2"
-          variant="soft"
-        >
-          {saving ? 'Saving...' : '💾 Save Comments'}
+      <Flex gap="2" mt="3">
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save'}
         </Button>
-        {justSaved && (
-          <Button 
-            onClick={handleRegenerate}
-            size="2"
-            color="orange"
-          >
-            🔄 Regenerate Report
-          </Button>
-        )}
+        {justSaved && <Badge color="green" size="1">Saved!</Badge>}
       </Flex>
-    </Flex>
+    </Box>
   );
 }
