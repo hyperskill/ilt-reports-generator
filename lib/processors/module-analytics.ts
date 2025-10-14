@@ -163,8 +163,8 @@ export function processModuleAnalytics(
     }
   }
 
-  // Build final results
-  const results: ModuleStats[] = [];
+  // Build final results (with timestamps for sorting)
+  const tempResults: Array<ModuleStats & { firstTimestamp: number }> = [];
 
   for (const [moduleId, stats] of moduleStats.entries()) {
     const totalSteps = moduleStepsCount.get(moduleId)?.size || 0;
@@ -180,37 +180,21 @@ export function processModuleAnalytics(
     // Calculate module period from timestamps
     let firstActivityDate: string | undefined;
     let lastActivityDate: string | undefined;
-    let meetingsAttended = 0;
+    let firstTimestamp = 0;
 
     if (stats.timestamps.length > 0) {
       const sortedTimestamps = stats.timestamps.sort((a, b) => a - b);
-      const firstTimestamp = sortedTimestamps[0];
+      firstTimestamp = sortedTimestamps[0];
       const lastTimestamp = sortedTimestamps[sortedTimestamps.length - 1];
       
       firstActivityDate = new Date(firstTimestamp * 1000).toISOString().split('T')[0];
       lastActivityDate = new Date(lastTimestamp * 1000).toISOString().split('T')[0];
-
-      // Count meetings that fall within the module period
-      const firstDate = new Date(firstTimestamp * 1000);
-      const lastDate = new Date(lastTimestamp * 1000);
-      
-      // Reset time to start of day for proper date comparison
-      firstDate.setHours(0, 0, 0, 0);
-      lastDate.setHours(23, 59, 59, 999);
-      
-      meetingsAttended = meetingDates.filter(m => {
-        if (!m.attended) return false;
-        // Reset meeting date time to start of day for comparison
-        const meetingDate = new Date(m.date);
-        meetingDate.setHours(0, 0, 0, 0);
-        return meetingDate >= firstDate && meetingDate <= lastDate;
-      }).length;
     }
 
     // Try both number and string keys for module names map
     const moduleName = moduleNamesMap[moduleId] || moduleNamesMap[String(moduleId)] || `Module ${moduleId}`;
     
-    results.push({
+    tempResults.push({
       module_id: moduleId,
       module_name: moduleName,
       module_position: stats.module_position,
@@ -222,14 +206,49 @@ export function processModuleAnalytics(
       success_rate: Math.round(successRate * 10) / 10,
       completion_rate: Math.round(completionRate * 10) / 10,
       avg_attempts_per_step: Math.round(avgAttemptsPerStep * 10) / 10,
-      meetings_attended: meetingsAttended,
+      meetings_attended: 0, // Will be calculated below
       first_activity_date: firstActivityDate,
       last_activity_date: lastActivityDate,
+      firstTimestamp,
     });
   }
 
   // Sort by module position
-  results.sort((a, b) => a.module_position - b.module_position);
+  tempResults.sort((a, b) => a.module_position - b.module_position);
+
+  // Now distribute meetings cumulatively across modules
+  // For each module, count meetings that happened up to the end of that module
+  // and subtract meetings counted in previous modules
+  let previousMeetingsCount = 0;
+  const results: ModuleStats[] = [];
+
+  for (const moduleResult of tempResults) {
+    let meetingsAttended = 0;
+
+    if (moduleResult.last_activity_date) {
+      const lastDate = new Date(moduleResult.last_activity_date);
+      lastDate.setHours(23, 59, 59, 999);
+      
+      // Count all meetings up to end of this module
+      const totalMeetingsUpToNow = meetingDates.filter(m => {
+        if (!m.attended) return false;
+        const meetingDate = new Date(m.date);
+        meetingDate.setHours(0, 0, 0, 0);
+        return meetingDate <= lastDate;
+      }).length;
+      
+      // This module's meetings = total up to now - previous modules' meetings
+      meetingsAttended = totalMeetingsUpToNow - previousMeetingsCount;
+      previousMeetingsCount = totalMeetingsUpToNow;
+    }
+
+    // Remove firstTimestamp field and add meetings count
+    const { firstTimestamp, ...finalResult } = moduleResult;
+    results.push({
+      ...finalResult,
+      meetings_attended: meetingsAttended,
+    });
+  }
 
   return results;
 }

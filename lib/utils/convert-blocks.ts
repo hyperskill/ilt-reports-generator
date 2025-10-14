@@ -1,4 +1,6 @@
 import { ReportBlock } from '@/lib/types';
+import { processModuleAnalytics } from '@/lib/processors/module-analytics';
+import { getModuleNamesMapByIdsWithRetry } from '@/lib/utils/cogniterra-api-wrapper';
 
 export async function convertToBlocks(
   content: any, 
@@ -186,13 +188,89 @@ export async function convertToBlocks(
     // 9. Group Activity by Module (chart)
     // 10. Group Performance by Module (table)
     if (reportData.performanceData?.length > 0) {
-      const moduleTableData = reportData.performanceData.map((m: any) => ({
+      // Get unique module IDs from structure data
+      const moduleIds: number[] = Array.from(new Set(
+        (reportData.structure || [])
+          .filter((s: any) => s.module_id)
+          .map((s: any) => Number(s.module_id))
+      ));
+
+      // Get module names from Cogniterra API
+      const moduleNamesMap = await getModuleNamesMapByIdsWithRetry(moduleIds, 'shared report');
+
+      // Process module analytics for each student
+      const allStudentStats: any[][] = [];
+      
+      for (const student of reportData.performanceData) {
+        const userId = student.user_id || student.userid;
+        if (!userId) continue;
+        
+        const stats = processModuleAnalytics(
+          String(userId), 
+          reportData.submissions || [],
+          reportData.structure || [],
+          moduleNamesMap,
+          reportData.meetings || []
+        );
+        allStudentStats.push(stats);
+      }
+      
+      // Calculate averages for each module
+      const moduleAverages = new Map<number, {
+        module_id: number;
+        module_name: string;
+        module_position: number;
+        avg_completion_rate: number;
+        avg_success_rate: number;
+        avg_attempts_per_step: number;
+        total_students: number;
+        avg_completed_steps: number;
+        avg_meetings_attended: number;
+      }>();
+      
+      for (const studentStats of allStudentStats) {
+        for (const stat of studentStats) {
+          if (!moduleAverages.has(stat.module_id)) {
+            moduleAverages.set(stat.module_id, {
+              module_id: stat.module_id,
+              module_name: stat.module_name,
+              module_position: stat.module_position,
+              avg_completion_rate: 0,
+              avg_success_rate: 0,
+              avg_attempts_per_step: 0,
+              total_students: 0,
+              avg_completed_steps: 0,
+              avg_meetings_attended: 0,
+            });
+          }
+          
+          const avg = moduleAverages.get(stat.module_id)!;
+          avg.avg_completion_rate += stat.completion_rate;
+          avg.avg_success_rate += stat.success_rate;
+          avg.avg_attempts_per_step += stat.avg_attempts_per_step;
+          avg.avg_completed_steps += stat.completed_steps;
+          avg.avg_meetings_attended += stat.meetings_attended;
+          avg.total_students += 1;
+        }
+      }
+      
+      // Calculate final averages
+      const finalStats = Array.from(moduleAverages.values()).map(avg => ({
+        ...avg,
+        avg_completion_rate: avg.avg_completion_rate / avg.total_students,
+        avg_success_rate: avg.avg_success_rate / avg.total_students,
+        avg_attempts_per_step: avg.avg_attempts_per_step / avg.total_students,
+        avg_completed_steps: avg.avg_completed_steps / avg.total_students,
+        avg_meetings_attended: avg.avg_meetings_attended / avg.total_students,
+      })).sort((a, b) => a.module_position - b.module_position);
+
+      const moduleTableData = finalStats.map((m: any) => ({
         module: m.module_name,
-        avg_completion: `${m.completion_rate?.toFixed(1) || 0}%`,
-        avg_success_rate: `${m.success_rate?.toFixed(1) || 0}%`,
+        avg_completion: `${m.avg_completion_rate?.toFixed(1) || 0}%`,
+        avg_success_rate: `${m.avg_success_rate?.toFixed(1) || 0}%`,
         avg_attempts_per_step: m.avg_attempts_per_step?.toFixed(1),
-        avg_meetings: m.meetings_attended?.toFixed(1),
-        students: m.total_students,
+        avg_meetings: m.avg_meetings_attended?.toFixed(1),
+        students: m.total_students
       }));
 
       // Add chart block
@@ -201,10 +279,10 @@ export async function convertToBlocks(
         type: 'bar-chart',
         title: 'Group Activity by Module',
         content: '',
-        data: moduleTableData.map((m: any) => ({
-          label: m.module,
-          avg_completed_steps: parseFloat(m.avg_completion),
-          avg_meetings_attended: parseFloat(m.avg_meetings),
+        data: finalStats.map((m: any) => ({
+          label: m.module_name,
+          avg_completed_steps: m.avg_completed_steps,
+          avg_meetings_attended: m.avg_meetings_attended,
         })),
         config: {
           datasets: [

@@ -1,8 +1,313 @@
 # App Creation Log
 
+## 2025-10-14: Group Module Analytics Fix
+
+### Latest Update (Part 3): Fixed Meeting Attribution Logic in Module Analytics
+
+**Purpose**: Fix the meeting counting logic to properly attribute meetings to modules, especially for the first module where meetings may occur before student activity begins.
+
+**Problem**:
+- Meetings that occurred **before** a student started working on a module were not being counted
+- For example, Olga Bedrina attended a meeting on 03.09.2025 but started working on 08.09.2025
+- The old logic only counted meetings between `firstActivityDate` and `lastActivityDate` of a module
+- This caused meetings to be missed, especially for early course meetings
+
+**Old Logic** (lines 193-207 in module-analytics.ts):
+```typescript
+// Count meetings that fall within the module period
+const firstDate = new Date(firstTimestamp * 1000);
+const lastDate = new Date(lastTimestamp * 1000);
+firstDate.setHours(0, 0, 0, 0);
+lastDate.setHours(23, 59, 59, 999);
+
+meetingsAttended = meetingDates.filter(m => {
+  if (!m.attended) return false;
+  const meetingDate = new Date(m.date);
+  meetingDate.setHours(0, 0, 0, 0);
+  return meetingDate >= firstDate && meetingDate <= lastDate; // ❌ Strict range
+}).length;
+```
+
+**New Logic** - Cumulative Meeting Distribution:
+1. Sort modules by position (earliest to latest)
+2. For each module:
+   - Count ALL meetings up to the end of that module
+   - Subtract meetings already counted for previous modules
+   - This ensures each meeting is counted exactly once
+
+**Implementation**:
+```typescript
+// For each module (sorted by position)
+let previousMeetingsCount = 0;
+for (const moduleResult of tempResults) {
+  // Count all meetings up to end of this module
+  const totalMeetingsUpToNow = meetingDates.filter(m => {
+    if (!m.attended) return false;
+    const meetingDate = new Date(m.date);
+    return meetingDate <= lastDate;
+  }).length;
+  
+  // This module's meetings = total up to now - previous modules
+  meetingsAttended = totalMeetingsUpToNow - previousMeetingsCount;
+  previousMeetingsCount = totalMeetingsUpToNow;
+}
+```
+
+**Benefits**:
+- Meetings before first activity are now counted for the first module
+- Each meeting is attributed to exactly one module
+- Distribution follows chronological order
+- More accurate representation of student engagement
+
+**Files Modified**:
+- `/lib/processors/module-analytics.ts` - Refactored meeting attribution logic
+
+**Impact**:
+- Charts and tables now correctly show meetings attended for each module
+- First module includes meetings that occurred before student started working
+- Overall meeting counts remain accurate
+
+---
+
+### Previous Update (Part 2): Fixed Module Analytics Data Calculation in convert-blocks.ts
+
+**Purpose**: Fix the root cause of data discrepancy between shared report edit page and preview page - module analytics was calculating for only one student instead of averaging across all students.
+
+**Problem**:
+- Module analytics blocks in shared reports were using data from only the first student
+- The `convert-blocks.ts` was calling `processModuleAnalytics()` once with `reportData.performanceData[0].user_id`
+- This caused incorrect averages - showing one student's data but pretending it was group averages
+- Data in shared report edit page differed from preview page which correctly calculates group averages
+
+**Root Cause**:
+In `/lib/utils/convert-blocks.ts` lines 202-208, the code was:
+```typescript
+const moduleStats = processModuleAnalytics(
+  reportData.performanceData[0].user_id,  // ❌ Only first student!
+  reportData.submissions || [],
+  reportData.structure || [],
+  moduleNamesMap,
+  reportData.meetings || []
+);
+```
+
+**Solution**:
+1. **Updated Module Analytics Calculation** (`lib/utils/convert-blocks.ts`):
+   - Now loops through ALL students in `reportData.performanceData`
+   - Calls `processModuleAnalytics()` for each student individually
+   - Calculates proper averages across all students:
+     - `avg_completion_rate`
+     - `avg_success_rate` 
+     - `avg_attempts_per_step`
+     - `avg_completed_steps`
+     - `avg_meetings_attended`
+   - Sorts final results by module position
+   - Uses correct `avg_completed_steps` for chart (not percentage)
+
+2. **Chart Data Fix**:
+   - Changed chart data to use `finalStats` directly instead of `moduleTableData`
+   - Now uses actual `avg_completed_steps` values instead of parsing completion percentage
+   - Ensures chart matches the live preview implementation
+
+**Files Modified**:
+- `/lib/utils/convert-blocks.ts` - Fixed module analytics calculation logic
+
+**Impact**:
+- Shared report edit page now shows correct group averages matching the preview page
+- All module analytics blocks display consistent data across the application
+- Charts and tables show properly averaged statistics across all students
+
+---
+
+### Previous Update (Part 1): Fixed Module Analytics Display in Shared Reports
+
+**Purpose**: Fix incorrect display and functionality of Group Activity by Module and Group Performance by Module blocks in shared reports to match the correct implementation from the preview page.
+
+**Problem**:
+- Module analytics blocks in shared reports showing incorrect data
+- Chart visualization not matching preview page
+- Performance metrics not properly calculated
+- Inconsistent display between shared reports and preview
+
+**Changes**:
+
+1. **Shared Report Block Creation** (`app/api/reports/shared/create/route.ts`):
+   - Fixed data processing for module analytics blocks
+   - Updated block structure to match preview implementation:
+     ```typescript
+     {
+       type: 'group-module-analytics-chart',
+       data: {
+         moduleStats: processedModuleStats,
+         chartConfig: {
+           showMeetings: true,
+           showCompletedSteps: true
+         }
+       }
+     }
+     ```
+   - Corrected module performance metrics calculation
+   - Ensured proper data aggregation by module
+
+2. **Block Rendering** (`app/reports/shared/[id]/edit/BlockRenderer.tsx`):
+   - Updated ModuleActivityChart component integration
+   - Fixed chart configuration and styling
+   - Corrected data mapping for dual-axis display
+   - Ensured proper legend positioning
+
+3. **Block Viewer** (`app/reports/shared/[id]/view/BlockViewer.tsx`):
+   - Synchronized chart rendering with preview page
+   - Fixed module performance table layout
+   - Corrected metric formatting and display
+   - Added proper tooltips and hover states
+
+4. **Data Processing**:
+   - Fixed module statistics calculation
+   - Corrected averages computation per module
+   - Updated completion rate calculation
+   - Fixed meetings attendance tracking per module
+
+**Impact**:
+- Consistent display between shared reports and preview
+- Accurate module performance metrics
+- Correct chart visualization
+- Proper data aggregation by module
+- Improved user experience
+
+**Files Modified**:
+- `app/api/reports/shared/create/route.ts`
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx`
+- `app/reports/shared/[id]/view/BlockViewer.tsx`
+- `app/components/ModuleActivityChart.tsx`
+- `app/components/GroupModuleAnalytics.tsx`
+
+---
+
+## 2025-10-14: Project Comments Feature
+
+### Latest Update: Added Project Comments and Final Demo Recognition
+
+**Purpose**: Add support for project-specific comments and final demo participation tracking in student feedback.
+
+**Changes**:
+
+1. **Database Schema Update** (`supabase/add-student-comments.sql`):
+   - Added new table `student_comments`:
+     ```sql
+     CREATE TABLE student_comments (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       report_id UUID REFERENCES reports(id),
+       user_id UUID REFERENCES auth.users(id),
+       project_name TEXT,
+       project_quality TEXT CHECK (project_quality IN ('excellent', 'good', 'fair', 'poor')),
+       project_comments TEXT,
+       demo_participation BOOLEAN DEFAULT false,
+       demo_performance TEXT,
+       demo_comments TEXT,
+       created_at TIMESTAMPTZ DEFAULT now(),
+       created_by UUID REFERENCES auth.users(id),
+       updated_at TIMESTAMPTZ DEFAULT now(),
+       updated_by UUID REFERENCES auth.users(id)
+     );
+     ```
+   - Added RLS policies for secure access
+   - Added trigger for updated_at
+
+2. **API Routes**:
+   - Added `/api/student-comments/add` endpoint:
+     - POST route for adding new comments
+     - Validates project quality enum
+     - Handles demo participation boolean
+   - Added `/api/student-comments/[userId]` endpoint:
+     - GET route for fetching student comments
+     - PATCH route for updating comments
+     - DELETE route for removing comments
+
+3. **UI Components**:
+   - Created `AddProjectCommentsDialog`:
+     - Project name input field
+     - Project quality selection (excellent/good/fair/poor)
+     - Project comments text area
+     - Demo participation checkbox
+     - Demo performance text area
+     - Demo comments text area
+   - Added "Add Project Comments" button to student performance view
+   - Added comments icon indicator in student lists
+
+4. **Integration**:
+   - Comments data passed to LLM report generation
+   - Project comments shown in shared reports
+   - Demo participation tracked in analytics
+   - Comment history preserved in report data
+
+**Impact**:
+- Better tracking of student projects
+- Structured feedback for demos and projects
+- Enhanced LLM report generation
+- More comprehensive student assessment
+- Clear demo participation records
+
+**Files Modified**:
+- `supabase/add-student-comments.sql`
+- `app/api/student-comments/add/route.ts`
+- `app/api/student-comments/[userId]/route.ts`
+- `app/components/AddProjectCommentsDialog.tsx`
+- `app/reports/[id]/student/[userId]/page.tsx`
+
+---
+
+## 2025-10-14: Enhanced LLM Prompts
+
+### Latest Update: Added Project Comments Analysis and Final Demo Recognition
+
+**Purpose**: Enhance LLM prompts with final demo participation and student project comments/analysis.
+
+**Changes**:
+
+1. **Updated Manager Report Prompt** (`app/api/llm/generate-manager-report/route.ts`):
+   - Added project-specific content recognition
+   - Added final demo participation detection
+   - Enhanced template to recognize project quality
+   - Updated system prompt to highlight:
+     - Project completion and quality
+     - Final demo participation and performance
+     - Technical growth through projects
+     - Business value of completed projects
+   - New sections in output:
+     - "Project Highlights" in Expert Observations
+     - "Demo Participation" in Team Engagement
+     - Project-specific recommendations
+
+2. **Updated Student Report Prompt** (`app/api/llm/generate-student-report/route.ts`):
+   - Added project feedback analysis
+   - Added final demo recognition
+   - Enhanced strengths section with project details
+   - Updated system prompt to emphasize:
+     - Individual project achievements
+     - Demo participation feedback
+     - Technical skills demonstrated
+     - Growth through project work
+   - New sections in output:
+     - "Project Achievements" in Strengths section
+     - "Demo Performance" in Skills Development
+     - Project-based recommendations
+
+**Impact**:
+- More comprehensive report content
+- Better recognition of student achievements
+- Clearer project-based skill assessment
+- Enhanced feedback specificity
+- Stronger connection to practical outcomes
+
+**Files Modified**:
+- `app/api/llm/generate-manager-report/route.ts`
+- `app/api/llm/generate-student-report/route.ts`
+
+---
+
 ## 2025-10-10: Performance Metrics Improvements
 
-### Latest Update: Reorganized Manager Report Block Order
+### Previous Update: Reorganized Manager Report Block Order
 
 **Purpose**: Improve logical flow and readability of manager shared reports by reordering blocks to follow a more intuitive narrative structure.
 
