@@ -196,6 +196,22 @@ export async function POST(request: Request) {
     }
 
     // Prepare data for LLM
+    // Load student project comment
+    let projectComment = '';
+    try {
+      const { data: studentCommentData } = await supabase
+        .from('student_comments')
+        .select('project_comment')
+        .eq('report_id', reportId)
+        .eq('user_id', userId)
+        .single();
+      if (studentCommentData && studentCommentData.project_comment) {
+        projectComment = studentCommentData.project_comment;
+      }
+    } catch (err) {
+      // ignore
+    }
+
     const promptData = {
       studentName: studentPerformance.name,
       performance: studentPerformance,
@@ -208,6 +224,8 @@ export async function POST(request: Request) {
       moduleStructure,
       // NEW: Student's individual module analytics
       studentModuleAnalytics,
+      // NEW: Student project comment
+      projectComment,
     };
 
     const systemPrompt = `You are an expert Learning Coach creating a personalized learning report for an individual student who completed a transformative learning journey.
@@ -265,7 +283,16 @@ You have access to:
 - **Module analytics**: Performance in each course module (with real module names!)
 - **Meeting attendance**: Participation in live sessions
 - **Instructor feedback**: Comments from program experts, teaching assistants, and learning support
-- **Student projects**: Mentioned in instructor feedback
+- **Student projects**: Detailed feedback about their project work
+- **Project Reviews**: Individual feedback about this student's project (check project comments)
+- **Final Demo**: Check meetings data for participation in the final project demonstration - this is a significant achievement!
+
+**Special Achievement Rules:**
+1. Always review project comments carefully - they contain valuable insights about the student's practical work
+2. Look for mentions of final demo participation in the meetings data (entries containing "demo" or "final")
+   - If the student participated in the final demo, celebrate this achievement enthusiastically!
+   - Emphasize their confidence in presenting their work
+   - Include this achievement in the Strengths & Achievements section
 
 ## Analysis Guidelines
 

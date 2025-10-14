@@ -311,7 +311,8 @@ export default function ReportBuilder({
                                 block.type === 'table' ? '📊' :
                                 block.type === 'pie-chart' ? '📈' :
                                 block.type === 'line-chart' ? '📉' :
-                                block.type === 'bar-chart' ? '📊' : '📄';
+                                block.type === 'bar-chart' ? '📊' :
+                                block.type === 'student-project-comment' ? '📝' : '📄';
                               
                               return (
                                 <Select.Item key={block.id} value={block.id}>
@@ -375,7 +376,8 @@ export default function ReportBuilder({
                       block.type === 'comments' ? 'yellow' :
                       block.type === 'table' ? 'green' :
                       block.type === 'pie-chart' ? 'purple' :
-                      block.type === 'line-chart' ? 'orange' : 'gray'
+                      block.type === 'line-chart' ? 'orange' :
+                      block.type === 'student-project-comment' ? 'cyan' : 'gray'
                     }>
                       {block.type}
                     </Badge>
@@ -424,7 +426,7 @@ export default function ReportBuilder({
                   >
                     ↓
                   </Button>
-                  {(block.type === 'section' || block.type === 'comments') && (
+                  {(block.type === 'section' || block.type === 'comments' || block.type === 'student-project-comment') && (
                     <Button
                       size="1"
                       variant="soft"

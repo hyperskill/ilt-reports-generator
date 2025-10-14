@@ -59,9 +59,10 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
 
   // Comments state
   const [commentsData, setCommentsData] = useState({
-    comment_program_expert: '',
-    comment_teaching_assistants: '',
-    comment_learning_support: '',
+  comment_program_expert: '',
+  comment_teaching_assistants: '',
+  comment_learning_support: '',
+  project_comment: '',
   });
 
   const supabase = createClient();
@@ -204,7 +205,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
       // Check student comments (individual student comments)
       const { data: studentComments } = await supabase
         .from('student_comments')
-        .select('user_id, comment_program_expert, comment_teaching_assistants, comment_learning_support')
+        .select('user_id, project_comment, comment_program_expert, comment_teaching_assistants, comment_learning_support')
         .eq('report_id', params.id);
 
       // Create status map and details for individual student comments
@@ -214,11 +215,12 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
         report.performance_data.forEach((student: any) => {
           commentsStatusMap[student.user_id] = false; // Default to no comments
           commentsDetailsMap[student.user_id] = {
+            project_comment: '',
             comment_program_expert: '',
             comment_teaching_assistants: '',
             comment_learning_support: '',
             filled: 0,
-            total: 3
+            total: 4
           };
         });
       }
@@ -227,6 +229,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
       if (studentComments) {
         studentComments.forEach((comment: any) => {
           const filled = [
+            comment.project_comment,
             comment.comment_program_expert,
             comment.comment_teaching_assistants,
             comment.comment_learning_support
@@ -234,11 +237,12 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
           
           commentsStatusMap[comment.user_id] = filled > 0;
           commentsDetailsMap[comment.user_id] = {
+            project_comment: comment.project_comment || '',
             comment_program_expert: comment.comment_program_expert || '',
             comment_teaching_assistants: comment.comment_teaching_assistants || '',
             comment_learning_support: comment.comment_learning_support || '',
             filled,
-            total: 3
+            total: 4
           };
         });
       }
@@ -262,7 +266,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
     try {
       const { data: reportData } = await supabase
         .from('reports')
-        .select('comment_program_expert, comment_teaching_assistants, comment_learning_support')
+        .select('comment_program_expert, comment_teaching_assistants, comment_learning_support, project_comment')
         .eq('id', params.id)
         .single();
 
@@ -271,6 +275,7 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
           comment_program_expert: reportData.comment_program_expert || '',
           comment_teaching_assistants: reportData.comment_teaching_assistants || '',
           comment_learning_support: reportData.comment_learning_support || '',
+          project_comment: reportData.project_comment || '',
         });
       }
     } catch (error) {
@@ -737,7 +742,6 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
       {/* Shared Reports List */}
       <Card>
         <Heading size="4" mb="3">📤 Existing Shared Reports</Heading>
-        
         {sharedReports.length === 0 ? (
           <Text color="gray">No shared reports created yet.</Text>
         ) : (
@@ -760,6 +764,13 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                       <Text size="1" color="gray" style={{ display: 'block' }}>
                         {sharedReport.description}
                       </Text>
+                    )}
+                    {/* project_comment block for shared student report */}
+                    {sharedReport.report_type === 'student' && sharedReport.user_id && studentCommentsDetails[sharedReport.user_id]?.project_comment && (
+                      <Card mt="2" style={{ backgroundColor: 'var(--yellow-2)', borderLeft: '4px solid var(--yellow-9)' }}>
+                        <Text size="2" weight="bold" mb="1">Student Project Comment:</Text>
+                        <Text size="2">{studentCommentsDetails[sharedReport.user_id].project_comment}</Text>
+                      </Card>
                     )}
                   </Table.Cell>
                   <Table.Cell>

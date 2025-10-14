@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { reportId, userId, comment_program_expert, comment_teaching_assistants, comment_learning_support } = body;
+  const { reportId, userId, project_comment, comment_program_expert, comment_teaching_assistants, comment_learning_support } = body;
 
     if (!reportId || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       .upsert({
         report_id: reportId,
         user_id: userId,
+        project_comment: project_comment || null,
         comment_program_expert: comment_program_expert || null,
         comment_teaching_assistants: comment_teaching_assistants || null,
         comment_learning_support: comment_learning_support || null,

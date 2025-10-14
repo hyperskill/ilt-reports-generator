@@ -17,6 +17,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [comments, setComments] = useState<any>(null);
+  const [projectComment, setProjectComment] = useState('');
   const [programExpert, setProgramExpert] = useState('');
   const [teachingAssistants, setTeachingAssistants] = useState('');
   const [learningSupport, setLearningSupport] = useState('');
@@ -28,6 +29,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
       // Load from context if no reportId (current session)
       const contextComment = studentComments?.[userId];
       if (contextComment) {
+        setProjectComment(contextComment.project_comment || '');
         setProgramExpert(contextComment.comment_program_expert || '');
         setTeachingAssistants(contextComment.comment_teaching_assistants || '');
         setLearningSupport(contextComment.comment_learning_support || '');
@@ -46,6 +48,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
         const data = await response.json();
         setComments(data.comments);
         if (data.comments) {
+          setProjectComment(data.comments.project_comment || '');
           setProgramExpert(data.comments.comment_program_expert || '');
           setTeachingAssistants(data.comments.comment_teaching_assistants || '');
           setLearningSupport(data.comments.comment_learning_support || '');
@@ -69,6 +72,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
           body: JSON.stringify({
             reportId,
             userId,
+            project_comment: projectComment,
             comment_program_expert: programExpert,
             comment_teaching_assistants: teachingAssistants,
             comment_learning_support: learningSupport,
@@ -90,6 +94,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
         // Save to context if no reportId (current session)
         const newComment = {
           userId,
+          project_comment: projectComment || undefined,
           comment_program_expert: programExpert || undefined,
           comment_teaching_assistants: teachingAssistants || undefined,
           comment_learning_support: learningSupport || undefined,
@@ -107,10 +112,12 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
 
   const handleCancel = () => {
     if (comments) {
+      setProjectComment(comments.project_comment || '');
       setProgramExpert(comments.comment_program_expert || '');
       setTeachingAssistants(comments.comment_teaching_assistants || '');
       setLearningSupport(comments.comment_learning_support || '');
     } else {
+      setProjectComment('');
       setProgramExpert('');
       setTeachingAssistants('');
       setLearningSupport('');
@@ -124,6 +131,7 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
   }
 
   const hasAnyComment = comments?.comment_program_expert || comments?.comment_teaching_assistants || comments?.comment_learning_support;
+  const hasProjectComment = comments?.project_comment;
 
   if (loading) {
     return (
@@ -165,7 +173,19 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
 
             <Box>
               <Text as="div" size="2" weight="bold" mb="2">
-                💼 Feedback from Program Expert
+                � Student Project Comment
+              </Text>
+              <TextArea
+                value={projectComment}
+                onChange={(e) => setProjectComment(e.target.value)}
+                placeholder="Comment about project work, its essence, results, value for the student and others..."
+                rows={4}
+              />
+            </Box>
+
+            <Box>
+              <Text as="div" size="2" weight="bold" mb="2">
+                �💼 Feedback from Program Expert
               </Text>
               <TextArea
                 value={programExpert}
@@ -210,10 +230,21 @@ export function StudentCommentsSection({ reportId, userId, isAdmin, onCommentsSa
           </>
         ) : (
           <>
-            {!hasAnyComment ? (
+            {!hasAnyComment && !hasProjectComment ? (
               <Text size="2" color="gray">No feedback available yet.</Text>
             ) : (
               <>
+                {hasProjectComment && (
+                  <Box>
+                    <Text as="div" size="2" weight="bold" mb="1">
+                      📝 Student Project Comment
+                    </Text>
+                    <Text as="div" size="2" color="gray" style={{ whiteSpace: 'pre-wrap' }}>
+                      {comments.project_comment}
+                    </Text>
+                  </Box>
+                )}
+
                 {comments?.comment_program_expert && (
                   <Box>
                     <Text as="div" size="2" weight="bold" mb="1">
