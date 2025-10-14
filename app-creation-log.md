@@ -4275,3 +4275,60 @@ img {
 - `lib/utils/simple-pdf-generator.ts` - Added canvas to image conversion in STEP 5
 - `app-creation-log.md` - Updated documentation
 
+
+---
+
+## Password Change Feature - October 14, 2025
+
+### Feature Description
+
+Added password change functionality for all users. Users can now change their passwords from the Profile page.
+
+### Implementation
+
+1. **API Endpoint** - Created `/api/users/change-password/route.ts`
+   - Validates current password by attempting sign-in
+   - Validates new password (minimum 6 characters)
+   - Updates user password using Supabase Auth
+   - Returns appropriate error messages for validation failures
+
+2. **UI Component** - Created `ChangePasswordForm.tsx` with CSS Module
+   - Client-side form with three fields: current password, new password, confirm password
+   - Client-side validation:
+     - All fields required
+     - Passwords must match
+     - Minimum 6 characters
+     - New password must differ from current
+   - Success/error message display
+   - Loading state during submission
+
+3. **Profile Page Update** - Added password change section to `/app/profile/page.tsx`
+   - New "Change Password" card positioned before "Shared Reports"
+   - Available to all users regardless of role
+
+### Files Created
+
+- `app/api/users/change-password/route.ts` - Password change API endpoint
+- `app/components/ChangePasswordForm.tsx` - Password change form component
+- `app/components/ChangePasswordForm.module.css` - Form styling
+
+### Files Modified
+
+- `app/profile/page.tsx` - Added ChangePasswordForm import and new card section
+
+### Security Features
+
+✅ **Current password verification** - Requires current password to change
+✅ **Password validation** - Minimum length enforcement
+✅ **Match confirmation** - Confirms new password entry
+✅ **Authenticated requests** - Uses Supabase Auth session
+✅ **Error handling** - Clear feedback for validation failures
+
+### User Experience
+
+- Clean, consistent UI using Radix UI components
+- Real-time validation feedback
+- Success confirmation message
+- Form clears on successful password change
+- Loading states during submission
+

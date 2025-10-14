@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Box, Card, Flex, Heading, Text, Badge, Separator } from '@radix-ui/themes';
 import { UserNav } from '@/app/components/UserNav';
 import SharedReportsList from './SharedReportsList';
+import ChangePasswordForm from '@/app/components/ChangePasswordForm';
 import Link from 'next/link';
 
 export default async function ProfilePage() {
@@ -168,6 +169,14 @@ export default async function ProfilePage() {
                 </Box>
               )}
             </Box>
+          </Flex>
+        </Card>
+
+        <Card>
+          <Flex direction="column" gap="4">
+            <Heading size="5">Change Password</Heading>
+            <Separator size="4" />
+            <ChangePasswordForm />
           </Flex>
         </Card>
 
