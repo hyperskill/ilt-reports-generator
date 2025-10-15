@@ -1,5 +1,94 @@
 # App Creation Log
 
+## 2025-10-15: Student Certificates Feature
+
+### Feature: Certificate Link Management for Students
+
+**Purpose**: Allow administrators to add, edit, and manage links to student certificates, making them accessible in student reports and shared reports.
+
+**Implementation**:
+
+1. **Database Layer** (`supabase/add-student-certificates.sql`):
+   - Created `student_certificates` table with columns:
+     - `id` (UUID, primary key)
+     - `report_id` (UUID, foreign key to reports)
+     - `user_id` (text, student identifier)
+     - `certificate_url` (text, certificate link)
+     - `created_at`, `updated_at` (timestamps)
+   - Unique constraint on `(report_id, user_id)` to ensure one certificate per student per report
+   - Row Level Security (RLS) policies:
+     - Admins: full access
+     - Managers/Students: read-only access to completed reports
+   - Indexes on `report_id` and `user_id` for performance
+
+2. **API Endpoints** (`app/api/student-certificates/route.ts`):
+   - `GET /api/student-certificates?reportId=X&userId=Y` - Get specific certificate
+   - `GET /api/student-certificates?reportId=X` - Get all certificates for a report
+   - `POST /api/student-certificates` - Create or update certificate (admin only)
+   - `DELETE /api/student-certificates?reportId=X&userId=Y` - Remove certificate (admin only)
+   - URL validation to ensure valid certificate links
+   - Admin-only write operations with role checking
+
+3. **Student Page Component** (`app/student/[userId]/StudentCertificateSection.tsx`):
+   - Displays certificate link after Individual Feedback section
+   - For non-admin users: Shows clickable certificate link if available
+   - For admin users: Full management interface with:
+     - Add/Edit certificate URL
+     - Remove certificate link
+     - URL validation
+     - Save/Cancel actions
+   - Automatic loading of existing certificates
+   - Error handling and user feedback
+
+4. **Report Management Page** (`app/reports/[id]/CertificatesManagement.tsx`):
+   - New "Certificates" tab in report settings
+   - Table view of all students with their certificate status
+   - Inline editing of certificate URLs
+   - Batch management of certificates for multiple students
+   - Features:
+     - Add/Edit certificate for each student
+     - Remove certificates
+     - Preview certificate links
+     - Real-time save/update
+   - Integrated into main report page with new tab
+
+5. **Shared Report Integration**:
+   - Added new block type `certificate` to `BlockType` in `lib/types.ts`
+   - Updated `BlockViewer.tsx` for viewing certificate blocks:
+     - Green-highlighted card with certificate icon
+     - Clickable link: "🎓 View Your Certificate →"
+     - Opens certificate in new tab
+   - Updated `BlockRenderer.tsx` for editing certificate blocks:
+     - Editable URL field
+     - Preview link
+     - Green-themed styling
+   - Updated `BLOCK_TYPES_GUIDE.md` documentation
+   - Modified `app/api/reports/shared/create/route.ts`:
+     - Fetches certificate URL when creating student shared report
+     - Passes certificate data to convertToBlocks function
+   - Modified `lib/utils/convert-blocks.ts`:
+     - Automatically adds certificate block if certificate URL exists
+     - Positioned as the last block in student shared reports (after "Next Steps")
+
+**User Interface**:
+- Student page: Certificate section appears after comments
+- Report page: Certificate management card in "Preview and Setup" tab with button to dedicated management page
+- Dedicated certificates page: `/reports/[id]/preview/certificates` - Full table interface for managing all student certificates
+- Shared reports: Certificate block automatically included at the end of student reports (can be edited like other blocks)
+
+**Access Control**:
+- Only admins can add/edit/remove certificate links
+- All authenticated users can view certificates in completed reports
+- Certificate links are visible in shared student reports
+
+**Benefits**:
+- Centralized certificate management
+- Easy distribution of certificates to students
+- Integration with existing report system
+- Maintains audit trail with timestamps
+
+---
+
 ## 2025-10-14: Group Module Analytics Fix
 
 ### Latest Update (Part 3): Fixed Meeting Attribution Logic in Module Analytics

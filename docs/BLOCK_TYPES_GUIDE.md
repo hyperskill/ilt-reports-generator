@@ -2,7 +2,7 @@
 
 ## Overview
 
-Shared reports support 5 types of content blocks that can be reordered and customized. This guide explains each block type and how they work.
+Shared reports support 7 types of content blocks that can be reordered and customized. This guide explains each block type and how they work.
 
 ---
 
@@ -224,6 +224,67 @@ Line charts displaying temporal data or cumulative curves.
 
 ---
 
+### 6. 🎓 Certificate Blocks
+
+**Type:** `certificate`  
+**Editable:** ✅ Yes  
+**Use case:** Student certificate links, achievement recognition
+
+Special blocks for displaying links to student certificates with visual distinction (green highlighting).
+
+**Features:**
+- Editable certificate URL
+- Styled with green background
+- Border accent for visibility
+- Clickable link with icon
+- Preview mode in editor
+
+**Example:**
+```json
+{
+  "id": "certificate-link",
+  "type": "certificate",
+  "title": "Certificate",
+  "content": "https://example.com/certificate/12345",
+  "order": 10
+}
+```
+
+**Usage:**
+- Managed from the Certificates tab in report settings
+- Automatically populated from certificate database
+- Can be manually edited in shared report constructor
+- Only visible if certificate URL is provided
+
+---
+
+### 7. 📝 Student Project Comment Blocks
+
+**Type:** `student-project-comment`  
+**Editable:** ✅ Yes  
+**Use case:** Student's own reflections on project work
+
+Special formatted blocks for student project comments with visual distinction (blue highlighting).
+
+**Features:**
+- Same editing capabilities as sections
+- Styled with blue background
+- Border accent for visibility
+- Separate from instructor comments
+
+**Example:**
+```json
+{
+  "id": "student-project-comment",
+  "type": "student-project-comment",
+  "title": "Project Reflection",
+  "content": "I found the machine learning project challenging but rewarding...",
+  "order": 5
+}
+```
+
+---
+
 ## Block Configuration
 
 ### Common Fields
@@ -324,7 +385,7 @@ Block badges show type for easy identification.
 ### Type Definitions
 
 ```typescript
-export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'comments';
+export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments' | 'student-project-comment' | 'certificate';
 
 export interface ReportBlock {
   id: string;
@@ -334,7 +395,7 @@ export interface ReportBlock {
   data?: any;
   config?: {
     columns?: string[];
-    chartType?: 'pie' | 'line';
+    chartType?: 'pie' | 'line' | 'bar';
     xField?: string;
     yField?: string;
     showLegend?: boolean;
@@ -450,5 +511,5 @@ Potential additions:
 
 ---
 
-**Last Updated:** 2025-10-08  
-**Version:** 2.0
+**Last Updated:** 2025-10-15  
+**Version:** 2.1

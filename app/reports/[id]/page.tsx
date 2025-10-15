@@ -259,6 +259,21 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
                     <Card>
                       <Flex justify="between" align="center" p="3">
                         <Box>
+                          <Text size="3" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>🎓 Student Certificates</Text>
+                          <Text size="2" color="gray" style={{ display: 'block' }}>Manage certificate links for all students</Text>
+                        </Box>
+                        <Button 
+                          variant="outline"
+                          onClick={() => router.push(`/reports/${params.id}/preview/certificates?tab=preview`)}
+                        >
+                          Manage Certificates
+                        </Button>
+                      </Flex>
+                    </Card>
+
+                    <Card>
+                      <Flex justify="between" align="center" p="3">
+                        <Box>
                           <Text size="3" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>🤖 LLM Report Generation</Text>
                           <Text size="2" color="gray" style={{ display: 'block' }}>Generate AI-powered manager and student reports</Text>
                         </Box>

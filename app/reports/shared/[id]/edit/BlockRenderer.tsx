@@ -78,6 +78,39 @@ export function BlockRenderer({ block, isEditing, onContentChange }: BlockRender
         </Card>
       );
 
+    case 'certificate':
+      return (
+        <Card style={{ backgroundColor: 'var(--green-2)', borderLeft: '4px solid var(--green-9)' }}>
+          <Box>
+            <Text size="2" weight="bold" mb="2" style={{ display: 'block' }}>🎓 Certificate URL:</Text>
+            <TextArea
+              value={block.content}
+              onChange={(e) => onContentChange(e.target.value)}
+              rows={2}
+              placeholder="https://example.com/certificate/..."
+              disabled={!isEditing}
+              style={{ backgroundColor: 'transparent' }}
+            />
+            {block.content && (
+              <Box mt="2">
+                <a 
+                  href={block.content}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'var(--accent-11)',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                  }}
+                >
+                  Preview: View Certificate →
+                </a>
+              </Box>
+            )}
+          </Box>
+        </Card>
+      );
+
     case 'table':
       return (
         <>

@@ -121,6 +121,34 @@ export function BlockViewer({ block }: BlockViewerProps) {
         </Card>
       );
 
+    case 'certificate':
+      return (
+        <Card style={{ backgroundColor: 'var(--green-2)', borderLeft: '4px solid var(--green-9)' }}>
+          <Box>
+            {block.content ? (
+              <a 
+                href={block.content}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: 'var(--accent-11)',
+                  textDecoration: 'none',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                🎓 View Your Certificate →
+              </a>
+            ) : (
+              <Text size="3" color="gray">Certificate URL not available</Text>
+            )}
+          </Box>
+        </Card>
+      );
+
     default:
       return <Text color="red">Unknown block type: {block.type}</Text>;
   }

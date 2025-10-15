@@ -144,6 +144,14 @@ export async function POST(request: Request) {
           .eq('user_id', userId)
           .single();
 
+        // Fetch student certificate
+        const { data: certificate } = await supabase
+          .from('student_certificates')
+          .select('certificate_url')
+          .eq('report_id', sourceReportId)
+          .eq('user_id', userId)
+          .single();
+
         processedData = {
           performance: studentPerformance,
           dynamics: studentDynamic,
@@ -152,6 +160,7 @@ export async function POST(request: Request) {
             ...studentFeedback,
             project_comment: studentFeedback?.project_comment || null,
           },
+          certificateUrl: certificate?.certificate_url || null,
           structure: baseReport.structure_data || [],
           submissions: baseReport.submissions_data || [],
           meetings: baseReport.meetings_data || [],

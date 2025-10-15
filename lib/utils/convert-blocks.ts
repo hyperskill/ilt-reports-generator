@@ -521,6 +521,17 @@ export async function convertToBlocks(
       content: content.nextSteps || '',
       order: order++,
     });
+
+    // 14. Certificate Link (last block)
+    if (reportData.certificateUrl) {
+      blocks.push({
+        id: 'certificate-link',
+        type: 'certificate',
+        title: 'Certificate',
+        content: reportData.certificateUrl,
+        order: order++,
+      });
+    }
   }
 
   return blocks;

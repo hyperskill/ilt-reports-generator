@@ -9,6 +9,7 @@ import { generateStudentReport } from '@/lib/processors/student-report-processor
 import { ModuleActivityChart } from '@/app/components/ModuleActivityChart';
 import { ModuleAnalytics } from '@/app/components/ModuleAnalytics';
 import { StudentCommentsSection } from './StudentCommentsSection';
+import { StudentCertificateSection } from './StudentCertificateSection';
 import { createClient } from '@/lib/supabase/client';
 import styles from './student.module.css';
 
@@ -666,6 +667,13 @@ export default function StudentDetailPage({ params }: PageProps) {
           userId={params.userId}
           isAdmin={isAdmin}
           onCommentsSaved={loadCommentsStatus}
+        />
+
+        {/* Certificate Section */}
+        <StudentCertificateSection
+          reportId={reportId}
+          userId={params.userId}
+          isAdmin={isAdmin}
         />
 
         {/* AI Report Link for Admins */}
