@@ -24,16 +24,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let query = supabase
-      .from('student_certificates')
-      .select('*')
-      .eq('report_id', reportId);
-
     // If userId is provided, get specific certificate
     if (userId) {
-      query = query.eq('user_id', userId).single();
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('student_certificates')
+        .select('*')
+        .eq('report_id', reportId)
+        .eq('user_id', userId)
+        .single();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error fetching certificate:', error);
@@ -43,7 +41,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ certificate: data || null });
     } else {
       // Get all certificates for the report
-      const { data, error } = await query.order('user_id');
+      const { data, error } = await supabase
+        .from('student_certificates')
+        .select('*')
+        .eq('report_id', reportId)
+        .order('user_id');
       
       if (error) {
         console.error('Error fetching certificates:', error);
