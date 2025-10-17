@@ -54,7 +54,7 @@ export async function convertToBlocks(
           chartType: 'pie',
           showLegend: true,
         },
-        helpText: '<p>This chart shows how your students are grouped based on their performance and engagement.</p><p><strong>What the colors mean:</strong></p><ul><li><strong>Leader engaged</strong> - Students doing great and participating actively</li><li><strong>Leader efficient</strong> - Top performers who work smart</li><li><strong>Balanced + engaged</strong> - Doing well and staying involved</li><li><strong>Balanced middle</strong> - Average performance</li><li><strong>Hardworking but struggling</strong> - Putting in effort but finding it challenging</li><li><strong>Low engagement</strong> - Students who need encouragement to participate</li></ul>',
+        helpText: '<p>This chart shows how your students are grouped based on their performance and engagement.</p><p><strong>Segment definitions (based on objective metrics):</strong></p><ul><li><strong>Leader engaged</strong> - Completion ≥80% + Meeting attendance ≥70% (shows both high performance and active participation in live sessions)</li><li><strong>Leader efficient</strong> - Completion ≥80% + Low attempts per task (≤3) + Regular work pattern (≥50% course days) (achieves top results efficiently without excessive effort)</li><li><strong>Balanced + engaged</strong> - Completion 30-80% + Meeting attendance ≥60% + Regular activity (≥40% course days) (solid performance with consistent participation)</li><li><strong>Balanced middle</strong> - Completion 30-80% (average performance, standard engagement)</li><li><strong>Hardworking but struggling</strong> - High effort (above-average submissions and active days) + High struggle score (many attempts per task + low success rate) (putting in effort but facing challenges)</li><li><strong>Low engagement</strong> - Completion <30% with very few submissions (<20) OR very low activity (below-average effort + irregular work pattern) (minimal participation or progress)</li></ul>',
         order: order++,
       });
 
@@ -64,7 +64,27 @@ export async function convertToBlocks(
         student_count: stats.count,
         percentage: `${((stats.count / reportData.performanceData.length) * 100).toFixed(1)}%`,
         avg_completion: `${stats.avgScore.toFixed(1)}%`,
-      })).sort((a, b) => b.student_count - a.student_count);
+      })).sort((a, b) => {
+        // Custom sort: Leader first, then Balanced, then others
+        const getSegmentPriority = (seg: string): number => {
+          const segLower = seg.toLowerCase();
+          if (segLower.includes('leader')) return 1;
+          if (segLower.includes('balanced')) return 2;
+          if (segLower.includes('low')) return 3;
+          if (segLower.includes('hardworking')) return 4;
+          return 5;
+        };
+        
+        const priorityA = getSegmentPriority(a.segment);
+        const priorityB = getSegmentPriority(b.segment);
+        
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        
+        // Within same priority, sort by segment name alphabetically
+        return a.segment.localeCompare(b.segment);
+      });
 
       blocks.push({
         id: 'segment-statistics',
@@ -75,7 +95,7 @@ export async function convertToBlocks(
         config: {
           columns: ['segment', 'student_count', 'percentage', 'avg_completion'],
         },
-        helpText: '<p>This table breaks down each student group in detail.</p><p><strong>What each column shows:</strong></p><ul><li><strong>Segment</strong> - The group name</li><li><strong>Student Count</strong> - How many students are in this group</li><li><strong>Percentage</strong> - What portion of your class this represents</li><li><strong>Avg Completion</strong> - How much of the course these students completed on average</li></ul>',
+        helpText: '<p>This table breaks down each student group with detailed statistics.</p><p><strong>What each column shows:</strong></p><ul><li><strong>Segment</strong> - Group classification based on completion rate, meeting attendance, work efficiency (attempts per task), and activity patterns</li><li><strong>Student Count</strong> - Number of students in this segment</li><li><strong>Percentage</strong> - Proportion of total class in this segment</li><li><strong>Avg Completion</strong> - Average course completion percentage for students in this segment</li></ul><p><strong>Key metrics used for segmentation:</strong></p><ul><li>Completion rate (% of course finished)</li><li>Meeting attendance (% of live sessions attended)</li><li>Effort index (based on total submissions and active days)</li><li>Consistency index (% of course days active)</li><li>Struggle index (attempts per task vs. success rate)</li></ul>',
         order: order++,
       });
     }

@@ -1,5 +1,93 @@
 # App Creation Log
 
+## 2025-10-17: Enhanced Manager Report Prompt - All Projects Mention
+
+### Change: Improved Expert Observations & Project Highlights Section
+
+**Purpose**: Ensure that ALL student projects are mentioned in the manager report, making every team member feel valued and giving managers complete visibility into their team's work.
+
+**Implementation**:
+- Modified `app/api/llm/generate-manager-report/route.ts`:
+  - Updated system prompt for "Expert Observations & Project Highlights" section (lines 246-255)
+  - Changed paragraph count from (2-3) to (3-5) to accommodate more projects
+  - Added explicit rule: **"IMPORTANT: You must mention ALL student projects from the group"**
+  - Provided guidance for organizing many projects (5+):
+    - Group similar projects together
+    - Highlight standout projects with more detail
+    - Use final paragraph to acknowledge remaining projects
+    - Ensure every student's project is mentioned by name
+  - Emphasized making managers feel that each team member's contribution is valued
+
+**Impact**:
+- ✅ Every student's project will be mentioned in manager reports
+- ✅ Better structure for reports with many projects (3-5 paragraphs)
+- ✅ Managers get complete visibility of team's practical work
+- ✅ All team members feel recognized and valued
+- ✅ More actionable insights for business stakeholders
+
+**Files Modified**:
+- `app/api/llm/generate-manager-report/route.ts` - Enhanced system prompt
+
+---
+
+## 2025-10-17: Hide Student Project Comments from Shared Reports List
+
+### Change: Remove Student Project Comment Display
+
+**Purpose**: Hide "Student Project Comment" blocks from the shared reports list on the `/reports/[id]/shared` page (constructor tab).
+
+**Implementation**:
+- Modified `app/reports/[id]/shared/page.tsx`:
+  - Removed rendering of project_comment Card in the shared reports table (lines 768-774)
+  - Card displayed student project comments in yellow box below report title/description
+  - Comments remain stored in database and accessible through other views
+
+**Result**: Student project comments are no longer visible in the shared reports list table, making the interface cleaner while preserving the data.
+
+**Files Modified**:
+- `app/reports/[id]/shared/page.tsx` - Removed project_comment Card from table display
+
+---
+
+## 2025-10-17: Segmentation Statistics Sorting & Help Text Updates
+
+### Change 1: Custom Sorting for Segmentation Statistics Table
+
+**Purpose**: Improve readability of shared report view by sorting segments in a meaningful order (Leader → Balanced → Low/Others) instead of by student count.
+
+**Implementation**:
+- Modified `lib/utils/convert-blocks.ts` line 67
+- Changed sorting logic for `segmentTableData` from count-based to priority-based
+- New sort order:
+  1. Leader segments (all segments containing "leader")
+  2. Balanced segments (all segments containing "balanced")
+  3. Low engagement segments (all segments containing "low")
+  4. Hardworking segments (all segments containing "hardworking")
+  5. Others
+- Within each priority group, segments are sorted alphabetically
+- Affects manager reports in shared report view (`/reports/shared/[id]/view`)
+
+### Change 2: Enhanced Segment Descriptions with Objective Metrics
+
+**Purpose**: Make segment definitions clearer by showing exact metrics and thresholds used for classification, removing ambiguity about how students are categorized.
+
+**Implementation**:
+- Updated helpText for "Student Segmentation Distribution" pie chart (line 57)
+- Updated helpText for "Segmentation Statistics" table (line 98)
+- New descriptions explain exact criteria:
+  - **Leader engaged**: Completion ≥80% + Meeting attendance ≥70%
+  - **Leader efficient**: Completion ≥80% + Attempts per task ≤3 + Consistency ≥50%
+  - **Balanced + engaged**: Completion 30-80% + Meeting attendance ≥60% + Consistency ≥40%
+  - **Balanced middle**: Completion 30-80%
+  - **Hardworking but struggling**: High effort + High struggle score (many attempts + low success rate)
+  - **Low engagement**: Completion <30% with <20 submissions OR very low activity
+- Added explanation of key metrics: completion rate, meeting attendance, effort index, consistency index, struggle index
+
+**Files Modified**:
+- `lib/utils/convert-blocks.ts` - Updated helpText for segment distribution chart and statistics table
+
+---
+
 ## 2025-10-15: Student Certificates Feature
 
 ### Feature: Certificate Link Management for Students

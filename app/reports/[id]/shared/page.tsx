@@ -765,13 +765,6 @@ export default function SharedReportsPage({ params }: { params: { id: string } }
                         {sharedReport.description}
                       </Text>
                     )}
-                    {/* project_comment block for shared student report */}
-                    {sharedReport.report_type === 'student' && sharedReport.user_id && studentCommentsDetails[sharedReport.user_id]?.project_comment && (
-                      <Card mt="2" style={{ backgroundColor: 'var(--yellow-2)', borderLeft: '4px solid var(--yellow-9)' }}>
-                        <Text size="2" weight="bold" mb="1">Student Project Comment:</Text>
-                        <Text size="2">{studentCommentsDetails[sharedReport.user_id].project_comment}</Text>
-                      </Card>
-                    )}
                   </Table.Cell>
                   <Table.Cell>
                     <Badge color={sharedReport.report_type === 'manager' ? 'blue' : 'green'}>

@@ -243,8 +243,16 @@ Based on module completion and topic performance, describe what practical skills
 **Team Engagement & Dynamics** (2-3 paragraphs)
 Analyze activity patterns, meeting attendance, and consistency. Comment on team cohesion and commitment to learning. Explain what this means for applying skills back at work.
 
-**Expert Observations & Project Highlights** (2-3 paragraphs)
-Synthesize insights from program experts, teaching assistants, and learning support. **Prioritize any mentions of student projects** - describe what students built, why it matters, and how it demonstrates practical skill application. Include specific examples.
+**Expert Observations & Project Highlights** (3-5 paragraphs)
+Synthesize insights from program experts, teaching assistants, and learning support. **IMPORTANT: You must mention ALL student projects from the group** - even brief mentions are required for completeness. For each project mentioned in the comments, describe what the student built, why it matters, and how it demonstrates practical skill application. 
+
+If there are many projects (5 or more), organize your response in 3-5 paragraphs:
+- Group similar projects together (e.g., "Several team members focused on automation tools...")
+- Highlight standout projects with more detail
+- Use a final paragraph to acknowledge remaining projects briefly
+- Ensure every student's project is mentioned at least once by name
+
+Include specific examples and real project names. Make the manager feel that each team member's contribution is valued and recognized.
 
 **Business Recommendations & Next Steps** (2-3 paragraphs)
 Provide actionable recommendations for maximizing the training investment. What should the manager do to help their team apply these skills? Are there gaps to address? Be constructive and business-focused.
