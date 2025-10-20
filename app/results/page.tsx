@@ -10,7 +10,7 @@ import { CommentsSection } from './CommentsSection';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ResultsPage() {
-  const { results, currentMode, setCurrentMode, currentReportId } = useAppContext();
+  const { results, currentMode, setCurrentMode, currentReportId, files } = useAppContext();
   const [isAdmin, setIsAdmin] = useState(false);
   const [reportComments, setReportComments] = useState<any>(null);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -112,6 +112,10 @@ export default function ResultsPage() {
             <DynamicResults 
               summary={results.dynamicData}
               series={results.dynamicSeries}
+              submissions={files.submissions?.data}
+              structure={files.structure?.data}
+              courseId={files.structure?.data?.[0]?.course_id || files.structure?.data?.[0]?.courseid}
+              meetings={files.meetings?.data}
             />
           </Tabs.Content>
         </Box>

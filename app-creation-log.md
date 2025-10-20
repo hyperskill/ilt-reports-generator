@@ -1,5 +1,90 @@
 # App Creation Log
 
+## 2025-10-20: Fix Meeting Dates Display in Module Analytics
+
+### Change: Show Actual Meeting Dates Instead of Activity Dates
+
+**Problem**: In the Module Progress table, the dates shown under "Meetings" column were the student's first and last **submission activity dates** (e.g., Oct 4 - Oct 5), not the actual **meeting dates** attended (e.g., Sep 3, Sep 10, Oct 1, Oct 8).
+
+**Root Cause**: The `ModuleAnalytics` component was displaying `first_activity_date` and `last_activity_date` from module stats, which represent when the student worked on the module, not when they attended meetings.
+
+**Solution**: 
+1. Added `meeting_dates` field to `ModuleStats` interface to store actual meeting dates
+2. Modified `processModuleAnalytics()` to track and return the actual dates of meetings attended for each module
+3. Updated `ModuleAnalytics` component to display the real meeting dates instead of activity dates
+
+**Implementation**:
+- **`lib/processors/module-analytics.ts`**:
+  - Added `meeting_dates?: Date[]` to `ModuleStats` interface (line 21)
+  - Modified meeting distribution logic to store actual meeting dates for each module (lines 224-280)
+  - Tracks which meetings have been assigned to previous modules to avoid duplication
+  - For last module, includes post-activity meetings
+  
+- **`app/components/ModuleAnalytics.tsx`**:
+  - Changed meeting date display to use `module.meeting_dates` instead of `first_activity_date/last_activity_date` (lines 177-184)
+  - Shows single date if only one meeting, or date range (first - last) if multiple meetings
+
+**Impact**:
+- ✅ Meeting dates now show **actual meeting attendance dates** (e.g., "Sep 3 - Oct 8")
+- ✅ More accurate representation of when student participated in meetings
+- ✅ Eliminates confusion between learning activity period and meeting attendance
+- ✅ Easier to verify meeting attendance against calendar
+
+**Example**: Student attended meetings on Sep 3, Sep 10, Oct 1, Oct 8 during "Agents" module - now shows "Sep 3 - Oct 8" instead of "Oct 4 - Oct 5" (their submission activity dates).
+
+**Files Modified**:
+- `lib/processors/module-analytics.ts` - Added meeting_dates tracking
+- `app/components/ModuleAnalytics.tsx` - Updated date display logic
+
+---
+
+## 2025-10-20: Fix Meeting Attribution for Last Module
+
+### Change: Include Post-Activity Meetings in Last Module
+
+**Problem**: Meetings that occurred after the student's last submission activity (e.g., final wrap-up meetings, demo sessions) were not displayed on the module activity chart. For example, a student's last activity was on October 13, but they attended a course wrap-up meeting on October 15 - this meeting was not shown on the chart.
+
+**Root Cause**: The algorithm only counted meetings that occurred **during** the active period of each module (from first to last submission). Meetings after all activity ended were not assigned to any module.
+
+**Solution**: Modified the meeting distribution logic in `processModuleAnalytics()` to assign post-activity meetings to the last module:
+- The algorithm still distributes meetings chronologically across modules based on activity periods
+- For the **last module only**, any meetings that occurred after the module's last activity date are now included
+- This captures final course events like wrap-up meetings, demos, and presentations
+
+**Implementation**:
+- Modified `lib/processors/module-analytics.ts`:
+  - Added `isLastModule` flag in the distribution loop (line 227)
+  - Added conditional logic for last module (lines 246-257)
+  - Counts and adds remaining meetings that occurred after `last_activity_date`
+  - These "hanging" meetings are now attributed to the final module
+
+**Additional Fix - Missing Meetings Data in Current Session**:
+- Fixed `app/results/page.tsx` to pass meetings, submissions, and structure data to `DynamicResults`
+- Now the module activity charts work correctly in both saved reports AND current session
+- Added `files` from context to access uploaded meetings data
+
+**Impact**:
+- ✅ Final wrap-up meetings now appear on student activity charts
+- ✅ More accurate representation of student engagement throughout the entire course
+- ✅ Captures attendance at course conclusion events (demos, presentations, etc.)
+- ✅ Better visibility into student participation beyond just submission activity
+- ✅ Works for ALL students (not just individual pages)
+- ✅ Works in BOTH saved reports AND current analysis session
+- ✅ Works in shared reports (through saved report data)
+
+**Coverage Verified**:
+1. ✅ Individual student pages (`/student/[userId]`) - uses savedReportData.meetings_data or files.meetings
+2. ✅ Dynamic results for all students (`/results` and `/reports/[id]/preview/dynamic`) - now passes meetings data
+3. ✅ Shared reports - uses saved meetings_data from database
+
+**Example**: Student with last submission on Oct 13 attending wrap-up meeting on Oct 15 - the meeting now shows in the "Final" module bar on the chart across all views.
+
+**Files Modified**:
+- `lib/processors/module-analytics.ts` - Enhanced meeting distribution algorithm
+- `app/results/page.tsx` - Added meetings data propagation to DynamicResults
+
+---
+
 ## 2025-10-17: Enhanced Manager Report Prompt - All Projects Mention
 
 ### Change: Improved Expert Observations & Project Highlights Section

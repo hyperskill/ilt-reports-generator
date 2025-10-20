@@ -18,6 +18,7 @@ export interface ModuleStats {
   meetings_attended: number;
   first_activity_date?: string;
   last_activity_date?: string;
+  meeting_dates?: Date[]; // Array of actual meeting dates attended for this module
 }
 
 interface SubmissionRow {
@@ -220,33 +221,62 @@ export function processModuleAnalytics(
   // For each module, count meetings that happened up to the end of that module
   // and subtract meetings counted in previous modules
   let previousMeetingsCount = 0;
+  const previousMeetingDates: Date[] = [];
   const results: ModuleStats[] = [];
 
-  for (const moduleResult of tempResults) {
+  for (let i = 0; i < tempResults.length; i++) {
+    const moduleResult = tempResults[i];
+    const isLastModule = i === tempResults.length - 1;
     let meetingsAttended = 0;
+    const moduleMeetingDates: Date[] = [];
 
     if (moduleResult.last_activity_date) {
       const lastDate = new Date(moduleResult.last_activity_date);
       lastDate.setHours(23, 59, 59, 999);
       
-      // Count all meetings up to end of this module
-      const totalMeetingsUpToNow = meetingDates.filter(m => {
+      // Get all meetings up to end of this module
+      const meetingsUpToNow = meetingDates.filter(m => {
         if (!m.attended) return false;
         const meetingDate = new Date(m.date);
         meetingDate.setHours(0, 0, 0, 0);
         return meetingDate <= lastDate;
-      }).length;
+      });
       
-      // This module's meetings = total up to now - previous modules' meetings
-      meetingsAttended = totalMeetingsUpToNow - previousMeetingsCount;
-      previousMeetingsCount = totalMeetingsUpToNow;
+      // This module's meetings = meetings up to now - meetings from previous modules
+      const newMeetings = meetingsUpToNow.filter(m => {
+        return !previousMeetingDates.some(prevDate => 
+          prevDate.getTime() === m.date.getTime()
+        );
+      });
+      
+      moduleMeetingDates.push(...newMeetings.map(m => m.date));
+      meetingsAttended = newMeetings.length;
+      
+      // Update tracking
+      previousMeetingsCount += meetingsAttended;
+      previousMeetingDates.push(...moduleMeetingDates);
+      
+      // For the last module, also add any remaining meetings that happened after all activity
+      // (e.g., final wrap-up meetings, demos, etc.)
+      if (isLastModule) {
+        const remainingMeetings = meetingDates.filter(m => {
+          if (!m.attended) return false;
+          const meetingDate = new Date(m.date);
+          meetingDate.setHours(0, 0, 0, 0);
+          return meetingDate > lastDate;
+        });
+        
+        moduleMeetingDates.push(...remainingMeetings.map(m => m.date));
+        meetingsAttended += remainingMeetings.length;
+      }
     }
 
-    // Remove firstTimestamp field and add meetings count
+    // Remove firstTimestamp field and add meetings count and dates
     const { firstTimestamp, ...finalResult } = moduleResult;
     results.push({
       ...finalResult,
       meetings_attended: meetingsAttended,
+      meeting_dates: moduleMeetingDates.length > 0 ? moduleMeetingDates : undefined,
     });
   }
 

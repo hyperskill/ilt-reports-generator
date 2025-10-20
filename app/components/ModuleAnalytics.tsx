@@ -174,9 +174,12 @@ export function ModuleAnalytics({ userId, submissions, structure, courseId, meet
                     <Badge color={module.meetings_attended > 0 ? 'purple' : 'gray'} size="2">
                       {module.meetings_attended}
                     </Badge>
-                    {module.first_activity_date && module.last_activity_date && (
+                    {module.meeting_dates && module.meeting_dates.length > 0 && (
                       <Text size="1" color="gray">
-                        {new Date(module.first_activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(module.last_activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {module.meeting_dates.length === 1 
+                          ? new Date(module.meeting_dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : `${new Date(module.meeting_dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(module.meeting_dates[module.meeting_dates.length - 1]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                        }
                       </Text>
                     )}
                   </Flex>
