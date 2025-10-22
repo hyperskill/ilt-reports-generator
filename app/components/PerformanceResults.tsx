@@ -66,21 +66,20 @@ export function PerformanceResults({ data, reportId }: Props) {
   };
 
   const getSegmentColor = (segment: string): any => {
-    if (segment.includes('Leader')) return 'green';
-    if (segment.includes('Low engagement')) return 'red';
-    if (segment.includes('Hardworking')) return 'orange';
+    if (segment.includes('Highly')) return 'green';
+    if (segment.includes('Low participation')) return 'red';
+    if (segment.includes('effortful')) return 'orange';
     if (segment.includes('engaged')) return 'blue';
     return 'gray';
   };
 
   const getSegmentChartColor = (segment: string): string => {
-    if (segment.includes('Leader engaged')) return '#22c55e'; // green-500
-    if (segment.includes('Leader efficient')) return '#16a34a'; // green-600
-    if (segment.includes('Balanced + engaged')) return '#3b82f6'; // blue-500
-    if (segment.includes('Low engagement but socially active')) return '#ef4444'; // red-500
-    if (segment.includes('Hardworking but struggling')) return '#f97316'; // orange-500
-    if (segment.includes('Low engagement')) return '#dc2626'; // red-600
-    return '#6b7280'; // gray-500 for Balanced middle
+    if (segment.includes('Highly engaged')) return '#22c55e';
+    if (segment.includes('Highly efficient')) return '#16a34a';
+    if (segment.includes('Moderately engaged')) return '#3b82f6';
+    if (segment.includes('Highly effortful')) return '#f97316';
+    if (segment.includes('Low participation')) return '#dc2626';
+    return '#6b7280';
   };
 
   // Prepare pie chart data
@@ -257,27 +256,27 @@ export function PerformanceResults({ data, reportId }: Props) {
                   <Text size="2" weight="bold" mb="2" as="div">Student Groups (Segments):</Text>
                   <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="green">🏆 Leader engaged</Text><br/>
+                      <Text weight="bold" color="green">🏆 Highly engaged</Text><br/>
                       Leaders active in meetings: Score ≥80% AND meeting attendance ≥70%
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="green">⚡ Leader efficient</Text><br/>
+                      <Text weight="bold" color="green">⚡ Highly efficient</Text><br/>
                       Efficient leaders: Score ≥80% AND few retry attempts (≤3) AND regular study
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="blue">👥 Balanced + engaged</Text><br/>
+                      <Text weight="bold" color="blue">👥 Moderately engaged</Text><br/>
                       Average level, active: Score 30-80% AND attend meetings (≥60%) AND consistency ≥0.4
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="orange">💪 Hardworking but struggling</Text><br/>
+                      <Text weight="bold" color="orange">💪 Highly effortful</Text><br/>
                       Trying hard but with difficulties: High effort AND struggle index ≥0.6
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="red">😴 Low engagement</Text><br/>
+                      <Text weight="bold" color="red">😴 Low participation</Text><br/>
                       Low involvement: Few attempts (&lt;20) OR very low activity
                     </Text>
                     <Text as="p" mb="1">
-                      <Text weight="bold" color="gray">📊 Balanced middle</Text><br/>
+                      <Text weight="bold" color="gray">📊 Moderately performing</Text><br/>
                       Average level: All other students
                     </Text>
                   </Box>

@@ -54,7 +54,7 @@ export async function convertToBlocks(
           chartType: 'pie',
           showLegend: true,
         },
-        helpText: '<p>This chart shows how your students are grouped based on their performance and engagement.</p><p><strong>Segment definitions (based on objective metrics):</strong></p><ul><li><strong>Leader engaged</strong> - Completion ≥80% + Meeting attendance ≥70% (shows both high performance and active participation in live sessions)</li><li><strong>Leader efficient</strong> - Completion ≥80% + Low attempts per task (≤3) + Regular work pattern (≥50% course days) (achieves top results efficiently without excessive effort)</li><li><strong>Balanced + engaged</strong> - Completion 30-80% + Meeting attendance ≥60% + Regular activity (≥40% course days) (solid performance with consistent participation)</li><li><strong>Balanced middle</strong> - Completion 30-80% (average performance, standard engagement)</li><li><strong>Hardworking but struggling</strong> - High effort (above-average submissions and active days) + High struggle score (many attempts per task + low success rate) (putting in effort but facing challenges)</li><li><strong>Low engagement</strong> - Completion <30% with very few submissions (<20) OR very low activity (below-average effort + irregular work pattern) (minimal participation or progress)</li></ul>',
+        helpText: '<p>This chart shows how your students are grouped based on their performance and engagement.</p><p><strong>Segment definitions (based on objective metrics):</strong></p><ul><li><strong>Highly engaged</strong> - Completion ≥80% + Meeting attendance ≥70% (shows both high performance and active participation in live sessions)</li><li><strong>Highly efficient</strong> - Completion ≥80% + Low attempts per task (≤3) + Regular work pattern (≥50% course days) (achieves top results efficiently without excessive effort)</li><li><strong>Moderately engaged</strong> - Completion 30-80% + Meeting attendance ≥60% + Regular activity (≥40% course days) (solid performance with consistent participation)</li><li><strong>Moderately performing</strong> - Completion 30-80% (average performance, standard engagement)</li><li><strong>Highly effortful</strong> - High effort (above-average submissions and active days) + High struggle score (many attempts per task + low success rate) (putting in effort but facing challenges)</li><li><strong>Low participation</strong> - Completion <30% with very few submissions (<20) OR very low activity (below-average effort + irregular work pattern) (minimal participation or progress)</li></ul>',
         order: order++,
       });
 
@@ -108,7 +108,9 @@ export async function convertToBlocks(
           name: s.name,
           completion: `${s.total_pct.toFixed(1)}%`,
           success_rate: `${s.success_rate.toFixed(1)}%`,
-          meetings: `${s.meetings_attended || 0}/${s.meetings_attended_pct?.toFixed(0) || 0}%`,
+          meetings: s.total_meetings > 0 
+            ? `${s.meetings_attended || 0}/${s.total_meetings} (${s.meetings_attended_pct?.toFixed(0) || 0}%)`
+            : `${s.meetings_attended || 0}/${s.meetings_attended_pct?.toFixed(0) || 0}%`,
           segment: s.simple_segment,
         }));
 

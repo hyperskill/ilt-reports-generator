@@ -48,6 +48,7 @@ export interface PerformanceRow {
   struggle_index: number;
   meetings_attended: number;
   meetings_attended_pct: number;
+  total_meetings: number;
   simple_segment: string;
 }
 
