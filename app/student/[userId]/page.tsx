@@ -212,9 +212,9 @@ export default function StudentDetailPage({ params }: PageProps) {
   }
 
   const getSegmentColor = (segment: string): any => {
-    if (segment.includes('Leader')) return 'green';
-    if (segment.includes('Low engagement')) return 'red';
-    if (segment.includes('Hardworking')) return 'orange';
+    if (segment.includes('Highly')) return 'green';
+    if (segment.includes('Low participation')) return 'red';
+    if (segment.includes('effortful')) return 'orange';
     if (segment.includes('engaged')) return 'blue';
     return 'gray';
   };

@@ -150,9 +150,9 @@ export default function SharedReportViewPage() {
               </Flex>
               <Heading size="8" mb="2">{report.title}</Heading>
               {report.description && (
-                <Text size="3" color="gray">{report.description}</Text>
+                <Text size="3" color="gray" style={{ display: 'block', marginBottom: '8px' }}>{report.description}</Text>
               )}
-              <Text size="1" color="gray" mt="2">
+              <Text size="1" color="gray" style={{ display: 'block' }}>
                 Created: {new Date(report.created_at).toLocaleDateString()}
                 {report.updated_at !== report.created_at && (
                   <> • Updated: {new Date(report.updated_at).toLocaleDateString()}</>

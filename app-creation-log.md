@@ -1,5 +1,167 @@
 # App Creation Log
 
+## 2025-10-22: Improve Meetings Display Format in Reports
+
+### Change: Show Total Meetings Count in Addition to Percentage
+
+**Problem**: In the "Student Performance Overview" table, the meetings column showed "3/60%" which was confusing - it displayed attended meetings and percentage, but not the total number of meetings available.
+
+**Solution**: Changed format to "3/5 (60%)" where:
+- 3 = meetings attended
+- 5 = total meetings available
+- 60% = attendance percentage
+
+**Implementation**:
+- **`lib/types.ts`**: Added `total_meetings` field to `PerformanceRow` interface
+- **`lib/processors/performance-processor.ts`**: 
+  - Extracted `totalMeetings` from `meetingData.total`
+  - Added `total_meetings` to results
+- **`lib/utils/convert-blocks.ts`**: 
+  - Updated meetings column format from `"3/60%"` to `"3/5 (60%)"`
+  - Falls back to old format if total_meetings is 0
+
+**Impact**:
+- ✅ More intuitive meetings display
+- ✅ Shows both absolute numbers (3 out of 5) and percentage (60%)
+- ✅ Easier to understand meeting attendance context
+- ✅ Applies to all shared manager reports
+- ✅ **Automatically converts old format in existing reports** - no need to recreate reports!
+
+**Backward Compatibility**:
+- Added format conversion in `BlockViewer` and `BlockRenderer` components
+- Old format "3/60%" is automatically detected and converted to "3/5 (60%)"
+- Formula: total = attended / (percentage / 100)
+- Works for all existing reports without database migration
+
+**Files Modified**:
+- `lib/types.ts` - Added total_meetings field
+- `lib/processors/performance-processor.ts` - Extract and store total meetings count
+- `lib/utils/convert-blocks.ts` - Updated display format for new reports
+- `app/reports/shared/[id]/view/BlockViewer.tsx` - Added old format conversion
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Added old format conversion
+
+---
+
+## 2025-10-22: Update Segment Colors and Legend Order in Charts
+
+### Change: Improve Visual Consistency in Pie Charts
+
+**Problem**: 
+1. "Moderately performing" segment used gray color instead of light green
+2. "Low participation" appeared in random order in chart legend instead of at the bottom
+
+**Solution**:
+1. Changed "Moderately performing" color from gray to light green (rgba(134, 239, 172, 0.8))
+2. Added sorting logic to always display segments in consistent order with "Low participation" last
+
+**Implementation**:
+- **`app/reports/shared/[id]/view/BlockViewer.tsx`**: 
+  - Updated color logic for "Moderately performing" segments
+  - Added `getSegmentSortOrder()` function to sort labels before rendering
+  - Segments now always appear in order: Highly efficient → Highly engaged → Moderately engaged → Moderately performing → Highly effortful → Low participation
+
+- **`app/reports/shared/[id]/edit/BlockRenderer.tsx`**: 
+  - Applied same color and sorting changes for edit view
+
+**Impact**:
+- ✅ "Moderately performing" now shows in light green/mint (more positive visual)
+- ✅ Chart legends display in consistent, logical order
+- ✅ "Low participation" always appears at bottom of legend
+- ✅ Better visual hierarchy in reports
+- ✅ Table badges now show correct colors: green for "Highly" segments, mint for "Moderately performing", orange for "Highly effortful", red for "Low participation"
+
+**Color Scheme (Chart and Badges now match exactly)**:
+- **Highly efficient/engaged**: rgba(34, 197, 94) - Green
+- **Moderately engaged**: rgba(59, 130, 246) - Blue
+- **Moderately performing**: rgba(134, 239, 172) - Light Green
+- **Highly effortful**: rgba(249, 115, 22) - Orange
+- **Low participation**: rgba(239, 68, 68) - Red
+
+**Technical Details**:
+- Added comprehensive `getBadgeStyle()` function for ALL segment types
+- Chart uses opacity 0.8, badges use opacity 0.15 for background (better readability)
+- All badges now use exact same RGB values as pie chart slices
+- Complete visual consistency between charts and table badges
+
+**Files Modified**:
+- `app/reports/shared/[id]/view/BlockViewer.tsx` - Updated colors, sorting, and table badge colors
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Updated colors, sorting, and table badge colors
+
+---
+
+## 2025-10-22: Rename Student Segments for Better Clarity
+
+### Change: Update Segment Names Throughout the Application
+
+**Problem**: The original segment names were not intuitive and could be confusing for users reading reports.
+
+**Solution**: Renamed all student segments to more descriptive names:
+- "Leader engaged" → "Highly engaged"
+- "Leader efficient" → "Highly efficient"
+- "Balanced + engaged" → "Moderately engaged"
+- "Balanced middle" → "Moderately performing"
+- "Hardworking but struggling" → "Highly effortful"
+- "Low engagement" → "Low participation"
+
+**Implementation**:
+- **`lib/processors/performance-processor.ts`**: Updated segment assignment logic
+- **`app/components/PerformanceResults.tsx`**: Updated color mapping and legend
+- **`app/components/TableLegend.tsx`**: Updated legend descriptions
+- **`app/reports/[id]/preview/students/page.tsx`**: Updated color mapping
+- **`app/student/[userId]/page.tsx`**: Updated color mapping
+- **`lib/utils/convert-blocks.ts`**: Updated help text for shared reports
+- **`app/reports/shared/[id]/view/BlockViewer.tsx`**: Updated badge and chart colors
+
+**Impact**:
+- ✅ Consistent segment naming across all reports
+- ✅ More intuitive names that better describe student behavior
+- ✅ Updated in performance segmentation, shared reports, and LLM reports
+- ✅ All color coding remains consistent with new names
+
+**Files Modified**:
+- 8 TypeScript/TSX files updated with new segment names
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Added to fix shared report edit view
+
+**Database Migration**:
+- Created `supabase/migrate-segment-names-simple.sql` to update existing shared reports in database
+- This migration uses text replacement to update segment names in all JSONB blocks stored in shared_reports table
+
+**Note**: Existing shared reports in the database still contain old segment names. To update them:
+1. Run the migration script: `supabase/migrate-segment-names-simple.sql`
+2. Or recreate shared reports - new ones will automatically use new segment names
+
+---
+
+## 2025-10-22: Fix Report Description and Date Display Overlap
+
+### Change: Add Proper Line Breaks Between Description and Dates
+
+**Problem**: On the shared manager report preview page, the report description and creation/update dates were displayed on the same line, causing text to overlap and making it difficult to read. Example: "...value these employees can bring to the business after the training.Created: 20.10.2025 • Updated: 21.10.2025" (all on one line).
+
+**Root Cause**: The `Text` components for description and dates in the shared report view were inline elements without explicit block-level styling, causing them to flow together on the same line.
+
+**Solution**: 
+1. Added `display: 'block'` style to description Text component to ensure it takes full width
+2. Added `marginBottom: '8px'` to description for visual spacing
+3. Added `display: 'block'` style to dates Text component to force it onto a new line
+4. Removed `mt="2"` prop since we're using inline styles now
+
+**Implementation**:
+- **`app/reports/shared/[id]/view/page.tsx`** (lines 152-155):
+  - Changed description: `<Text size="3" color="gray" style={{ display: 'block', marginBottom: '8px' }}>`
+  - Changed dates: `<Text size="1" color="gray" style={{ display: 'block' }}>`
+
+**Impact**:
+- ✅ Description text appears on its own line(s)
+- ✅ Creation/update dates appear on a separate line below
+- ✅ Proper visual spacing between description and metadata
+- ✅ Improved readability of shared report preview
+
+**Files Modified**:
+- `app/reports/shared/[id]/view/page.tsx` - Fixed description and dates display
+
+---
+
 ## 2025-10-20: Fix Meeting Dates Display in Module Analytics
 
 ### Change: Show Actual Meeting Dates Instead of Activity Dates

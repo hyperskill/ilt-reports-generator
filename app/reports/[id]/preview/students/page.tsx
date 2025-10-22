@@ -12,18 +12,17 @@ export default function StudentsPreviewPage({ params }: { params: { id: string }
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<any>(null);
 
-  // Helper function to get segment color
   const getSegmentColor = (segment: string) => {
     switch (segment) {
-      case 'Leader engaged':
-      case 'Leader efficient':
+      case 'Highly engaged':
+      case 'Highly efficient':
         return 'green';
-      case 'Balanced + engaged':
-      case 'Balanced middle':
+      case 'Moderately engaged':
+      case 'Moderately performing':
         return 'blue';
-      case 'Hardworking but struggling':
+      case 'Highly effortful':
         return 'orange';
-      case 'Low engagement':
+      case 'Low participation':
         return 'red';
       default:
         return 'gray';

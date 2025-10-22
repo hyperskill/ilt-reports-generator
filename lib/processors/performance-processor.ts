@@ -217,11 +217,11 @@ export function processPerformanceSegmentation({
     }
     const struggleIndex = Number(struggleScore.toFixed(3));
 
-    // Meetings
     const meetingData = meetingStats.get(userId);
     const meetingsAttended = meetingData?.attended || 0;
-    const meetingsAttendedPct = meetingData?.total 
-      ? Number((meetingsAttended / meetingData.total * 100).toFixed(1))
+    const totalMeetings = meetingData?.total || 0;
+    const meetingsAttendedPct = totalMeetings 
+      ? Number((meetingsAttended / totalMeetings * 100).toFixed(1))
       : 0;
 
     // Segment classification
@@ -254,6 +254,7 @@ export function processPerformanceSegmentation({
       struggle_index: struggleIndex,
       meetings_attended: meetingsAttended,
       meetings_attended_pct: meetingsAttendedPct,
+      total_meetings: totalMeetings,
       simple_segment: segment,
     });
   }
@@ -287,39 +288,31 @@ function classifySegment({
   const low = totalPct < 30;
   const balanced = !leader && !low;
 
-  // Priority rules (more flexible)
-  // 1. Leader engaged - if meetings are being used
   if (useMeetings && leader && meetingsAttendedPct >= 70) {
-    return 'Leader engaged';
+    return 'Highly engaged';
   }
   
-  // 2. Leader efficient - efficient leaders with good consistency
   if (leader && persistence <= 3 && consistencyIndex >= 0.5) {
-    return 'Leader efficient';
+    return 'Highly efficient';
   }
   
-  // 3. Leaders without strict conditions (fallback for leaders)
   if (leader) {
-    return 'Leader efficient'; // All other leaders default here
+    return 'Highly efficient';
   }
   
-  // 4. Balanced + engaged
   if (useMeetings && balanced && meetingsAttendedPct >= 60 && consistencyIndex >= 0.4) {
-    return 'Balanced + engaged';
+    return 'Moderately engaged';
   }
   
-  // 5. Hardworking but struggling
   if (!leader && effortIndex >= 0.5 && struggleIndex >= 0.6) {
-    return 'Hardworking but struggling';
+    return 'Highly effortful';
   }
   
-  // 6. Low engagement
   if ((low && submissions < 20) || (effortIndex <= -0.5 && consistencyIndex < 0.3)) {
-    return 'Low engagement';
+    return 'Low participation';
   }
   
-  // 7. Default: Balanced middle
-  return 'Balanced middle';
+  return 'Moderately performing';
 }
 
 // Helper functions

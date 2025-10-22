@@ -161,12 +161,10 @@ function TableBlockViewer({ block }: { block: ReportBlock }) {
 
   const columns = block.config?.columns || Object.keys(block.data[0] || {});
 
-  // Helper function to get badge color for segments or patterns
   const getBadgeColor = (value: string): any => {
     if (!value) return 'gray';
     const valueLower = value.toLowerCase();
     
-    // Easing patterns
     if (valueLower.includes('ease-out')) return 'green';
     if (valueLower.includes('ease-in-out')) return 'purple';
     if (valueLower.includes('ease-in')) return 'orange';
@@ -174,13 +172,61 @@ function TableBlockViewer({ block }: { block: ReportBlock }) {
     if (valueLower.includes('linear')) return 'gray';
     if (valueLower.includes('no-activity')) return 'red';
     
-    // Segments
-    if (valueLower.includes('leader')) return 'green';
-    if (valueLower.includes('low engagement')) return 'red';
-    if (valueLower.includes('hardworking')) return 'orange';
-    if (valueLower.includes('engaged')) return 'blue';
+    if (valueLower.includes('highly efficient')) return 'green';
+    if (valueLower.includes('highly engaged')) return 'green';
+    if (valueLower.includes('moderately engaged')) return 'blue';
+    if (valueLower.includes('moderately performing')) return 'green';
+    if (valueLower.includes('highly effortful')) return 'orange';
+    if (valueLower.includes('low participation')) return 'red';
     
     return 'gray';
+  };
+
+  const getBadgeStyle = (value: string): any => {
+    if (!value) return {};
+    const valueLower = value.toLowerCase();
+    
+    if (valueLower.includes('highly efficient') || valueLower.includes('highly engaged')) {
+      return {
+        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+        color: 'rgb(21, 128, 61)',
+        borderColor: 'rgba(34, 197, 94, 0.4)',
+      };
+    }
+    
+    if (valueLower.includes('moderately engaged')) {
+      return {
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        color: 'rgb(29, 78, 216)',
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+      };
+    }
+    
+    if (valueLower.includes('moderately performing')) {
+      return {
+        backgroundColor: 'rgba(134, 239, 172, 0.15)',
+        color: 'rgb(21, 128, 61)',
+        borderColor: 'rgba(134, 239, 172, 0.5)',
+      };
+    }
+    
+    if (valueLower.includes('highly effortful')) {
+      return {
+        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        color: 'rgb(194, 65, 12)',
+        borderColor: 'rgba(249, 115, 22, 0.4)',
+      };
+    }
+    
+    if (valueLower.includes('low participation')) {
+      return {
+        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        color: 'rgb(185, 28, 28)',
+        borderColor: 'rgba(239, 68, 68, 0.4)',
+      };
+    }
+    
+    return {};
   };
 
   return (
@@ -224,18 +270,31 @@ function TableBlockViewer({ block }: { block: ReportBlock }) {
                   );
                 }
                 
-                // Add colored badge for segment column
                 if (col === 'segment' && cellValue) {
                   return (
                     <Table.Cell key={col}>
-                      <Badge color={getBadgeColor(cellValue)} size="1">
+                      <Badge color={getBadgeColor(cellValue)} size="1" style={getBadgeStyle(cellValue)}>
                         {cellValue}
                       </Badge>
                     </Table.Cell>
                   );
                 }
                 
-                // Add colored badge for pattern column (easing types)
+                if (col === 'meetings' && cellValue && typeof cellValue === 'string') {
+                  const oldFormatMatch = cellValue.match(/^(\d+)\/(\d+)%$/);
+                  if (oldFormatMatch) {
+                    const attended = parseInt(oldFormatMatch[1]);
+                    const percentage = parseInt(oldFormatMatch[2]);
+                    const total = percentage > 0 ? Math.round(attended / (percentage / 100)) : 0;
+                    const newFormat = `${attended}/${total} (${percentage}%)`;
+                    return (
+                      <Table.Cell key={col}>
+                        {newFormat}
+                      </Table.Cell>
+                    );
+                  }
+                }
+                
                 if (col === 'pattern' && cellValue) {
                   return (
                     <Table.Cell key={col}>
@@ -265,55 +324,69 @@ function PieChartBlockViewer({ block }: { block: ReportBlock }) {
     return <Text color="gray">No chart data</Text>;
   }
 
-  const labels = Object.keys(block.data);
-  const values = Object.values(block.data) as number[];
-
-  // Helper function to get color for segments or easing patterns
   const getChartColor = (label: string): string => {
-    if (!label) return 'rgba(156, 163, 175, 0.8)'; // gray
+    if (!label) return 'rgba(156, 163, 175, 0.8)';
     const labelLower = label.toLowerCase();
     
-    // Check if this is an easing pattern (activity pattern)
     if (labelLower.includes('ease-out')) {
-      return 'rgba(34, 197, 94, 0.8)'; // green-500 - early start
+      return 'rgba(34, 197, 94, 0.8)';
     }
     if (labelLower.includes('ease-in-out')) {
-      return 'rgba(168, 85, 247, 0.8)'; // purple-500 - S-curve
+      return 'rgba(168, 85, 247, 0.8)';
     }
     if (labelLower.includes('ease-in')) {
-      return 'rgba(249, 115, 22, 0.8)'; // orange-500 - late start
+      return 'rgba(249, 115, 22, 0.8)';
     }
     if (labelLower === 'ease') {
-      return 'rgba(59, 130, 246, 0.8)'; // blue-500 - moderate
+      return 'rgba(59, 130, 246, 0.8)';
     }
     if (labelLower.includes('linear')) {
-      return 'rgba(156, 163, 175, 0.8)'; // gray-400 - steady
+      return 'rgba(156, 163, 175, 0.8)';
     }
     if (labelLower.includes('no-activity')) {
-      return 'rgba(220, 38, 38, 0.8)'; // red-600 - no activity
+      return 'rgba(220, 38, 38, 0.8)';
     }
     
-    // Segment colors (for segmentation charts)
-    if (labelLower.includes('leader')) {
-      return 'rgba(34, 197, 94, 0.8)'; // green-500
+    if (labelLower.includes('highly')) {
+      return 'rgba(34, 197, 94, 0.8)';
     }
-    if (labelLower.includes('low engagement')) {
-      return 'rgba(239, 68, 68, 0.8)'; // red-500
+    if (labelLower.includes('low participation')) {
+      return 'rgba(239, 68, 68, 0.8)';
     }
-    if (labelLower.includes('hardworking')) {
-      return 'rgba(249, 115, 22, 0.8)'; // orange-500
+    if (labelLower.includes('effortful')) {
+      return 'rgba(249, 115, 22, 0.8)';
+    }
+    if (labelLower.includes('moderately performing')) {
+      return 'rgba(134, 239, 172, 0.8)';
     }
     if (labelLower.includes('engaged')) {
-      return 'rgba(59, 130, 246, 0.8)'; // blue-500
+      return 'rgba(59, 130, 246, 0.8)';
     }
-    if (labelLower.includes('balanced')) {
-      return 'rgba(156, 163, 175, 0.8)'; // gray-400
+    if (labelLower.includes('moderately')) {
+      return 'rgba(134, 239, 172, 0.8)';
     }
     
-    return 'rgba(156, 163, 175, 0.8)'; // gray as fallback
+    return 'rgba(156, 163, 175, 0.8)';
   };
 
-  // Generate colors based on labels
+  const getSegmentSortOrder = (label: string): number => {
+    const labelLower = label.toLowerCase();
+    if (labelLower.includes('highly efficient')) return 1;
+    if (labelLower.includes('highly engaged')) return 2;
+    if (labelLower.includes('moderately engaged')) return 3;
+    if (labelLower.includes('moderately performing')) return 4;
+    if (labelLower.includes('highly effortful')) return 5;
+    if (labelLower.includes('low participation')) return 6;
+    return 99;
+  };
+
+  const entries = Object.entries(block.data).sort(([labelA], [labelB]) => {
+    return getSegmentSortOrder(labelA) - getSegmentSortOrder(labelB);
+  });
+
+  const labels = entries.map(([label]) => label);
+  const values = entries.map(([, value]) => value as number);
+
   const backgroundColors = labels.map(label => getChartColor(label));
 
   const chartData = {
