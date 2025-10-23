@@ -194,6 +194,22 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
               </Text>
               
               <Flex direction="column" gap="3">
+                {isAdmin && (
+                  <Card>
+                    <Flex justify="between" align="center" p="3">
+                      <Box>
+                        <Text size="3" weight="bold" style={{ display: 'block', marginBottom: '4px' }}>⚙️ General Report Settings</Text>
+                        <Text size="2" color="gray" style={{ display: 'block' }}>Manage report metadata and define learning outcomes for each module</Text>
+                      </Box>
+                      <Button 
+                        variant="outline"
+                        onClick={() => router.push(`/reports/${params.id}/preview/settings?tab=preview`)}
+                      >
+                        Manage Settings
+                      </Button>
+                    </Flex>
+                  </Card>
+                )}
                 <Card>
                   <Flex justify="between" align="center" p="3">
                     <Box>

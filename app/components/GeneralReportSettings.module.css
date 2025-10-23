@@ -1,0 +1,30 @@
+.container {
+  width: 100%;
+}
+
+.topicsList {
+  padding: 12px;
+  background: var(--gray-a2);
+  border-radius: var(--radius-2);
+}
+
+.outcomesSection {
+  padding: 12px;
+  background: var(--blue-a2);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--blue-a5);
+}
+
+.outcomesDisplay {
+  padding: 8px;
+  background: white;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--gray-a4);
+}
+
+.editArea {
+  width: 100%;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
+  font-size: 13px;
+}
+
