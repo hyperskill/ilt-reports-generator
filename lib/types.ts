@@ -215,3 +215,40 @@ export interface SharedReportWithAccess extends SharedReport {
   }>;
   access_count: number;
 }
+
+// Learning Outcomes Feature
+export interface CourseModule {
+  moduleId: number;
+  moduleTitle: string;
+  modulePosition: number;
+  topics: CourseTopic[];
+}
+
+export interface CourseTopic {
+  topicId: number;
+  topicTitle: string;
+  topicPosition: number;
+  stepsCount: number;
+}
+
+export interface LearningOutcome {
+  id: string;
+  report_id: string;
+  module_id: number;
+  module_title: string;
+  outcomes: string; // Markdown text with bullet points
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleTool {
+  id: string;
+  report_id: string;
+  module_id: number;
+  module_title: string;
+  tools: string; // Markdown text describing tools
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}

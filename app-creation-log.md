@@ -1,5 +1,271 @@
 # App Creation Log
 
+## 2025-10-23: Module Tools Feature
+
+**Agent:** Added LLM-powered tools generation for each module
+
+**Purpose**: Allow administrators to generate and manage information about tools, technologies, and platforms students use in each course module.
+
+**Database Changes** (`supabase/add-module-tools.sql`):
+- Created `module_tools` table
+- Fields: `id`, `report_id`, `module_id`, `module_title`, `tools`, `created_by`, timestamps
+- RLS policies: Admin full access, Manager read-only
+- Unique constraint on `(report_id, module_id)`
+
+**API Endpoints**:
+1. **LLM Generation** (`app/api/llm/generate-module-tools/route.ts`):
+   - POST endpoint for AI-generated tools information
+   - Analyzes module topics and suggests relevant tools/technologies
+   - **System prompt**: Base suggestions ONLY on module/topic names, no assumptions
+   - Output: SHORT bullet-point list (3-7 items) with tool names only, no descriptions
+   - Returns categorized tool lists (3-7 items)
+
+2. **CRUD Operations** (`app/api/reports/module-tools/route.ts`):
+   - GET: Fetch all tools for a report
+   - POST: Save/update tools (upsert)
+   - DELETE: Remove tools
+   - Admin-only write access
+
+**UI Implementation** (`app/components/GeneralReportSettings.tsx`):
+- Added "🔧 Generate Tools" button (purple color scheme)
+- Independent state management from Learning Outcomes
+- Editable tools display with save/cancel
+- Tools section appears below Learning Outcomes in each module
+- **Delete buttons** for both Learning Outcomes and Tools with confirmation dialogs
+
+**Features**:
+- LLM-powered tools generation based on course content
+- Inline editing with TextArea
+- Auto-save on generation
+- Manual save for edits
+- **Delete functionality** with confirmation for both Learning Outcomes and Tools
+- Purple visual theme to distinguish from Learning Outcomes
+
+**Delete Functionality**:
+- "🗑️ Delete" button appears next to "✏️ Edit" button
+- Confirmation dialog before deletion
+- Red color for delete button to indicate destructive action
+- Loading spinner during deletion
+- Updates local state immediately after successful deletion
+
+**Files Created**:
+- `supabase/add-module-tools.sql`
+- `app/api/llm/generate-module-tools/route.ts`
+- `app/api/reports/module-tools/route.ts`
+- `docs/module-tools-feature.md`
+
+**Files Modified**:
+- `lib/types.ts` - Added `ModuleTool` interface
+- `app/components/GeneralReportSettings.tsx` - Added tools UI, logic, and delete functionality
+- `app-creation-log.md` - This entry
+
+---
+
+## 2025-10-23: Learning Outcomes Management Feature
+
+### Update 5: Moved to Separate Page
+**Restructured**: General Report Settings now has its own dedicated page, consistent with other Preview and Setup sections.
+
+**Changes**:
+- Created `/app/reports/[id]/preview/settings/page.tsx` - dedicated page for settings
+- Main Preview and Setup tab now shows only a card with link (like other sections)
+- Card displays: "⚙️ General Report Settings" with "Manage Settings" button
+- Removed inline component from main tab
+- Navigation pattern now consistent across all Preview and Setup items
+
+**UX Benefits**:
+- Cleaner main navigation page
+- More space for settings functionality
+- Consistent navigation pattern
+- Better organization
+
+---
+
+### Update 4: UI Improvements - Show All Topics & Save Metadata
+**Added**: 
+1. Show all topics (removed 5-topic limit with "...more" text)
+2. Added "Save Changes" button for report title and description
+
+**Changes**:
+- Removed `.slice(0, 5)` from topics display - now shows all topics
+- Added `savingMetadata` and `metadataChanged` state tracking
+- "💾 Save Changes" button appears only when title or description is modified
+- Save button calls `PATCH /api/reports/[id]` to update metadata
+- Success/error feedback with alerts
+
+**UX**: Button appears only when changes are made, then disappears after successful save.
+
+---
+
+### Update 3: Fixed LLM API Configuration
+**Fixed**: Changed `LITELLM_API_URL` to `LITELLM_BASE_URL` to match other API endpoints.
+
+**Problem**: Generation failed because of wrong environment variable name.
+
+**Solution**: 
+- Changed `process.env.LITELLM_API_URL` → `process.env.LITELLM_BASE_URL`
+- Updated documentation and env.example
+- Now consistent with generate-manager-report and generate-student-report APIs
+
+---
+
+### Update 2: Fixed Course Structure Loading - Now Uses structure_data
+**Changed**: Complete refactor to use `structure_data` from reports instead of `courseId`.
+
+**Why**: 
+- Original implementation fetched data by `courseId` which returned wrong/test data
+- Other parts of the app use `structure_data` (from CSV) + Cogniterra API for real names
+- This approach matches existing module analytics and student reports
+
+**How it works now**:
+1. Component receives `structure_data` from parent (report data)
+2. Extracts unique `module_id` and `lesson_id` from structure
+3. Calls `/api/cogniterra/course-structure` (POST) with `structureData`
+4. API fetches real module names via `getModuleNamesMapByIds()`
+5. API fetches real topic names via `getLessonNamesMapByIds()`
+6. Builds complete structure with real names, positions, and step counts
+
+**Changes**:
+- `/api/cogniterra/course-structure/route.ts`: Changed from GET with `courseId` to POST with `structureData`
+- `GeneralReportSettings`: Removed `courseId` prop, added `structureData` prop
+- Removed manual Course ID input (not needed anymore)
+- Fixed component to match approach used in `lib/utils/llm-data-helpers.ts`
+
+---
+
+### Update 1: Made Course ID Optional and API-First
+**Changed**: Course structure is now fetched from Cogniterra API, not CSV files. Course ID can be entered manually if not auto-detected.
+
+**Why**: 
+- CSV structure files only contain IDs, not actual module/topic names
+- Cogniterra API provides full module and topic titles
+- More flexible: works even without structure CSV upload
+- Better UX: real names instead of "Module 123"
+
+---
+
+### Overview
+Added a comprehensive "General Report Settings" section to the Preview and Setup tab that allows admins to manage report metadata and generate AI-powered learning outcomes for each course module.
+
+### Changes Made
+
+#### 1. Database Schema
+- **`supabase/add-learning-outcomes.sql`**:
+  - Created `learning_outcomes` table to store generated learning outcomes
+  - Fields: `id`, `report_id`, `module_id`, `module_title`, `outcomes`, `created_by`, timestamps
+  - Unique constraint per module per report
+  - Row Level Security (RLS) policies for admin and manager access
+  - Indexes for performance optimization
+
+#### 2. Type Definitions
+- **`lib/types.ts`**:
+  - Added `CourseModule` interface for module structure with topics
+  - Added `CourseTopic` interface for topic details
+  - Added `LearningOutcome` interface for storing outcomes data
+
+#### 3. API Endpoints
+
+**Course Structure API** (`app/api/cogniterra/course-structure/route.ts`):
+- `GET /api/cogniterra/course-structure?courseId={id}`
+- Fetches course structure (modules and topics) from Cogniterra API
+- Returns hierarchical data: modules → topics → steps count
+- Uses existing Cogniterra authentication and API wrapper
+
+**Learning Outcomes Generation API** (`app/api/llm/generate-learning-outcomes/route.ts`):
+- `POST /api/llm/generate-learning-outcomes`
+- Uses LLM to generate educational learning outcomes for specific modules
+- Includes full course context in prompt for better alignment
+- System prompt based on educational best practices (Bloom's taxonomy)
+- Returns 3-5 clear, measurable, action-oriented outcomes
+
+**Learning Outcomes CRUD API** (`app/api/reports/learning-outcomes/route.ts`):
+- `GET /api/reports/learning-outcomes?reportId={id}` - Fetch all outcomes for a report
+- `POST /api/reports/learning-outcomes` - Save/update outcomes for a module
+- `DELETE /api/reports/learning-outcomes?reportId={id}&moduleId={id}` - Delete outcomes
+- Admin-only write access, managers can read
+
+#### 4. UI Components
+
+**GeneralReportSettings Component** (`app/components/GeneralReportSettings.tsx` + `.module.css`):
+- Report metadata management:
+  - Editable report title
+  - Editable report description
+  - Live updates reflected in parent component
+- Learning outcomes management per module:
+  - Automatic course structure loading from Cogniterra API
+  - Display of module hierarchy with topic counts
+  - "Generate Learning Outcomes" button per module
+  - AI-powered generation with loading states
+  - Inline editing of generated outcomes
+  - Auto-save to database
+  - Visual status indicators (generated, editing, saving)
+- Responsive layout with cards and badges
+- Proper loading and error states
+
+#### 5. Integration
+- **`app/reports/[id]/page.tsx`**:
+  - Integrated `GeneralReportSettings` component at the top of Preview and Setup tab
+  - Only visible to admins
+  - Requires structure_data to be present (courseId needed)
+  - Passes report metadata and callbacks for updates
+  - Added separator for visual organization
+
+### User Flow
+
+1. **Admin opens report** → Goes to "Preview and Setup" tab
+2. **General Report Settings section appears** (if structure data exists)
+3. **Admin can edit** title and description inline
+4. **Course structure loads automatically** from Cogniterra API
+5. **For each module**, admin sees:
+   - Module title and position
+   - List of topics with step counts
+   - "Generate Learning Outcomes" button (if not generated yet)
+6. **On "Generate" click**:
+   - LLM receives full course context
+   - Generates 3-5 learning outcomes aligned with module content
+   - Results displayed in formatted text area
+   - Automatically saved to database
+7. **Admin can edit outcomes**:
+   - Click "Edit" button
+   - Modify text in editable area
+   - Save changes to database
+
+### Benefits
+
+- **Educational Alignment**: Learning outcomes help instructors and students understand expected results
+- **AI-Powered**: Automatic generation saves time while maintaining quality
+- **Context-Aware**: LLM receives full course structure for better alignment
+- **Flexible**: Outcomes can be edited and refined after generation
+- **Persistent**: Stored in database and associated with reports
+- **Scalable**: Works for courses with any number of modules
+
+### Technical Notes
+
+- Uses existing Cogniterra API wrapper for authentication
+- Leverages LiteLLM infrastructure for AI generation
+- Follows Radix UI design patterns for consistency
+- CSS Modules for component styling
+- TypeScript for type safety
+- Row Level Security enforces access control
+
+### Files Created/Modified
+
+**New Files**:
+- `supabase/add-learning-outcomes.sql` - Database schema
+- `app/api/cogniterra/course-structure/route.ts` - Course structure API
+- `app/api/llm/generate-learning-outcomes/route.ts` - LLM generation API
+- `app/api/reports/learning-outcomes/route.ts` - CRUD API for outcomes
+- `app/components/GeneralReportSettings.tsx` - Main settings component
+- `app/components/GeneralReportSettings.module.css` - Component styles
+- `app/reports/[id]/preview/settings/page.tsx` - Dedicated settings page
+
+**Modified Files**:
+- `lib/types.ts` - Added learning outcomes types
+- `app/reports/[id]/page.tsx` - Added navigation card to settings
+- `env.example` - Added required environment variables
+
+---
+
 ## 2025-10-22: Improve Meetings Display Format in Reports
 
 ### Change: Show Total Meetings Count in Addition to Percentage
