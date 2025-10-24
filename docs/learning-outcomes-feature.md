@@ -144,8 +144,8 @@ COGNITERRA_CLIENT_ID=your_client_id
 COGNITERRA_CLIENT_SECRET=your_client_secret
 
 # LiteLLM API (for AI generation)
-LITELLM_BASE_URL=https://litellm.aks-hs-prod.int.hyperskill.org
-LITELLM_API_KEY=your_litellm_key
+LITELLM_BASE_URL=your_litellm_base_url_here
+LITELLM_API_KEY=your_litellm_api_key_here
 LITELLM_MODEL=gpt-4o-mini (optional, this is default)
 ```
 

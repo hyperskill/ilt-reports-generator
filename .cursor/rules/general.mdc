@@ -4,6 +4,15 @@ alwaysApply: true
 
 IMPORTANT! DON'T DO GIT COMMANDS
 
+# Security & Privacy
+
+**CRITICAL: Never commit sensitive data to repository**
+- ❌ NO API keys, tokens, or passwords
+- ❌ NO production URLs or internal endpoints
+- ❌ NO real credentials in examples
+- ✅ Always use placeholders
+- ✅ Keep sensitive data in .env.local
+
 0. Ask human before performing any git commands
 1. Use Next.js as a main framework
 2. Use Radix UI for design. Here is doc docs/RADIX_UI_DOCUMENTATION.md

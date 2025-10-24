@@ -10,13 +10,13 @@ npm install
 ### ☐ 2. Get LiteLLM API Key
 - You should already have this from Hyperskill
 - Key starts with `sk-`
-- Base URL: `https://litellm.aks-hs-prod.int.hyperskill.org`
+- Base URL: Contact your admin for the LiteLLM endpoint
 
 ### ☐ 3. Add to Environment
 ```bash
 # Edit .env.local
-LITELLM_API_KEY=sk-paste-your-key-here
-LITELLM_BASE_URL=https://litellm.aks-hs-prod.int.hyperskill.org
+LITELLM_API_KEY=your_litellm_api_key_here
+LITELLM_BASE_URL=your_litellm_base_url_here
 ```
 
 ### ☐ 4. Run Database Migration

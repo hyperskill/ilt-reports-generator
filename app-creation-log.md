@@ -1,5 +1,32 @@
 # App Creation Log
 
+## 2025-10-23: Security & Documentation Update
+
+**Agent:** Removed sensitive credentials from public files
+
+**Changes**:
+- Removed real API keys and internal URLs from all documentation files
+- Replaced with placeholder values (e.g., `your_litellm_api_key_here`)
+- Created `.cursorrules` file with security guidelines
+- Added rule: Never commit sensitive data to repository
+
+**Files Updated**:
+- `SETUP_LITELLM.md` - Removed real LiteLLM key and URL
+- `docs/llm-reports-feature.md` - Replaced with placeholders
+- `docs/LLM_SETUP.md` - Replaced with placeholders
+- `docs/learning-outcomes-feature.md` - Replaced with placeholders
+- `QUICK_START.md` - Replaced with placeholders
+- `env.example` - Updated to use generic placeholders
+- `.cursorrules` - Added security guidelines
+
+**Security Rule Added**:
+Never commit:
+- API keys, tokens, or passwords
+- Production URLs or internal endpoints
+- Real credentials in examples
+
+---
+
 ## 2025-10-23: Module Tools Feature
 
 **Agent:** Added LLM-powered tools generation for each module

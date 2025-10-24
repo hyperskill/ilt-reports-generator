@@ -16,7 +16,7 @@ The application uses Hyperskill's internal LiteLLM proxy instead of direct OpenA
 
 You should already have:
 - API Key (starts with `sk-`)
-- Base URL: `https://litellm.aks-hs-prod.int.hyperskill.org`
+- Base URL: Contact your admin for the LiteLLM endpoint
 
 ### 3. Configure Environment Variables
 
@@ -27,8 +27,8 @@ Create or update your `.env.local` file:
 cp env.example .env.local
 
 # Edit .env.local and add your keys
-LITELLM_API_KEY=sk-your-actual-key-here
-LITELLM_BASE_URL=https://litellm.aks-hs-prod.int.hyperskill.org
+LITELLM_API_KEY=your_litellm_api_key_here
+LITELLM_BASE_URL=your_litellm_base_url_here
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
