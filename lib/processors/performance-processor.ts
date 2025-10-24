@@ -305,14 +305,14 @@ function classifySegment({
   }
   
   if (!leader && effortIndex >= 0.5 && struggleIndex >= 0.6) {
-    return 'Highly effortful';
+    return 'Highly committed';
   }
   
   if ((low && submissions < 20) || (effortIndex <= -0.5 && consistencyIndex < 0.3)) {
-    return 'Low participation';
+    return 'Less engaged';
   }
   
-  return 'Moderately performing';
+  return 'Moderately engaged';
 }
 
 // Helper functions

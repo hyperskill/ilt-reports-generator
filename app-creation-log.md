@@ -1,5 +1,44 @@
 # App Creation Log
 
+## 2025-10-24: Updated Student Segment Names to v3 Classification with Green Color Scheme
+
+**Agent:** Updated all segment names to new simplified classification system with unified green color gradient
+
+**Changes**:
+1. **Segment Name Updates**:
+   - "Highly effortful" → "Highly committed" — Puts in strong effort, motivated but still finding consistency
+   - "Low participation" → "Less engaged" — Limited participation or motivation
+   - "Moderately performing" → "Moderately engaged" (consolidated with existing Moderately engaged)
+   - "Highly efficient" — Consistently productive, delivers strong results (description updated)
+   - "Highly engaged" — Actively participates, contributes with enthusiasm (description updated)
+
+2. **Color Scheme Update** (Green gradient from dark to light):
+   - 🟢 **Highly efficient, Highly engaged** — Dark green `rgba(34, 197, 94, 0.8)` (green badge)
+   - 🟢 **Highly committed** — Medium green `rgba(74, 222, 128, 0.8)` (grass badge)
+   - 🟢 **Moderately engaged** — Light green `rgba(134, 239, 172, 0.8)` (lime badge)
+   - 🔴 **Less engaged** — Red `rgba(239, 68, 68, 0.8)` (red badge)
+
+3. **Files Updated**:
+   - `lib/processors/performance-processor.ts` — Updated segment classification logic
+   - `lib/utils/segment-colors.ts` — Updated color scheme with green gradient + badge colors
+   - `app/components/PerformanceResults.tsx` — Updated segment descriptions and legend colors
+   - `app/components/TableLegend.tsx` — Updated segment descriptions and legend colors
+   - `lib/utils/convert-blocks.ts` — Updated helpText for segment charts
+   - `docs/COLOR_SYSTEM.md` — Updated documentation with v3 naming and color scheme
+   - `docs/student-segment.md` — Updated segmentation rules with new names
+
+4. **Database Migrations**:
+   - Created `supabase/final-update-segments.sql` — Updates segment names in `reports.performance_data` using jsonb_set
+   - Created `supabase/update-shared-reports-segments.sql` — Updates segment names and descriptions in `shared_reports.blocks`
+   - Created `supabase/fix-duplicate-moderately.sql` — Removes duplicate "Moderately engaged" entries from helpText
+
+**New Segment Classification**:
+- 🟢 Highly efficient — consistently productive, delivers strong results
+- 🟢 Highly engaged — actively participates, contributes with enthusiasm
+- 🟢 Highly committed — puts in strong effort, motivated but still finding consistency
+- 🟢 Moderately engaged — participates occasionally, shows average involvement
+- 🔴 Less engaged — limited participation or motivation
+
 ## 2025-10-24: Enhanced LLM Test Script with Full Statistics Validation
 
 **Agent:** Added comprehensive statistics validation to `check-llm-data.js`

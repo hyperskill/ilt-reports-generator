@@ -77,13 +77,13 @@ const chartData = {
 
 ### Performance Segments
 
-| Segment | Chart Color | Badge Style | Visual |
-|---------|-------------|-------------|--------|
-| Leader efficient/engaged | `rgba(34, 197, 94, 0.8)` | Dark green RGB | 🟢 (dark) |
-| Moderately engaged | `rgba(59, 130, 246, 0.8)` | Blue RGB | 🔵 |
-| Balanced middle | `rgba(134, 239, 172, 0.8)` | Light green RGB | 🟢 (very light) |
-| Highly effortful | `rgba(249, 115, 22, 0.8)` | Orange RGB | 🟠 |
-| Low engagement | `rgba(239, 68, 68, 0.8)` | Red RGB | 🔴 |
+| Segment | Chart Color | Badge Style | Visual | Description |
+|---------|-------------|-------------|--------|-------------|
+| Highly efficient | `rgba(34, 197, 94, 0.8)` | green (dark) | 🟢 (dark) | Consistently productive, delivers strong results |
+| Highly engaged | `rgba(34, 197, 94, 0.8)` | green (dark) | 🟢 (dark) | Actively participates, contributes with enthusiasm |
+| Highly committed | `rgba(74, 222, 128, 0.8)` | grass (medium) | 🟢 (medium) | Puts in strong effort, motivated but still finding consistency |
+| Moderately engaged | `rgba(134, 239, 172, 0.8)` | lime (light) | 🟢 (light) | Participates occasionally, shows average involvement |
+| Less engaged | `rgba(239, 68, 68, 0.8)` | red | 🔴 | Limited participation or motivation |
 
 ### Easing Patterns
 
@@ -182,14 +182,14 @@ MODULE_COLORS = {
 
 The system supports both old and new segment naming conventions:
 
-| Old Name | New Name | Color |
-|----------|----------|-------|
-| Leader efficient | Highly efficient | 🟢 Dark green |
-| Leader engaged | Highly engaged | 🟢 Dark green |
-| Balanced + engaged | Moderately engaged | 🔵 Blue |
-| Balanced middle | Moderately performing | 🟢 Light green |
-| Hardworking but struggling | Highly effortful | 🟠 Orange |
-| Low engagement | Low participation | 🔴 Red |
+| Old Name (v1) | Mid Name (v2) | Current Name (v3) | Color (v3) |
+|---------------|---------------|-------------------|------------|
+| Leader efficient | Highly efficient | Highly efficient | 🟢 Dark green |
+| Leader engaged | Highly engaged | Highly engaged | 🟢 Dark green |
+| Balanced + engaged | Moderately engaged | Moderately engaged | 🟢 Light green |
+| Balanced middle | Moderately performing | Moderately engaged | 🟢 Light green |
+| Hardworking but struggling | Highly effortful | Highly committed | 🟢 Medium green |
+| Low engagement | Low participation | Less engaged | 🔴 Red |
 
 ## Examples
 

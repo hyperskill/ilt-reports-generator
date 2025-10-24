@@ -100,12 +100,12 @@ We avoid adding new files and reuse what we already have:
 ## 6) Simple Segmentation Rules (revised, no new files)
 Suggested rule set (priority order; tune to your cohort):
 
-1. **Leader engaged** → `total_pct ≥ 80` **and** `meetings_attended_pct ≥ 70` *(if meetings exist)*
-2. **Leader efficient** → `total_pct ≥ 80` **and** `persistence ≤ 3` **and** `consistency_index ≥ 0.5`
-3. **Balanced + engaged** → `30 ≤ total_pct < 80` **and** `meetings_attended_pct ≥ 60` **and** `consistency_index ≥ 0.4` *(if meetings exist)*
-4. **Hardworking but struggling** → `total_pct < 80` **and** `effort_index ≥ +0.5` **and** `struggle_index ≥ 0.6`
-5. **Low engagement** → `(total_pct < 30 && submissions < 20)` **or** `(effort_index ≤ −0.5 && active_days_ratio < 0.3)`
-6. **Balanced middle** → else
+1. **Highly engaged** → `total_pct ≥ 80` **and** `meetings_attended_pct ≥ 70` *(if meetings exist)* — Actively participates, contributes with enthusiasm
+2. **Highly efficient** → `total_pct ≥ 80` **and** `persistence ≤ 3` **and** `consistency_index ≥ 0.5` — Consistently productive, delivers strong results
+3. **Moderately engaged** → `30 ≤ total_pct < 80` **and** `meetings_attended_pct ≥ 60` **and** `consistency_index ≥ 0.4` *(if meetings exist)* — Participates occasionally, shows average involvement
+4. **Highly committed** → `total_pct < 80` **and** `effort_index ≥ +0.5` **and** `struggle_index ≥ 0.6` — Puts in strong effort, motivated but still finding consistency
+5. **Less engaged** → `(total_pct < 30 && submissions < 20)` **or** `(effort_index ≤ −0.5 && active_days_ratio < 0.3)` — Limited participation or motivation
+6. **Moderately engaged** (fallback) → else — Participates occasionally, shows average involvement
 
 
 ## 7) Outputs (what the app expects)
