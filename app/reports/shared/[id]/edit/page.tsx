@@ -140,7 +140,7 @@ export default function SharedReportEditPage() {
         onSave={handleSave}
         sourceReportId={report.source_report_id}
         reportType={report.report_type}
-        userId={report.user_id}
+        userId={report.user_id ? Number(report.user_id) : undefined}
       />
     </Container>
   );

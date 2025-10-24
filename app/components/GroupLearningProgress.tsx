@@ -81,10 +81,10 @@ export function GroupLearningProgress({
       const toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
 
       // Create maps for quick lookup
-      const outcomesMap = new Map(
+      const outcomesMap = new Map<number, string>(
         (outcomesData.learningOutcomes || []).map((lo: any) => [lo.module_id, lo.outcomes])
       );
-      const toolsMap = new Map(
+      const toolsMap = new Map<number, string>(
         (toolsData.moduleTools || []).map((mt: any) => [mt.module_id, mt.tools])
       );
       
