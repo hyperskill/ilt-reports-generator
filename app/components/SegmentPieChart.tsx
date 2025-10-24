@@ -32,7 +32,7 @@ export function SegmentPieChart({ title, data, total }: SegmentPieChartProps) {
       {
         data: data.map(item => item.count),
         backgroundColor: data.map(item => item.color),
-        borderColor: data.map(item => item.color),
+        borderColor: '#ffffff',
         borderWidth: 2,
       },
     ],

@@ -1,5 +1,382 @@
 # App Creation Log
 
+## 2025-10-24: Fixed Shared Reports Color System - Removed Old Badge Styles
+
+**Agent:** Removed old hardcoded badge styles from shared report components that were overriding centralized system
+
+**Problem**: 
+- Shared reports (`/reports/shared/[id]/view`) had old `getOldBadgeStyle` function with hardcoded colors
+- This function was overriding centralized color system with old RGB values and light text colors
+- User reported: "на странице shared отчета цвета в чартах и бейджах не привязаны к системе управления цветами"
+- Light text colors were not using the dark variant (30% brightness) from centralized system
+
+**Solution**:
+- Removed `getOldBadgeStyle` function entirely from both BlockViewer and BlockRenderer
+- Removed merging of old styles: `...getOldBadgeStyle(cellValue)`
+- Now using only `getBadgeStyle(cellValue)` which calls centralized system functions
+- Charts were already using centralized system correctly
+
+**Old code that was removed:**
+```typescript
+// This was overriding centralized colors with hardcoded values
+const getOldBadgeStyle = (value: string) => {
+  if (valueLower.includes('highly efficient')) {
+    return {
+      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+      color: 'rgb(21, 128, 61)', // Light green text - not dark enough
+      borderColor: 'rgba(34, 197, 94, 0.4)',
+    };
+  }
+  // ... more hardcoded colors
+};
+
+// Badge was merging both styles
+style={{
+  ...getBadgeStyle(cellValue),     // Centralized system
+  ...getOldBadgeStyle(cellValue),  // Old styles overriding centralized
+}}
+```
+
+**Files Updated**:
+- `app/reports/shared/[id]/view/BlockViewer.tsx` - Removed getOldBadgeStyle, using only centralized system
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Removed getOldBadgeStyle, using only centralized system
+- `app-creation-log.md` - Added this entry
+
+**Impact**:
+- ✅ Shared reports now use exact same colors as rest of app
+- ✅ Dark text (30% brightness) for excellent readability on all badges
+- ✅ No more hardcoded color values in shared reports
+- ✅ Charts and badges perfectly matched with centralized system
+- ✅ Consistent color experience across view and edit modes
+
+---
+
+## 2025-10-24: Connected Students Preview Page to Centralized Color System
+
+**Agent:** Updated students preview page to use centralized color management system
+
+**Problem**: 
+- Students preview page (`/reports/[id]/preview/students`) badges were still gray
+- Used old `getSegmentColor` function with Radix UI color names
+- User reported: "на этой странице бейджи все еще серые"
+
+**Solution**:
+- Imported `getPerformanceSegmentBadgeStyle` from centralized system
+- Removed old `getSegmentColor` helper function
+- Updated Badge components to use exact RGB colors with dark text
+
+**Changes**:
+```typescript
+// Before: Old Radix UI color names
+<Badge color={getSegmentColor(student.simple_segment)}>
+  {student.simple_segment}
+</Badge>
+
+// After: Centralized system with exact RGB
+<Badge style={getPerformanceSegmentBadgeStyle(student.simple_segment)}>
+  {student.simple_segment}
+</Badge>
+```
+
+**Files Updated**:
+- `app/reports/[id]/preview/students/page.tsx` - Connected to centralized color system
+- `app-creation-log.md` - Added this entry
+
+**Impact**:
+- ✅ Students table now shows colorful badges matching entire app
+- ✅ Dark text for excellent readability
+- ✅ Consistent colors across all preview pages (performance, dynamic, students)
+- ✅ All report-related pages now unified
+
+---
+
+## 2025-10-24: Connected Student Page to Centralized Color System
+
+**Agent:** Updated student detail page to use centralized color management system
+
+**Problem**: 
+- Student page badges were still using old gray/basic colors
+- Not integrated with the new centralized color system
+- User reported: "бейдж на странице студента все еще серый"
+
+**Solution**:
+- Imported `getPerformanceSegmentBadgeStyle` and `getEasingPatternBadgeStyle` functions
+- Removed old `getSegmentColor` and `getEasingColor` helper functions
+- Updated Badge components to use new style-based approach with exact RGB colors
+
+**Changes**:
+```typescript
+// Before: Old color names
+<Badge color={getSegmentColor(segment)}>
+  {segment}
+</Badge>
+
+// After: Centralized color system with exact RGB
+<Badge style={getPerformanceSegmentBadgeStyle(segment)}>
+  {segment}
+</Badge>
+```
+
+**Files Updated**:
+- `app/student/[userId]/page.tsx` - Connected to centralized color system
+- `app-creation-log.md` - Added this entry
+
+**Impact**:
+- ✅ Student page badges now match colors across entire app
+- ✅ Dark text for excellent readability
+- ✅ Consistent visual experience (performance pages, reports, student details)
+- ✅ All badges now use same color generation logic
+
+---
+
+## 2025-10-24: Added Visual Feedback for Segment Filters
+
+**Agent:** Implemented visual state changes for filter badges to show active/inactive status
+
+**Problem**: 
+- When clicking segment filter badges, no visual feedback was shown
+- User couldn't tell which segments were filtered out
+- User reported: "когда я нажимаю на эти фильтры, состояние кнопки не меняется визуально"
+
+**Solution**:
+- Added visual states to filter badges:
+  - **Active** (shown in table): Full opacity (1.0), no strikethrough
+  - **Inactive** (hidden from table): Reduced opacity (0.4), strikethrough text
+- Applied smooth CSS transitions (0.2s) for state changes
+
+**Implementation**:
+```typescript
+const isActive = selectedSegments.size === 0 || selectedSegments.has(segment);
+
+<Badge 
+  style={{ 
+    opacity: isActive ? 1 : 0.4,
+    textDecoration: isActive ? 'none' : 'line-through',
+    transition: 'opacity 0.2s, text-decoration 0.2s',
+  }}
+>
+  {segment}: {count}
+</Badge>
+```
+
+**Files Updated**:
+- `app/components/PerformanceResults.tsx` - Added visual states for performance segment filters
+- `app/components/DynamicResults.tsx` - Added visual states for easing pattern filters
+- `app-creation-log.md` - Added this entry
+
+**Impact**:
+- ✅ Clear visual feedback when clicking filter badges
+- ✅ Users can instantly see which segments are active/hidden
+- ✅ Smooth transitions for better UX
+- ✅ Consistent behavior across Performance and Dynamic views
+
+---
+
+## 2025-10-24: Fixed Badge Text Readability - Dark Text on Light Backgrounds
+
+**Agent:** Updated badge text color generation to use dark variants for better readability
+
+**Problem**: 
+- Light text on light badge backgrounds was hard to read
+- User reported: "цвет текста на бейджах не читается" (badge text color is not readable)
+- Especially problematic on light green "Balanced middle" badges
+
+**Solution**:
+- Updated `getBadgeStyleFromChartColor()` to generate dark text colors
+- Multiply RGB values by 0.3 to create dark variant (30% brightness)
+- Example: Light green `rgba(134, 239, 172, 0.8)` → Dark green text `rgb(40, 71, 51)`
+
+**Changes**:
+```typescript
+// Before: Same color for text and background (poor readability)
+color: `rgb(${r}, ${g}, ${b})`
+
+// After: Dark variant for text (excellent readability)
+const darkR = Math.floor(parseInt(r) * 0.3);
+const darkG = Math.floor(parseInt(g) * 0.3);
+const darkB = Math.floor(parseInt(b) * 0.3);
+color: `rgb(${darkR}, ${darkG}, ${darkB})`
+```
+
+**Files Updated**:
+- `lib/utils/segment-colors.ts` - Updated text color calculation
+- `docs/COLOR_SYSTEM.md` - Updated documentation with dark text approach
+- `app-creation-log.md` - Added this entry
+
+**Impact**:
+- ✅ Excellent text readability on all badge backgrounds
+- ✅ Maintains color relationship with charts (same hue, darker shade)
+- ✅ Works automatically for all segments and patterns
+- ✅ No manual color adjustments needed
+
+---
+
+## 2025-10-24: Implemented Exact RGB Color Matching for Badges
+
+**Agent:** Replaced Radix UI color names with inline RGB styles for perfect chart-badge color matching
+
+**Problem**: 
+- Radix UI predefined colors (`green`, `grass`, `lime`) couldn't provide perfect visual matching with chart RGB colors
+- User reported that "green" badges for leaders and "Balanced middle" were not visually distinct enough
+- Need exact RGB color matching between charts and badges
+
+**Solution**:
+- Created `getBadgeStyleFromChartColor()` function that extracts RGB values from chart colors
+- Generates custom inline styles with three opacity levels:
+  - Background: 15% opacity (subtle fill)
+  - Text: 100% opacity (clear readability)
+  - Border: 30% opacity (subtle outline)
+- Enhanced with saturation/contrast filters for better visibility
+
+**New Functions**:
+- `getBadgeStyleFromChartColor(chartColor: string): React.CSSProperties`
+- `getPerformanceSegmentBadgeStyle(segment: string): React.CSSProperties`
+- `getEasingPatternBadgeStyle(easing: string): React.CSSProperties`
+
+**Changes**:
+- Updated all badge usage from `color={getBadgeColor()}` to `style={getBadgeStyle()}`
+- Badges now use exact RGB values: `rgba(34, 197, 94, 0.8)` for leaders, `rgba(134, 239, 172, 0.8)` for balanced
+- Visual distinction is now perfect - dark green vs light green is clearly visible
+
+**Files Updated**:
+- `lib/utils/segment-colors.ts` - Added badge style generation functions
+- `app/components/PerformanceResults.tsx` - Updated to use badge styles
+- `app/components/DynamicResults.tsx` - Updated to use badge styles
+- `app/reports/shared/[id]/view/BlockViewer.tsx` - Updated to use badge styles
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Updated to use badge styles
+- `docs/COLOR_SYSTEM.md` - Updated documentation with new approach
+- `app-creation-log.md` - Added this entry
+
+**Before vs After**:
+```typescript
+// Before: Limited by Radix UI palette
+<Badge color="green">Leader</Badge>
+<Badge color="lime">Balanced</Badge>
+
+// After: Exact RGB matching charts
+<Badge style={getPerformanceSegmentBadgeStyle('Leader efficient')}>Leader</Badge>
+<Badge style={getPerformanceSegmentBadgeStyle('Balanced middle')}>Balanced</Badge>
+```
+
+**Impact**:
+- ✅ Perfect color matching between charts and badges across entire app
+- ✅ Clear visual distinction between similar segments (dark green vs light green)
+- ✅ Consistent styling approach - all badges use same color generation logic
+- ✅ Backward compatibility maintained for old segment names
+- ✅ No dependence on Radix UI color palette limitations
+
+---
+
+## 2025-10-24: Updated Balanced and Linear Colors to Light Green with Lime Badge
+
+**Agent:** Changed "Balanced middle" and "linear" colors from gray to light green, using Radix UI `lime` color for badges
+
+**Changes**:
+- Updated `BALANCED_GRAY` → `BALANCED_LIGHT_GREEN` = `rgba(134, 239, 172, 0.8)`
+- Updated `LINEAR_GRAY` → `LINEAR_LIGHT_GREEN` = `rgba(134, 239, 172, 0.8)`
+- Updated badge colors from `gray` → `lime` (very light green) for Balanced middle and linear
+- Leader segments use `green` (dark green), creating strong visual distinction
+- Added `lime`, `mint`, `cyan`, `teal` to RadixColor type for future flexibility
+- All components now use the new light green color automatically via centralized system
+
+**Color Distinction**:
+- 🟢 Leaders: dark green (`green` badge + `rgba(34, 197, 94, 0.8)` chart)
+- 🟢 Balanced/Linear: very light green (`lime` badge + `rgba(134, 239, 172, 0.8)` chart)
+
+**Rationale**: 
+- Light green color better represents "balanced" and "steady" performance
+- Using Radix UI `lime` color creates stronger visual distinction than `grass` from leader `green`
+- Lime is brighter and lighter, making it clearly distinguishable from dark green
+- Charts and badges now perfectly match in color intensity
+
+**Files Updated**:
+- `lib/utils/segment-colors.ts` - Updated color constants, added multiple color options to RadixColor type
+- `docs/COLOR_SYSTEM.md` - Updated documentation with lime color
+- `app-creation-log.md` - Added this entry
+
+**Impact**: 
+- Strong visual distinction between leaders (dark green) and balanced segments (very light green)
+- Perfect color matching between charts and badges
+- Better user experience with clearly distinguishable segment types
+
+---
+
+## 2025-10-24: Centralized Color Management System
+
+**Agent:** Implemented centralized color management system for all charts and badges
+
+**Purpose**: Create a single source of truth for all colors used across the application, ensuring perfect consistency between charts and badges in all views (regular reports, shared reports, tables, etc.).
+
+**Architecture**:
+
+Created `lib/utils/segment-colors.ts` as the single source of truth containing:
+- Color constants (SEGMENT_COLORS, BADGE_COLORS, MODULE_COLORS)
+- Chart color functions (getPerformanceSegmentChartColor, getEasingPatternChartColor)
+- Badge color functions (getPerformanceSegmentBadgeColor, getEasingPatternBadgeColor)
+- Helper utilities (toSolidColor, getSegmentColorMap, getEasingColorMap)
+
+**Color Scheme**:
+
+1. **Performance Segments** (supports both old and new segment names):
+   - 🟢 Green `rgba(34, 197, 94, 0.8)` - Leaders
+     - New: "Highly efficient", "Highly engaged"
+     - Old: "Leader efficient", "Leader engaged"
+   - 🔴 Red `rgba(239, 68, 68, 0.8)` - Low engagement
+     - New: "Low participation"
+     - Old: "Low engagement"
+   - 🟠 Orange `rgba(249, 115, 22, 0.8)` - Effortful
+     - New: "Highly effortful"
+     - Old: "Hardworking but struggling"
+   - 🔵 Blue `rgba(59, 130, 246, 0.8)` - Moderate engagement
+     - New: "Moderately engaged"
+     - Old: "Balanced + engaged"
+   - 🟢 Light Green `rgba(134, 239, 172, 0.8)` - Balanced/moderate
+     - New: "Moderately performing"
+     - Old: "Balanced middle"
+
+2. **Easing Patterns**:
+   - 🟢 Green `rgba(34, 197, 94, 0.8)` - "ease-out" (frontloaded)
+   - 🟠 Orange `rgba(249, 115, 22, 0.8)` - "ease-in" (backloaded)
+   - 🟣 Purple `rgba(168, 85, 247, 0.8)` - "ease-in-out" (S-curve)
+   - 🔵 Blue `rgba(59, 130, 246, 0.8)` - "ease" (general activity)
+   - 🟢 Light Green `rgba(134, 239, 172, 0.8)` - "linear" (steady)
+   - 🔴 Red `rgba(220, 38, 38, 0.8)` - "no-activity"
+
+3. **Module Activity**:
+   - 🔵 Blue `rgba(59, 130, 246, 0.8)` - Completed steps
+   - 🟣 Purple `rgba(168, 85, 247, 0.8)` - Meetings attended
+
+**Files Created**:
+- `lib/utils/segment-colors.ts` - Centralized color management system
+
+**Files Updated**:
+- `app/components/PerformanceResults.tsx` - Using centralized colors for charts and badges
+- `app/components/DynamicResults.tsx` - Using centralized colors for charts and badges
+- `app/components/ModuleActivityChart.tsx` - Using MODULE_COLORS constants
+- `app/components/GroupModuleAnalytics.tsx` - Using MODULE_COLORS constants
+- `app/components/EasingChart.tsx` - Using SEGMENT_COLORS constants
+- `app/components/SegmentPieChart.tsx` - Changed borderColor to white
+- `app/reports/shared/[id]/view/BlockViewer.tsx` - Using centralized color functions
+- `app/reports/shared/[id]/edit/BlockRenderer.tsx` - Using centralized color functions
+
+**Key Features**:
+1. **Single Source of Truth**: All colors defined in one place
+2. **Dual Output**: Functions for both chart colors (rgba) and badge colors (Radix UI color names)
+3. **Backward Compatibility**: Supports both old and new segment naming conventions
+4. **Semantic Colors**: Green = positive, Red = needs attention, Orange = warning, etc.
+5. **Type Safety**: TypeScript types for all color functions and constants
+6. **Helper Functions**: Utilities like `toSolidColor()` for border colors
+
+**Impact**:
+- ✅ Perfect consistency between charts and badges
+- ✅ Charts and badges now use the same semantic colors
+- ✅ Easy to maintain and update colors in the future
+- ✅ Single place to change colors for entire application
+- ✅ Backward compatibility with old segment names from pre-migration reports
+- ✅ Type-safe color management
+
+---
+
 ## 2025-10-23: Security & Documentation Update
 
 **Agent:** Removed sensitive credentials from public files

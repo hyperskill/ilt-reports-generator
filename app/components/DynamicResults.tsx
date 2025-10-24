@@ -6,6 +6,7 @@ import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
 import { ModuleActivityChart } from './ModuleActivityChart';
 import { SegmentPieChart } from './SegmentPieChart';
+import { getEasingPatternChartColor, getEasingPatternBadgeStyle } from '@/lib/utils/segment-colors';
 import * as Accordion from '@radix-ui/react-accordion';
 import styles from './DynamicResults.module.css';
 
@@ -66,36 +67,12 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
     setSelectedEasings(newSet);
   };
 
-  const getEasingColor = (easing: string): any => {
-    switch (easing) {
-      case 'linear': return 'gray';
-      case 'ease': return 'blue';
-      case 'ease-in': return 'orange';
-      case 'ease-out': return 'green';
-      case 'ease-in-out': return 'purple';
-      case 'no-activity': return 'red';
-      default: return 'gray';
-    }
-  };
-
-  const getEasingChartColor = (easing: string): string => {
-    switch (easing) {
-      case 'linear': return '#6b7280'; // gray-500
-      case 'ease': return '#3b82f6'; // blue-500
-      case 'ease-in': return '#f97316'; // orange-500
-      case 'ease-out': return '#22c55e'; // green-500
-      case 'ease-in-out': return '#a855f7'; // purple-500
-      case 'no-activity': return '#ef4444'; // red-500
-      default: return '#6b7280'; // gray-500
-    }
-  };
-
-  // Prepare pie chart data
+  // Prepare pie chart data using centralized color system
   const pieChartData = useMemo(() => {
     return Object.entries(stats.easings).map(([easing, count]) => ({
       label: easing,
       count,
-      color: getEasingChartColor(easing),
+      color: getEasingPatternChartColor(easing),
     }));
   }, [stats.easings]);
 
@@ -340,18 +317,25 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
       <Card>
         <Heading size="4" mb="3">Easing Label Distribution</Heading>
         <Flex gap="2" wrap="wrap">
-          {Object.entries(stats.easings).map(([easing, count]) => (
-            <Badge 
-              key={easing} 
-              color={getEasingColor(easing)}
-              size="2"
-              variant={selectedEasings.has(easing) ? 'solid' : 'soft'}
-              style={{ cursor: 'pointer' }}
-              onClick={() => toggleEasing(easing)}
-            >
-              {easing}: {count}
-            </Badge>
-          ))}
+          {Object.entries(stats.easings).map(([easing, count]) => {
+            const isActive = selectedEasings.size === 0 || selectedEasings.has(easing);
+            return (
+              <Badge 
+                key={easing} 
+                size="2"
+                style={{ 
+                  cursor: 'pointer',
+                  ...getEasingPatternBadgeStyle(easing),
+                  opacity: isActive ? 1 : 0.4,
+                  textDecoration: isActive ? 'none' : 'line-through',
+                  transition: 'opacity 0.2s, text-decoration 0.2s',
+                }}
+                onClick={() => toggleEasing(easing)}
+              >
+                {easing}: {count}
+              </Badge>
+            );
+          })}
         </Flex>
         {selectedEasings.size > 0 && (
           <Text size="2" color="gray" mt="2">
@@ -397,7 +381,10 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
           <Grid columns="2" gap="3" mb="4">
             <Box>
               <Text size="2" color="gray">Easing Label</Text>
-              <Badge color={getEasingColor(selectedUserData.easing_label)} size="3">
+              <Badge 
+                size="3"
+                style={getEasingPatternBadgeStyle(selectedUserData.easing_label)}
+              >
                 {selectedUserData.easing_label}
               </Badge>
             </Box>
@@ -463,7 +450,10 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge color={getEasingColor(row.easing_label)} size="1">
+                    <Badge 
+                      size="1"
+                      style={getEasingPatternBadgeStyle(row.easing_label)}
+                    >
                       {row.easing_label}
                     </Badge>
                   </Table.Cell>

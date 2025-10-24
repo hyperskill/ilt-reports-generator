@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Card, Flex, Spinner, Text } from '@radix-ui/themes';
 import { processModuleAnalytics } from '@/lib/processors/module-analytics';
+import { MODULE_COLORS, toSolidColor } from '@/lib/utils/segment-colors';
 
 ChartJS.register(
   CategoryScale,
@@ -99,16 +100,16 @@ export function ModuleActivityChart({
         {
           label: 'Completed Steps',
           data: moduleStats.map(m => m.completed_steps),
-          backgroundColor: 'rgba(75, 192, 192, 0.7)',
-          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: MODULE_COLORS.COMPLETED_STEPS,
+          borderColor: toSolidColor(MODULE_COLORS.COMPLETED_STEPS),
           borderWidth: 1,
           yAxisID: 'y',
         },
         {
           label: 'Meetings Attended',
           data: moduleStats.map(m => m.meetings_attended),
-          backgroundColor: 'rgba(153, 102, 255, 0.8)',
-          borderColor: 'rgb(153, 102, 255)',
+          backgroundColor: MODULE_COLORS.MEETINGS_ATTENDED,
+          borderColor: toSolidColor(MODULE_COLORS.MEETINGS_ATTENDED),
           borderWidth: 2,
           yAxisID: 'y1',
         },
@@ -159,7 +160,7 @@ export function ModuleActivityChart({
         title: {
           display: true,
           text: 'Completed Steps',
-          color: 'rgb(75, 192, 192)',
+          color: toSolidColor(MODULE_COLORS.COMPLETED_STEPS),
         },
         ticks: {
           callback: function(value: any) {
@@ -176,7 +177,7 @@ export function ModuleActivityChart({
         title: {
           display: true,
           text: 'Meetings Attended',
-          color: 'rgb(153, 102, 255)',
+          color: toSolidColor(MODULE_COLORS.MEETINGS_ATTENDED),
         },
         grid: {
           drawOnChartArea: false,
@@ -232,7 +233,7 @@ export function ModuleActivityChart({
         </div>
         
         <div style={{ marginBottom: '10px' }}>
-          <strong style={{ color: 'rgb(75, 192, 192)' }}>● Completed Steps</strong> (left axis, teal bars)
+          <strong style={{ color: toSolidColor(MODULE_COLORS.COMPLETED_STEPS) }}>● Completed Steps</strong> (left axis, blue bars)
           <br />
           <span style={{ color: '#666', fontSize: '13px' }}>
             Number of successfully completed exercises in each module.
@@ -240,7 +241,7 @@ export function ModuleActivityChart({
         </div>
         
         <div style={{ marginBottom: '10px' }}>
-          <strong style={{ color: 'rgb(153, 102, 255)' }}>● Meetings Attended</strong> (right axis, purple bars)
+          <strong style={{ color: toSolidColor(MODULE_COLORS.MEETINGS_ATTENDED) }}>● Meetings Attended</strong> (right axis, purple bars)
           <br />
           <span style={{ color: '#666', fontSize: '13px' }}>
             Number of live sessions attended during each module's activity period.

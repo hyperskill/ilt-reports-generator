@@ -11,6 +11,7 @@ import { ModuleAnalytics } from '@/app/components/ModuleAnalytics';
 import { StudentCommentsSection } from './StudentCommentsSection';
 import { StudentCertificateSection } from './StudentCertificateSection';
 import { createClient } from '@/lib/supabase/client';
+import { getPerformanceSegmentBadgeStyle, getEasingPatternBadgeStyle } from '@/lib/utils/segment-colors';
 import styles from './student.module.css';
 
 interface PageProps {
@@ -211,25 +212,7 @@ export default function StudentDetailPage({ params }: PageProps) {
     );
   }
 
-  const getSegmentColor = (segment: string): any => {
-    if (segment.includes('Highly')) return 'green';
-    if (segment.includes('Low participation')) return 'red';
-    if (segment.includes('effortful')) return 'orange';
-    if (segment.includes('engaged')) return 'blue';
-    return 'gray';
-  };
-
-  const getEasingColor = (easing: string): any => {
-    switch (easing) {
-      case 'linear': return 'gray';
-      case 'ease': return 'blue';
-      case 'ease-in': return 'orange';
-      case 'ease-out': return 'green';
-      case 'ease-in-out': return 'purple';
-      case 'no-activity': return 'red';
-      default: return 'gray';
-    }
-  };
+  // Using centralized color system from lib/utils/segment-colors.ts
 
   const getEngagementColor = (level: string): any => {
     if (level === 'High') return 'green';
@@ -311,13 +294,19 @@ export default function StudentDetailPage({ params }: PageProps) {
           <Grid columns="4" gap="3">
             <Box>
               <Text as="div" size="2" color="gray" mb="1">Segment</Text>
-              <Badge color={getSegmentColor(report.student.segment)} size="2">
+              <Badge 
+                size="2"
+                style={getPerformanceSegmentBadgeStyle(report.student.segment)}
+              >
                 {report.student.segment}
               </Badge>
             </Box>
             <Box>
               <Text as="div" size="2" color="gray" mb="1">Activity Pattern</Text>
-              <Badge color={getEasingColor(report.student.easing)} size="2">
+              <Badge 
+                size="2"
+                style={getEasingPatternBadgeStyle(report.student.easing)}
+              >
                 {report.student.easing}
               </Badge>
             </Box>

@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { DynamicSummaryRow, DynamicSeriesRow } from '@/lib/types';
+import { SEGMENT_COLORS, toSolidColor } from '@/lib/utils/segment-colors';
 
 ChartJS.register(
   CategoryScale,
@@ -42,8 +43,8 @@ export function EasingChart({ series, userData }: Props) {
         {
           label: 'Cumulative Activity',
           data: sorted.map(row => ({ x: row.x_norm, y: row.y_norm })),
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: toSolidColor(SEGMENT_COLORS.EASE_BLUE),
+          backgroundColor: SEGMENT_COLORS.EASE_BLUE.replace('0.8)', '0.2)'),
           tension: 0.4,
           fill: true,
         },

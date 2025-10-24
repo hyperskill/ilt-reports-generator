@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Heading, Text, Card, Flex, Button, Table, Badge } from '@radix-ui/themes';
 import { AppLayoutWithAuth } from '@/app/components/AppLayoutWithAuth';
+import { getPerformanceSegmentBadgeStyle } from '@/lib/utils/segment-colors';
 
 export default function StudentsPreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -11,23 +12,6 @@ export default function StudentsPreviewPage({ params }: { params: { id: string }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<any>(null);
-
-  const getSegmentColor = (segment: string) => {
-    switch (segment) {
-      case 'Highly engaged':
-      case 'Highly efficient':
-        return 'green';
-      case 'Moderately engaged':
-      case 'Moderately performing':
-        return 'blue';
-      case 'Highly effortful':
-        return 'orange';
-      case 'Low participation':
-        return 'red';
-      default:
-        return 'gray';
-    }
-  };
 
   useEffect(() => {
     fetchReport();
@@ -125,7 +109,10 @@ export default function StudentsPreviewPage({ params }: { params: { id: string }
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge color={getSegmentColor(student.simple_segment || 'Unknown')}>
+                    <Badge 
+                      size="1"
+                      style={getPerformanceSegmentBadgeStyle(student.simple_segment || 'Unknown')}
+                    >
                       {student.simple_segment || 'Unknown'}
                     </Badge>
                   </Table.Cell>

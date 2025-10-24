@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Box, Card, Flex, Grid, Heading, Text, Badge, Table, TextField } from '@radix-ui/themes';
 import { PerformanceRow } from '@/lib/types';
 import { SegmentPieChart } from './SegmentPieChart';
+import { getPerformanceSegmentChartColor, getPerformanceSegmentBadgeStyle } from '@/lib/utils/segment-colors';
 import * as Accordion from '@radix-ui/react-accordion';
 import styles from './PerformanceResults.module.css';
 
@@ -65,29 +66,12 @@ export function PerformanceResults({ data, reportId }: Props) {
     setSelectedSegments(newSet);
   };
 
-  const getSegmentColor = (segment: string): any => {
-    if (segment.includes('Highly')) return 'green';
-    if (segment.includes('Low participation')) return 'red';
-    if (segment.includes('effortful')) return 'orange';
-    if (segment.includes('engaged')) return 'blue';
-    return 'gray';
-  };
-
-  const getSegmentChartColor = (segment: string): string => {
-    if (segment.includes('Highly engaged')) return '#22c55e';
-    if (segment.includes('Highly efficient')) return '#16a34a';
-    if (segment.includes('Moderately engaged')) return '#3b82f6';
-    if (segment.includes('Highly effortful')) return '#f97316';
-    if (segment.includes('Low participation')) return '#dc2626';
-    return '#6b7280';
-  };
-
-  // Prepare pie chart data
+  // Prepare pie chart data using centralized color system
   const pieChartData = useMemo(() => {
     return Object.entries(stats.segments).map(([segment, count]) => ({
       label: segment,
       count,
-      color: getSegmentChartColor(segment),
+      color: getPerformanceSegmentChartColor(segment),
     }));
   }, [stats.segments]);
 
@@ -323,18 +307,25 @@ export function PerformanceResults({ data, reportId }: Props) {
       <Card>
         <Heading size="4" mb="3">Segment Distribution</Heading>
         <Flex gap="2" wrap="wrap">
-          {Object.entries(stats.segments).map(([segment, count]) => (
-            <Badge 
-              key={segment} 
-              color={getSegmentColor(segment)}
-              size="2"
-              variant={selectedSegments.has(segment) ? 'solid' : 'soft'}
-              style={{ cursor: 'pointer' }}
-              onClick={() => toggleSegment(segment)}
-            >
-              {segment}: {count}
-            </Badge>
-          ))}
+          {Object.entries(stats.segments).map(([segment, count]) => {
+            const isActive = selectedSegments.size === 0 || selectedSegments.has(segment);
+            return (
+              <Badge 
+                key={segment} 
+                size="2"
+                style={{ 
+                  cursor: 'pointer',
+                  ...getPerformanceSegmentBadgeStyle(segment),
+                  opacity: isActive ? 1 : 0.4,
+                  textDecoration: isActive ? 'none' : 'line-through',
+                  transition: 'opacity 0.2s, text-decoration 0.2s',
+                }}
+                onClick={() => toggleSegment(segment)}
+              >
+                {segment}: {count}
+              </Badge>
+            );
+          })}
         </Flex>
         {selectedSegments.size > 0 && (
           <Text size="2" color="gray" mt="2">
@@ -395,7 +386,10 @@ export function PerformanceResults({ data, reportId }: Props) {
                   <Table.Cell><Text size="2">{row.persistence}</Text></Table.Cell>
                   <Table.Cell><Text size="2">{row.efficiency}</Text></Table.Cell>
                   <Table.Cell>
-                    <Badge color={getSegmentColor(row.simple_segment)} size="1">
+                    <Badge 
+                      size="1"
+                      style={getPerformanceSegmentBadgeStyle(row.simple_segment)}
+                    >
                       {row.simple_segment}
                     </Badge>
                   </Table.Cell>

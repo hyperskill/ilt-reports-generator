@@ -14,6 +14,7 @@ import {
 import { Card, Flex, Spinner, Text, Heading, Table, Badge, Box } from '@radix-ui/themes';
 import * as Accordion from '@radix-ui/react-accordion';
 import { processModuleAnalytics } from '@/lib/processors/module-analytics';
+import { MODULE_COLORS, toSolidColor } from '@/lib/utils/segment-colors';
 
 ChartJS.register(
   CategoryScale,
@@ -162,16 +163,16 @@ export function GroupModuleAnalytics({
         {
           label: 'Avg Completed Steps',
           data: moduleStats.map(m => m.avg_completed_steps),
-          backgroundColor: 'rgba(75, 192, 192, 0.7)',
-          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: MODULE_COLORS.COMPLETED_STEPS,
+          borderColor: toSolidColor(MODULE_COLORS.COMPLETED_STEPS),
           borderWidth: 1,
           yAxisID: 'y',
         },
         {
           label: 'Avg Meetings Attended',
           data: moduleStats.map(m => m.avg_meetings_attended),
-          backgroundColor: 'rgba(153, 102, 255, 0.8)',
-          borderColor: 'rgb(153, 102, 255)',
+          backgroundColor: MODULE_COLORS.MEETINGS_ATTENDED,
+          borderColor: toSolidColor(MODULE_COLORS.MEETINGS_ATTENDED),
           borderWidth: 2,
           yAxisID: 'y1',
         },
@@ -220,7 +221,7 @@ export function GroupModuleAnalytics({
         title: {
           display: true,
           text: 'Avg Completed Steps',
-          color: 'rgb(75, 192, 192)',
+          color: toSolidColor(MODULE_COLORS.COMPLETED_STEPS),
         },
         ticks: {
           callback: function(value: any) {
@@ -237,7 +238,7 @@ export function GroupModuleAnalytics({
         title: {
           display: true,
           text: 'Avg Meetings Attended',
-          color: 'rgb(153, 102, 255)',
+          color: toSolidColor(MODULE_COLORS.MEETINGS_ATTENDED),
         },
         grid: {
           drawOnChartArea: false,
@@ -426,7 +427,7 @@ export function GroupModuleAnalytics({
                 
                 <p><strong>Chart interpretation:</strong></p>
                 <ul>
-                  <li><strong>Teal bars (left axis)</strong> - Average completed steps per module</li>
+                  <li><strong>Blue bars (left axis)</strong> - Average completed steps per module</li>
                   <li><strong>Purple bars (right axis)</strong> - Average meetings attended per module</li>
                 </ul>
                 
