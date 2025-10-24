@@ -1,5 +1,41 @@
 # Utility Scripts
 
+## 🧪 LLM Testing Scripts (NEW!)
+
+Scripts for testing LLM report generation functionality.
+
+### Quick Start
+
+```bash
+# Step 1: Check data preparation (NO TOKEN COST)
+node scripts/check-llm-data.js manager <reportId>
+node scripts/check-llm-data.js student <reportId> <userId>
+
+# Step 2: Full test with LLM call (COSTS TOKENS!)
+node scripts/test-llm-generation.js manager <reportId>
+node scripts/test-llm-generation.js student <reportId> <userId>
+```
+
+### Available Testing Scripts
+
+1. **`check-llm-data.js`** - Validates data preparation without making LLM API calls
+   - Checks ENV variables
+   - Validates report data
+   - Checks learning outcomes & module tools
+   - Detects empty/null values
+   - NO TOKEN COST ✅
+
+2. **`test-llm-generation.js`** - Complete test with actual LLM generation
+   - Tests LLM connection
+   - Makes real API call
+   - Validates response format
+   - Checks content quality
+   - COSTS TOKENS ⚠️
+
+📖 **[Read Full Testing Guide](TEST_LLM_GUIDE.md)** for detailed instructions and troubleshooting.
+
+---
+
 ## generate-activity-csv.js
 
 Generates `activity.csv` from `submissions.csv` by aggregating submission data into daily activity metrics.

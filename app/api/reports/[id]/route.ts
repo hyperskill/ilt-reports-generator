@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 // GET - Get single report
@@ -7,7 +8,29 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient();
+    // Check for Authorization header (for testing scripts)
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Use Bearer token from Authorization header
+      const token = authHeader.substring(7);
+      supabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+    } else {
+      // Use cookies (normal web request)
+      supabase = await createClient();
+    }
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -36,7 +59,27 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient();
+    // Check for Authorization header (for testing scripts)
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      supabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+    } else {
+      supabase = await createClient();
+    }
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {

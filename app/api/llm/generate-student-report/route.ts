@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModuleStructureData, getStudentModuleAnalytics } from '@/lib/utils/llm-data-helpers';
@@ -86,7 +87,28 @@ async function getStudentSubmissionsStats(
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    // Check for Authorization header (for testing scripts)
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Use Bearer token from Authorization header
+      const token = authHeader.substring(7);
+      supabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+    } else {
+      // Use cookies (normal web request)
+      supabase = await createClient();
+    }
     
     // Check if current user is admin
     const { data: { user } } = await supabase.auth.getUser();
@@ -195,6 +217,36 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch learning outcomes and module tools
+    let learningOutcomes = null;
+    let moduleTools = null;
+    
+    try {
+      const [outcomesResponse, toolsResponse] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportId}`,
+          { headers: request.headers }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportId}`,
+          { headers: request.headers }
+        ),
+      ]);
+
+      if (outcomesResponse.ok) {
+        const outcomesData = await outcomesResponse.json();
+        learningOutcomes = outcomesData.learningOutcomes || [];
+      }
+
+      if (toolsResponse.ok) {
+        const toolsData = await toolsResponse.json();
+        moduleTools = toolsData.moduleTools || [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch learning outcomes and module tools:', error);
+      // Continue without outcomes/tools if fetch fails
+    }
+
     // Prepare data for LLM
     // Load student project comment
     let projectComment = '';
@@ -226,6 +278,9 @@ export async function POST(request: Request) {
       studentModuleAnalytics,
       // NEW: Student project comment
       projectComment,
+      // NEW: Learning outcomes and tools by module
+      learningOutcomes,
+      moduleTools,
     };
 
     const systemPrompt = `You are an expert Learning Coach creating a personalized learning report for an individual student who completed a transformative learning journey.
@@ -281,6 +336,8 @@ You have access to:
 - **Activity patterns**: Consistency, effort, engagement over time
 - **Topic-level performance**: Success rates and attempts per topic (with real topic names!)
 - **Module analytics**: Performance in each course module (with real module names!)
+- **Learning Outcomes**: Specific learning outcomes defined for each module - what the student was expected to master
+- **Module Tools**: Technologies, platforms, and tools covered in each module that the student learned
 - **Meeting attendance**: Participation in live sessions
 - **Instructor feedback**: Comments from program experts, teaching assistants, and learning support
 - **Student projects**: Detailed feedback about their project work
@@ -309,6 +366,15 @@ You have access to:
 - Note activity periods showing engagement patterns
 - Use specific module names for personalized feedback
 
+**If learningOutcomes and moduleTools are provided:**
+- **Reference specific learning outcomes** when discussing what the student learned in each module
+- Celebrate mastery of specific outcomes in high-performing modules (≥75% completion/success)
+- For developing areas (50-74%), acknowledge progress and encourage continued practice
+- For challenging areas (<50%), provide compassionate support and frame as growth opportunities
+- **Highlight specific tools** the student can now use from moduleTools data
+- Connect learning outcomes to real-world applications: "By mastering [outcome], you can now [practical application]"
+- When discussing projects, reference which learning outcomes or tools the student demonstrated
+
 **If instructor feedback is provided:**
 - **Prioritize mentions of student projects** - describe what they built and why it's impressive
 - Share positive observations that build confidence
@@ -317,23 +383,28 @@ You have access to:
 
 ## Report Structure
 
-**Your Learning Journey** (2-3 paragraphs)
-Celebrate the student's participation and growth. Show them how they've transformed during this course. Highlight their unique approach to learning, activity patterns, and overall engagement. Help them see themselves as someone who took on a challenge and grew from it. Use real module names to show their progression through the course.
+**Your Learning Journey** (2-4 paragraphs)
+Celebrate the student's participation and growth. Show them how they've transformed during this course. Highlight their unique approach to learning, activity patterns, and overall engagement. Use real module names to show their progression through the course. **Reference key learning outcomes they've been working toward** to show the purposeful nature of their journey. Help them see themselves as someone who took on a challenge and grew from it. You can expand to 3-4 paragraphs if needed to properly celebrate their journey through different modules and learning outcomes.
 
-**Your Strengths & Achievements** (2-3 paragraphs)
-Identify specific areas where the student excelled. **If they built projects, highlight them prominently!** Mention successful projects, strong technical skills, good collaboration, consistent effort, or creative problem-solving. Be specific and genuine. Connect their achievements to real-world skills they can use. If performance was lower, focus on effort, persistence, and any small wins.
+**Your Strengths & Achievements** (2-4 paragraphs)
+Identify specific areas where the student excelled. **If they built projects, highlight them prominently!** Mention successful projects, strong technical skills, good collaboration, consistent effort, or creative problem-solving. Be specific and genuine. **Reference specific learning outcomes they've mastered** (especially those with ≥75% completion/success rates) and **tools they can now confidently use** from moduleTools data. Connect their achievements to real-world skills they can use. If performance was lower, focus on effort, persistence, and any small wins. You can expand to 3-4 paragraphs to thoroughly celebrate their achievements and connect them to specific outcomes.
 
-**Your Skills Development** (2-3 paragraphs)
-Analyze the student's technical progress and skill acquisition using real module and topic names. Show them what they can now do that they couldn't before. Comment on their problem-solving approach, persistence when facing challenges, and learning strategies. Map their progress through modules to concrete skills (e.g., "By completing Prompt Engineering, you can now craft effective AI prompts for various tasks").
+**Your Skills Development** (2-5 paragraphs)
+Analyze the student's technical progress and skill acquisition using real module and topic names. Show them what they can now do that they couldn't before. **Use specific learning outcomes from learningOutcomes data to detail their skill progression.** For each major module or group of modules, reference the outcomes they've mastered and what that means practically. Mention **specific tools and technologies** from moduleTools data that they're now proficient with. Comment on their problem-solving approach, persistence when facing challenges, and learning strategies. Structure your response to cover:
+- Overview of their skill transformation
+- Specific learning outcomes mastered in different modules
+- Tools and technologies they can now leverage
+- How these skills connect to real-world applications
+You can expand to 4-5 paragraphs to thoroughly cover their skills development across all modules and outcomes.
 
-**Feedback from Your Instructors** (2-3 paragraphs)
-Share insights and observations from program experts, teaching assistants, and learning support. **Prioritize any mentions of student projects** - describe what they built, why it's impressive, and what it demonstrates about their skills. Present all feedback in a constructive, encouraging way that builds confidence.
+**Feedback from Your Instructors** (2-4 paragraphs)
+Share insights and observations from program experts, teaching assistants, and learning support. **Prioritize any mentions of student projects** - describe what they built, why it's impressive, and what it demonstrates about their skills. **When discussing projects or feedback, connect them to specific learning outcomes or tools** they demonstrated mastery of. Present all feedback in a constructive, encouraging way that builds confidence. You can expand to 3-4 paragraphs if there's substantial instructor feedback to cover.
 
-**Opportunities for Growth** (2-3 paragraphs)
-Identify 2-4 specific areas where the student can continue growing. Frame these as exciting opportunities rather than criticisms. Be extra supportive if the student struggled - emphasize that challenges are part of learning and they've already shown courage by participating. Include concrete, encouraging suggestions for how they can develop further.
+**Opportunities for Growth** (2-4 paragraphs)
+Identify 2-4 specific areas where the student can continue growing. **Reference learning outcomes where completion/success rates were lower (<75%)** as areas for continued development. Frame these as exciting opportunities rather than criticisms. Be extra supportive if the student struggled - emphasize that challenges are part of learning and they've already shown courage by participating. **Suggest specific tools they could practice more** based on moduleTools data. Include concrete, encouraging suggestions for how they can develop further. You can expand to 3-4 paragraphs to provide comprehensive, supportive growth recommendations.
 
-**Next Steps & Recommendations** (2-3 paragraphs)
-Provide actionable, encouraging recommendations for the student's continued learning journey. Suggest specific topics to explore, skills to practice, or learning strategies to try. Help them see a clear, achievable path forward. Make them excited about what comes next!
+**Next Steps & Recommendations** (2-5 paragraphs)
+Provide actionable, encouraging recommendations for the student's continued learning journey. **Suggest ways to deepen mastery of learning outcomes** where they showed good but not complete mastery (50-75% rates). **Recommend specific tools to start using regularly** from moduleTools data. Suggest specific topics to explore, skills to practice, or learning strategies to try. Help them see a clear, achievable path forward. Make them excited about what comes next! You can expand to 4-5 paragraphs to provide detailed, actionable next steps that connect to their specific learning outcomes and tools.
 
 Format your response as JSON with this structure:
 {

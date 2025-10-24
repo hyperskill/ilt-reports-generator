@@ -1,5 +1,267 @@
 # App Creation Log
 
+## 2025-10-24: Enhanced LLM Test Script with Full Statistics Validation
+
+**Agent:** Added comprehensive statistics validation to `check-llm-data.js`
+
+**Update**: Test script now validates ALL report statistics, not just learning outcomes/tools
+
+**New Validations**:
+
+1. **Step 4: Report Statistics** - Validates all core data:
+   - Students count (critical)
+   - Structure rows (critical)
+   - Submissions count (critical)
+   - Meetings count
+   - Dynamic data points
+   - Dynamic series
+   - Learning outcomes count
+   - Module tools count
+   - Shows which fields are empty vs populated
+
+2. **Step 5: Module Coverage** - Validates learning outcomes & tools coverage:
+   - Total modules in structure
+   - Modules with learning outcomes
+   - Modules with tools
+   - Coverage percentage
+   - Warnings if coverage is incomplete
+
+3. **Step 5.5: Student-Specific Stats** - For student reports:
+   - Student submissions count
+   - Student meetings count
+   - Validates student exists in performance data
+
+4. **Step 7: Readiness Score** - Calculates data readiness:
+   - Checks: students > 0, structure > 0, submissions > 0, outcomes > 0, no critical issues
+   - Score: 100% = EXCELLENT, 80-99% = GOOD, 60-79% = FAIR, <60% = POOR
+   - Clear recommendations based on score
+
+**Example Output**:
+```
+📊 Step 4: Validating Report Statistics
+✅  students: 22
+✅  structureRows: 184
+✅  submissions: 2308
+✅  meetings: 22
+✅  dynamicData: 22
+✅  learningOutcomes: 5
+✅  moduleTools: 5
+✅ All critical statistics are present!
+
+🔍 Step 5: Validating Modules with Learning Outcomes
+✅ All modules have learning outcomes! 🎉
+✅ All modules have tools defined! 🎉
+
+🎯 Data Readiness Score:
+✅  80% - GOOD. LLM generation should work well
+```
+
+**API Updates** - Added Bearer token support to all endpoints:
+- `/api/reports/[id]/route.ts` (GET, PATCH)
+- `/api/reports/learning-outcomes/route.ts` (GET)
+- `/api/reports/module-tools/route.ts` (GET)
+
+**Benefits**:
+- ✅ Complete visibility into report data quality
+- ✅ Early detection of missing data before LLM call
+- ✅ Clear readiness score for decision making
+- ✅ Actionable recommendations
+- ✅ Saves tokens by catching issues early
+
+---
+
+## 2025-10-24: Added Automatic Authentication to LLM Testing Scripts
+
+**Agent:** Added automatic Supabase authentication with Bearer tokens to testing scripts
+
+**Update**: Tests now automatically authenticate using admin credentials from `.env.local`
+
+**Changes**:
+1. **Updated `scripts/test-llm-generation.js`**:
+   - Added `authenticateWithSupabase()` function
+   - Automatically signs in with TEST_ADMIN_EMAIL/TEST_ADMIN_PASSWORD
+   - Gets access_token from Supabase
+   - Uses Bearer token in Authorization header
+   - No more manual cookie copying needed!
+
+2. **Updated `scripts/check-llm-data.js`**:
+   - Added same authentication logic
+   - All API calls now use Bearer token authentication
+   - Fixes 401 Unauthorized errors
+
+3. **Updated API routes** (`generate-manager-report/route.ts`, `generate-student-report/route.ts`):
+   - Added support for Authorization header with Bearer token
+   - Checks for `Authorization: Bearer <token>` header first
+   - Falls back to cookie-based auth for browser requests
+   - Uses `createClient` from `@supabase/supabase-js` directly with token
+   - **Dual authentication**: works with both Bearer tokens (scripts) and cookies (browser)
+
+4. **Updated `env.example`**:
+   - Added TEST_ADMIN_EMAIL
+   - Added TEST_ADMIN_PASSWORD
+   - Clear instructions for test credentials
+
+5. **Updated `RUN_TESTS_NOW.md`**:
+   - Simplified setup process
+   - Step 2 now: just add email/password to .env.local
+   - No more manual browser steps!
+
+**How it works**:
+1. Script reads TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD from `.env.local`
+2. Calls Supabase auth API: `POST /auth/v1/token?grant_type=password`
+3. Gets access_token from response
+4. Adds `Authorization: Bearer <token>` header to all API requests
+5. API routes detect Authorization header and create Supabase client with it
+6. Normal browser requests still use cookies (middleware handles them)
+
+**Benefits**:
+- ✅ No manual cookie copying
+- ✅ No browser DevTools needed  
+- ✅ Works in CI/CD pipelines
+- ✅ Same credentials as normal login
+- ✅ Clean Bearer token authentication
+- ✅ Doesn't interfere with normal browser usage
+- ✅ Standard REST API auth pattern
+
+**Test Results**:
+- ✅ Successfully authenticated with Supabase
+- ✅ LLM generation working (tokens consumed)
+- ✅ Generated content mentions learning outcomes and tools
+- ✅ All validations passing
+
+---
+
+## 2025-10-24: Added LLM Testing Scripts
+
+**Agent:** Created comprehensive testing scripts for LLM report generation
+
+**Feature**: Two scripts for validating LLM integration and data quality
+
+**Created Files**:
+
+1. **`scripts/check-llm-data.js`** - Data validation without LLM calls
+   - Checks environment variables (LITELLM_API_KEY, LITELLM_BASE_URL)
+   - Fetches report data via API
+   - Fetches learning outcomes and module tools
+   - Validates no empty/null values in critical data
+   - Checks system prompt structure in route files
+   - Saves prepared data to JSON for inspection
+   - NO TOKEN COST - safe to run multiple times
+   - Usage: `node scripts/check-llm-data.js <reportType> <reportId> [userId]`
+
+2. **`scripts/test-llm-generation.js`** - Full LLM generation test
+   - Makes REAL API call to LLM (COSTS TOKENS!)
+   - Tests connection with API keys
+   - Validates response format
+   - Checks all required fields present
+   - Analyzes content for learning outcomes/tools mentions
+   - Shows sample generated content
+   - Saves full response to JSON
+   - 3-second cancellation window to prevent accidental runs
+   - Usage: `node scripts/test-llm-generation.js <reportType> <reportId> [userId]`
+
+3. **`scripts/TEST_LLM_GUIDE.md`** - Comprehensive testing guide
+   - Step-by-step instructions
+   - Expected results for each test
+   - Troubleshooting common issues
+   - Interpretation of test outputs
+   - Examples for both manager and student reports
+
+4. **Updated `scripts/README.md`**
+   - Added quick start instructions
+   - Links to detailed guide
+   - Clear distinction between token-free and token-consuming tests
+
+**What Tests Validate**:
+- ✅ LLM connection with API keys works
+- ✅ No empty/null data sent to LLM
+- ✅ System prompt includes learning outcomes/tools references
+- ✅ Response has correct JSON structure
+- ✅ All required content fields present and non-empty
+- ✅ Content quality (mentions outcomes/tools when available)
+
+**Usage**:
+```bash
+# Install dotenv (if needed)
+npm install --save-dev dotenv
+
+# Step 1: Data check (no cost)
+node scripts/check-llm-data.js manager b5b4b3e5-79d7-4f80-8f24-7b21681b0f0b
+
+# Step 2: Full test (costs tokens)
+node scripts/test-llm-generation.js manager b5b4b3e5-79d7-4f80-8f24-7b21681b0f0b
+```
+
+**Result**:
+- Easy validation of LLM integration
+- Catch data issues before spending tokens
+- Debug prompts and responses
+- Verify learning outcomes/tools integration
+- Production-ready testing workflow
+
+---
+
+## 2025-10-24: Integrated Learning Outcomes & Tools into LLM Report Generation
+
+**Agent:** Enhanced LLM-generated reports (manager and student) to include learning outcomes and module tools analysis
+
+**Feature**: LLM now analyzes and references specific learning outcomes and tools when generating reports
+
+**Changes for Manager Reports** (`app/api/llm/generate-manager-report/route.ts`):
+
+1. **Data Fetching** (lines 146-174):
+   - Added fetching of learning outcomes and module tools with proper authorization
+   - Data added to `promptData` as `learningOutcomes` and `moduleTools`
+
+2. **System Prompt Updates**:
+   - Added "Learning Outcomes" and "Module Tools" to "Data Available to You" section
+   - **New guideline #4**: "Analyze Learning Outcomes Mastery"
+     * Assess how well team is mastering specific learning outcomes
+     * Identify mastered outcomes vs. those needing support
+     * Connect outcomes to business capabilities
+     * Highlight tools the team can now use
+     * Use completion/success rates to assess mastery level
+   - Updated "Report Structure" section:
+     * **Executive Summary**: Reference important outcomes and tools mastered
+     * **Skills Acquired & Learning Outcomes** (2-5 paragraphs): Use specific outcomes from data, detail what team can do, mention tools they're proficient with
+     * **Team Engagement & Dynamics** (2-4 paragraphs): Reference how engagement relates to mastering outcomes
+     * **Expert Observations** (3-5 paragraphs): Connect projects to specific learning outcomes/tools demonstrated
+     * **Business Recommendations** (2-5 paragraphs): Suggest reinforcement for outcomes with lower mastery, recommend tools to use immediately
+
+**Changes for Student Reports** (`app/api/llm/generate-student-report/route.ts`):
+
+1. **Data Fetching** (lines 198-226):
+   - Added fetching of learning outcomes and module tools with proper authorization
+   - Data added to `promptData` as `learningOutcomes` and `moduleTools`
+
+2. **System Prompt Updates**:
+   - Added "Learning Outcomes" and "Module Tools" to "Data Available to You" section
+   - **New Analysis Guidelines**: "If learningOutcomes and moduleTools are provided"
+     * Reference specific learning outcomes when discussing what student learned
+     * Celebrate mastery of outcomes in high-performing modules (≥75%)
+     * Acknowledge progress in developing areas (50-74%)
+     * Provide compassionate support for challenging areas (<50%)
+     * Highlight specific tools student can now use
+     * Connect outcomes to real-world applications
+     * When discussing projects, reference which outcomes/tools student demonstrated
+   - Updated "Report Structure" section:
+     * **Learning Journey** (2-4 paragraphs): Reference key learning outcomes they've been working toward
+     * **Strengths & Achievements** (2-4 paragraphs): Reference specific outcomes mastered and tools they can use
+     * **Skills Development** (2-5 paragraphs): Use specific outcomes to detail skill progression, mention tools they're proficient with
+     * **Instructor Feedback** (2-4 paragraphs): Connect feedback to specific outcomes/tools demonstrated
+     * **Opportunities for Growth** (2-4 paragraphs): Reference outcomes with lower rates as development areas, suggest tools to practice
+     * **Next Steps** (2-5 paragraphs): Suggest ways to deepen mastery of outcomes, recommend tools to use regularly
+
+**Result**:
+- LLM-generated reports now provide detailed, outcome-oriented analysis
+- Reports reference specific learning outcomes and tools from database
+- Managers see which business capabilities their team gained
+- Students see exactly what skills they've mastered and can use
+- Reports expanded from 2-3 to 2-5 paragraphs per section where needed for comprehensive coverage
+- Structure preserved, only content quality and depth improved
+
+---
+
 ## 2025-10-24: Fixed Learning Outcomes Block for Student Shared Reports
 
 **Agent:** Fixed data fetching and display for Learning Outcomes & Tools block in student shared reports

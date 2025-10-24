@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getModuleStructureData, getGroupModuleAnalytics } from '@/lib/utils/llm-data-helpers';
@@ -48,7 +49,28 @@ function getTopicDistribution(
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    // Check for Authorization header (for testing scripts)
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Use Bearer token from Authorization header
+      const token = authHeader.substring(7);
+      supabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+    } else {
+      // Use cookies (normal web request)
+      supabase = await createClient();
+    }
     
     // Check if current user is admin
     const { data: { user } } = await supabase.auth.getUser();
@@ -143,6 +165,36 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fetch learning outcomes and module tools
+    let learningOutcomes = null;
+    let moduleTools = null;
+    
+    try {
+      const [outcomesResponse, toolsResponse] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportId}`,
+          { headers: request.headers }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportId}`,
+          { headers: request.headers }
+        ),
+      ]);
+
+      if (outcomesResponse.ok) {
+        const outcomesData = await outcomesResponse.json();
+        learningOutcomes = outcomesData.learningOutcomes || [];
+      }
+
+      if (toolsResponse.ok) {
+        const toolsData = await toolsResponse.json();
+        moduleTools = toolsData.moduleTools || [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch learning outcomes and module tools:', error);
+      // Continue without outcomes/tools if fetch fails
+    }
+
     // Prepare data for LLM
     const promptData = {
       reportTitle: report.title,
@@ -171,6 +223,9 @@ export async function POST(request: Request) {
       moduleStructure,
       // NEW: Group average module analytics
       groupModuleAnalytics,
+      // NEW: Learning outcomes and tools by module
+      learningOutcomes,
+      moduleTools,
     };
 
     const systemPrompt = `You are an expert Learning Experience Designer creating a comprehensive group activity report for business managers who invested in their team's professional development.
@@ -212,14 +267,24 @@ This report is for a **business manager who sent their team to this training**. 
    - "Prompt Engineering" → Ability to effectively communicate with AI tools
    - "Agentic AI & Automation" → Skills to build automated workflows
 
-4. **Synthesize Expert Feedback**: Expert comments contain valuable insights about student engagement, project quality, and practical applications. Highlight these observations, especially when they mention specific projects or business-relevant achievements.
+4. **Analyze Learning Outcomes Mastery**: You have access to specific learning outcomes and tools for each module, along with group progress data (completion rates, success rates). Use this information to:
+   - Assess how well the team is mastering specific learning outcomes across modules
+   - Identify which outcomes the team has mastered vs. which need more support
+   - Connect learning outcomes to business capabilities (e.g., "The team has mastered prompt engineering outcomes, enabling them to effectively leverage AI tools like ChatGPT and Claude in daily work")
+   - Highlight specific tools and technologies the team can now use (from moduleTools data)
+   - When discussing module progress, reference the actual learning outcomes to show what skills were acquired
+   - Use completion and success rates to assess mastery level: high rates (≥75%) = strong mastery, medium (50-74%) = developing, low (<50%) = needs support
 
-5. **Use Business Language**: Avoid jargon. Explain technical concepts in terms managers understand. Focus on outcomes, not metrics.
+5. **Synthesize Expert Feedback**: Expert comments contain valuable insights about student engagement, project quality, and practical applications. Highlight these observations, especially when they mention specific projects or business-relevant achievements.
+
+6. **Use Business Language**: Avoid jargon. Explain technical concepts in terms managers understand. Focus on outcomes, not metrics.
 
 ## Data Available to You
 
 You have access to:
 - **Module Analytics**: Real module names, topics, completion rates, success rates, and meeting attendance per module
+- **Learning Outcomes**: Specific learning outcomes defined for each module - what students were expected to master
+- **Module Tools**: Technologies, platforms, and tools covered in each module
 - **Performance Data**: Overall group metrics and individual student performance
 - **Expert Comments**: Observations from program experts, teaching assistants, and learning support
 - **Student Feedback**: Comments about individual student progress and projects
@@ -235,27 +300,32 @@ When analyzing team performance:
 ## Report Structure
 
 **Executive Summary** (2-3 paragraphs)
-Provide a high-level business overview: Was the training successful? What's the key takeaway? What business value was delivered? Make this actionable and focused on ROI.
+Provide a high-level business overview: Was the training successful? What's the key takeaway? What business value was delivered? Reference the most important learning outcomes the team mastered and the practical tools they can now use. Make this actionable and focused on ROI.
 
-**Skills Acquired & Learning Outcomes** (2-3 paragraphs)
-Based on module completion and topic performance, describe what practical skills the team now has. Connect module names to real-world capabilities. Highlight any standout projects or achievements mentioned in expert comments.
+**Skills Acquired & Learning Outcomes** (2-5 paragraphs)
+Based on module completion, topic performance, and learning outcomes data, describe what practical skills the team now has. **Use the specific learning outcomes from learningOutcomes data** to detail what the team can now do. Connect these outcomes to real-world business capabilities. Mention specific tools and technologies from moduleTools data that the team can now leverage. Highlight any standout projects or achievements mentioned in expert comments. Structure your response to cover:
+- Overview of key competencies gained across all modules
+- Specific learning outcomes mastered in high-performing modules (≥75% completion/success)
+- Tools and technologies the team is now proficient with
+- How these skills translate to business value
+If needed, you can expand to 5 paragraphs to thoroughly cover all relevant learning outcomes and tools.
 
-**Team Engagement & Dynamics** (2-3 paragraphs)
-Analyze activity patterns, meeting attendance, and consistency. Comment on team cohesion and commitment to learning. Explain what this means for applying skills back at work.
+**Team Engagement & Dynamics** (2-4 paragraphs)
+Analyze activity patterns, meeting attendance, and consistency. Comment on team cohesion and commitment to learning. When discussing module-level engagement, reference how it relates to mastering specific learning outcomes. Explain what this means for applying skills back at work. You can expand to 3-4 paragraphs if needed to properly analyze engagement patterns across different modules and learning outcomes.
 
 **Expert Observations & Project Highlights** (3-5 paragraphs)
-Synthesize insights from program experts, teaching assistants, and learning support. **IMPORTANT: You must mention ALL student projects from the group** - even brief mentions are required for completeness. For each project mentioned in the comments, describe what the student built, why it matters, and how it demonstrates practical skill application. 
+Synthesize insights from program experts, teaching assistants, and learning support. **IMPORTANT: You must mention ALL student projects from the group** - even brief mentions are required for completeness. For each project mentioned in the comments, describe what the student built, why it matters, and how it demonstrates practical skill application. **When describing projects, reference which learning outcomes or tools they demonstrate mastery of** (use learningOutcomes and moduleTools data to make these connections).
 
 If there are many projects (5 or more), organize your response in 3-5 paragraphs:
-- Group similar projects together (e.g., "Several team members focused on automation tools...")
-- Highlight standout projects with more detail
+- Group similar projects together (e.g., "Several team members focused on automation tools, demonstrating mastery of the agentic AI outcomes...")
+- Highlight standout projects with more detail, connecting them to specific learning outcomes
 - Use a final paragraph to acknowledge remaining projects briefly
 - Ensure every student's project is mentioned at least once by name
 
 Include specific examples and real project names. Make the manager feel that each team member's contribution is valued and recognized.
 
-**Business Recommendations & Next Steps** (2-3 paragraphs)
-Provide actionable recommendations for maximizing the training investment. What should the manager do to help their team apply these skills? Are there gaps to address? Be constructive and business-focused.
+**Business Recommendations & Next Steps** (2-5 paragraphs)
+Provide actionable recommendations for maximizing the training investment. What should the manager do to help their team apply these skills? Are there gaps to address? **If certain learning outcomes have lower mastery rates (<75%), suggest specific ways to reinforce those skills.** Recommend which tools the team should start using immediately based on moduleTools data. Be constructive and business-focused. You can expand to 4-5 paragraphs if needed to provide comprehensive, actionable recommendations.
 
 ## Output Format
 
