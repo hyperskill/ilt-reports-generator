@@ -116,7 +116,7 @@ export function TableLegend({ mode }: LegendProps) {
                       Low involvement: Few attempts (&lt;20) OR very low activity
                     </Text>
                     <Text as="p" mb="1">
-                      <Text weight="bold" color="gray">📊 Moderately performing</Text><br/>
+                      <Text weight="bold" style={{ color: 'rgb(40, 71, 51)' }}>📊 Moderately performing</Text><br/>
                       Average level: All other students
                     </Text>
                   </Box>
@@ -201,7 +201,7 @@ export function TableLegend({ mode }: LegendProps) {
                     Student started slowly but became more active towards the end
                   </Text>
                   <Text as="p" mb="2">
-                    <Text weight="bold" color="gray">📊 linear (Steady)</Text><br/>
+                    <Text weight="bold" style={{ color: 'rgb(40, 71, 51)' }}>📊 linear (Steady)</Text><br/>
                     Activity distributed evenly throughout the entire period
                   </Text>
                   <Text as="p" mb="2">

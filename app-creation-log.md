@@ -1,5 +1,56 @@
 # App Creation Log
 
+## 2025-10-24: Fixed Table Legend Colors - Light Green for Balanced/Linear
+
+**Agent:** Updated TableLegend component to use correct light green color for "Moderately performing" and "linear" segments
+
+**Problem**: 
+- In TableLegend descriptions, "Moderately performing" segment was shown as gray instead of light green
+- "linear" easing pattern was shown as gray instead of light green
+- These segments should use light green color matching centralized system
+
+**Solution**:
+- Changed "Moderately performing" from `color="gray"` to inline style with dark light-green `rgb(40, 71, 51)`
+- Changed "linear" from `color="gray"` to inline style with dark light-green `rgb(40, 71, 51)`
+- Dark color (30% brightness of `rgba(134, 239, 172, 0.8)`) ensures good readability
+
+**Changes**:
+```typescript
+// Before: Gray text
+<Text weight="bold" color="gray">📊 Moderately performing</Text>
+<Text weight="bold" color="gray">📊 linear (Steady)</Text>
+
+// After: Light green text matching centralized system
+<Text weight="bold" style={{ color: 'rgb(40, 71, 51)' }}>📊 Moderately performing</Text>
+<Text weight="bold" style={{ color: 'rgb(40, 71, 51)' }}>📊 linear (Steady)</Text>
+```
+
+**Files Updated**:
+- `app/components/TableLegend.tsx` - Fixed both performance and dynamic mode legends
+- `app-creation-log.md` - Added this entry
+
+**Color Verification Results**:
+All legends now correctly match centralized color system:
+- ✅ Highly engaged/efficient: green (dark)
+- ✅ Moderately engaged: blue
+- ✅ Moderately performing/Balanced: light green (was gray ❌)
+- ✅ Highly effortful: orange
+- ✅ Low participation: red
+- ✅ ease-out: green (dark)
+- ✅ ease-in: orange
+- ✅ linear: light green (was gray ❌)
+- ✅ ease-in-out: purple
+- ✅ ease: blue
+- ✅ no-activity: red
+
+**Impact**:
+- ✅ All legend descriptions now visually match actual badge/chart colors
+- ✅ Users can correctly identify segment colors from legends
+- ✅ Light green segments clearly distinguished from dark green leaders
+- ✅ Complete color consistency across entire application
+
+---
+
 ## 2025-10-24: Fixed Shared Reports Color System - Removed Old Badge Styles
 
 **Agent:** Removed old hardcoded badge styles from shared report components that were overriding centralized system
