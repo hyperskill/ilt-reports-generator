@@ -27,8 +27,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # LiteLLM (your new keys)
-LITELLM_API_KEY=sk-T7_jQMSloCTpbpv2F3mc_Q
-LITELLM_BASE_URL=https://litellm.aks-hs-prod.int.hyperskill.org
+LITELLM_API_KEY=your_litellm_api_key_here
+LITELLM_BASE_URL=your_litellm_base_url_here
 ```
 
 ### 3. Restart Dev Server

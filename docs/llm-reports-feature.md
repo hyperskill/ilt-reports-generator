@@ -134,8 +134,8 @@ Generates a student report for a specific student in a report.
 Add to your `.env.local`:
 
 ```bash
-LITELLM_API_KEY=sk-T7_jQMSloCTpbpv2F3mc_Q
-LITELLM_BASE_URL=https://litellm.aks-hs-prod.int.hyperskill.org
+LITELLM_API_KEY=your_litellm_api_key_here
+LITELLM_BASE_URL=your_litellm_base_url_here
 ```
 
 The application uses Hyperskill's internal LiteLLM proxy instead of direct OpenAI access.
