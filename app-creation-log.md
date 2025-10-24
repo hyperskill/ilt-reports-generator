@@ -1,5 +1,93 @@
 # App Creation Log
 
+## 2025-10-24: Added Student Learning Progress Block to Personal Report
+
+**Agent:** Created StudentLearningProgress component for individual student pages
+
+**Feature**: Personal learning outcomes & tools progress tracker for student reports
+
+**What it shows**:
+- Student's personal progress on learning outcomes and tools for each module
+- Individual completion and success rates per module
+- Same collapsible table design as group version
+- ALL learning outcomes displayed (collapsible to ~1.5 by default)
+- Tools as purple badges
+- Summary statistics for the student
+
+**Implementation**:
+1. **New Component**: `StudentLearningProgress.tsx`
+   - Similar to GroupLearningProgress but for single student
+   - Takes userId instead of students array
+   - Uses processModuleAnalytics for single student
+   - Fetches same learning outcomes and tools from database
+   - Displays personalized metrics
+
+2. **Table Structure** (identical to group version):
+   - **Module** column (20%): Name and position
+   - **Progress** column (15%): Completion badge, success rate
+   - **Learning Outcomes** column (40%): All outcomes, collapsible
+   - **Tools** column (25%): Tool badges
+
+3. **Integration**:
+   - Added to student personal page `/student/[userId]`
+   - Positioned after Module Analytics (Module Progress table)
+   - Works with both saved reports and session data
+   - Only shows if reportId exists (not in session-only mode)
+
+4. **Visual Design**:
+   - Same color system as group version
+   - Green/orange/red progress badges
+   - Purple tools badges
+   - Collapsible outcomes (▼ See all / ▲ Show less)
+   - Personalized heading: "{FirstName}'s Learning Outcomes & Tools Progress"
+   - Student-friendly help text
+
+5. **Props**:
+   ```typescript
+   reportId: string        // For fetching outcomes/tools
+   userId: string          // Student ID
+   submissions: any[]      // Submission data
+   structure: any[]        // Course structure
+   courseId: number        // Cogniterra course ID
+   meetings?: any[]        // Optional meetings
+   studentName?: string    // For personalized heading
+   ```
+
+**User Experience**:
+- Students see their personal progress on educational goals
+- Understand which outcomes they're mastering
+- See tools they're practicing with
+- Progress indicators show their performance
+- Collapsible design keeps table compact
+- Help section explains metrics in student-friendly language
+
+**Files Created**:
+- `app/components/StudentLearningProgress.tsx` - New component
+
+**Files Updated**:
+- `app/student/[userId]/page.tsx` - Added StudentLearningProgress after ModuleAnalytics
+- `app-creation-log.md` - Added this entry
+
+**Location**:
+- Visible at: `/student/{userId}?reportId={id}`
+- Positioned between "Module Progress" table and "Going Well/Focus Areas" sections
+
+**Consistency**:
+- Uses centralized color system from lib/utils/segment-colors.ts
+- Same design language as GroupLearningProgress
+- Same collapsible behavior
+- Same help accordion pattern
+
+**Benefits**:
+- ✅ Students understand their learning goals
+- ✅ Connects course objectives to personal progress
+- ✅ Motivates students with clear progress tracking
+- ✅ Shows mastery of specific outcomes
+- ✅ Highlights tools being learned
+- ✅ Encourages self-reflection on progress
+
+---
+
 ## 2025-10-24: Integrated Learning Progress Colors into Centralized System
 
 **Agent:** Moved all color management for Learning Progress block to centralized color system
