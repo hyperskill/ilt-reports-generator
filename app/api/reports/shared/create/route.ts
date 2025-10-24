@@ -62,6 +62,21 @@ export async function POST(request: Request) {
     let sourceContent;
     let processedData: any = {};
 
+    // Fetch learning outcomes and module tools (with proper auth)
+    const [outcomesResponse, toolsResponse] = await Promise.all([
+      fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${sourceReportId}`,
+        { headers: request.headers }
+      ),
+      fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${sourceReportId}`,
+        { headers: request.headers }
+      ),
+    ]);
+
+    const outcomesData = outcomesResponse.ok ? await outcomesResponse.json() : { learningOutcomes: [] };
+    const toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
+
     // Fetch report data based on type
     try {
       if (reportType === 'manager') {
@@ -97,6 +112,9 @@ export async function POST(request: Request) {
           structure: baseReport.structure_data || [],
           submissions: baseReport.submissions_data || [],
           meetings: baseReport.meetings_data || [],
+          reportId: sourceReportId,
+          learningOutcomes: outcomesData.learningOutcomes || [],
+          moduleTools: toolsData.moduleTools || [],
           teamComments: {
             programExpert: teamComments?.comment_program_expert,
             teachingAssistants: teamComments?.comment_teaching_assistants,
@@ -165,6 +183,9 @@ export async function POST(request: Request) {
           submissions: baseReport.submissions_data || [],
           meetings: baseReport.meetings_data || [],
           userId,
+          reportId: sourceReportId,
+          learningOutcomes: outcomesData.learningOutcomes || [],
+          moduleTools: toolsData.moduleTools || [],
         };
 
         // Process submissions analysis if available

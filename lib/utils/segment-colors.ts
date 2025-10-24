@@ -1,6 +1,18 @@
 /**
- * Centralized color management system for segments, patterns, and charts
+ * Centralized color management system for segments, patterns, charts, and UI elements
  * This is the single source of truth for all colors used across the application
+ * 
+ * COLOR CATEGORIES:
+ * - Performance Segments (green/blue/light-green/orange/red)
+ * - Easing Patterns (green/orange/purple/blue/light-green/red)
+ * - Module Activity (blue for steps, purple for meetings)
+ * - Learning Progress (green/orange/red for completion rates, blue/purple for outcomes/tools)
+ * 
+ * USAGE:
+ * - Import color functions: getCompletionRateBadgeColor(), getPerformanceSegmentBadgeColor(), etc.
+ * - Import color constants: BADGE_COLORS, SEGMENT_COLORS, LEARNING_PROGRESS_COLORS
+ * - Use functions for dynamic color selection based on data
+ * - Use constants for fixed UI elements
  */
 
 import React from 'react';
@@ -10,12 +22,17 @@ import React from 'react';
 // ============================================================================
 
 export const SEGMENT_COLORS = {
-  // Performance Segments
-  LEADER_GREEN: 'rgba(34, 197, 94, 0.8)',      // Green for leaders (efficient/engaged)
-  MODERATE_BLUE: 'rgba(59, 130, 246, 0.8)',    // Blue for moderate engagement
-  BALANCED_LIGHT_GREEN: 'rgba(134, 239, 172, 0.8)', // Light green for balanced middle
-  EFFORTFUL_ORANGE: 'rgba(249, 115, 22, 0.8)', // Orange for effortful/struggling
-  LOW_RED: 'rgba(239, 68, 68, 0.8)',           // Red for low engagement
+  // Performance Segments - All green shades from dark to light
+  LEADER_DARK_GREEN: 'rgba(34, 197, 94, 0.8)',      // Dark green for leaders (Highly efficient/engaged)
+  COMMITTED_MEDIUM_GREEN: 'rgba(74, 222, 128, 0.8)', // Medium green for Highly committed
+  MODERATE_LIGHT_GREEN: 'rgba(134, 239, 172, 0.8)', // Light green for Moderately engaged
+  LOW_RED: 'rgba(239, 68, 68, 0.8)',                // Red for Less engaged
+  
+  // Legacy names for backward compatibility
+  LEADER_GREEN: 'rgba(34, 197, 94, 0.8)',
+  MODERATE_BLUE: 'rgba(134, 239, 172, 0.8)',        // Now light green, not blue
+  BALANCED_LIGHT_GREEN: 'rgba(134, 239, 172, 0.8)',
+  EFFORTFUL_ORANGE: 'rgba(74, 222, 128, 0.8)',      // Now medium green, not orange
   
   // Easing Patterns
   EASE_OUT_GREEN: 'rgba(34, 197, 94, 0.8)',    // Green for early activity (frontloaded)
@@ -29,6 +46,14 @@ export const SEGMENT_COLORS = {
   STEPS_BLUE: 'rgba(59, 130, 246, 0.8)',       // Blue for completed steps
   MEETINGS_PURPLE: 'rgba(168, 85, 247, 0.8)',  // Purple for meetings
   
+  // Learning Progress
+  PROGRESS_EXCELLENT_GREEN: 'rgba(34, 197, 94, 0.8)',   // Green for excellent progress (≥75%)
+  PROGRESS_MODERATE_ORANGE: 'rgba(249, 115, 22, 0.8)', // Orange for moderate progress (50-74%)
+  PROGRESS_LOW_RED: 'rgba(239, 68, 68, 0.8)',          // Red for low progress (<50%)
+  
+  OUTCOMES_BLUE: 'rgba(59, 130, 246, 0.8)',    // Blue theme for learning outcomes
+  TOOLS_PURPLE: 'rgba(168, 85, 247, 0.8)',     // Purple for tools & technologies
+  
   // Default
   DEFAULT_GRAY: 'rgba(156, 163, 175, 0.8)',    // Default gray for unknown
 } as const;
@@ -40,12 +65,15 @@ export const SEGMENT_COLORS = {
 export type RadixColor = 'gray' | 'red' | 'orange' | 'yellow' | 'green' | 'grass' | 'lime' | 'mint' | 'cyan' | 'teal' | 'blue' | 'purple' | 'pink';
 
 export const BADGE_COLORS = {
-  // Performance Segments
-  LEADER: 'green' as RadixColor,        // Dark green for leaders
-  MODERATE_ENGAGED: 'blue' as RadixColor,
-  BALANCED: 'lime' as RadixColor,       // Lime (very light green) for balanced - more distinct from green
-  EFFORTFUL: 'orange' as RadixColor,
-  LOW: 'red' as RadixColor,
+  // Performance Segments - All green shades
+  LEADER: 'green' as RadixColor,           // Dark green for Highly efficient/engaged
+  COMMITTED: 'grass' as RadixColor,        // Medium green for Highly committed
+  MODERATE_ENGAGED: 'lime' as RadixColor,  // Light green for Moderately engaged
+  LOW: 'red' as RadixColor,                // Red for Less engaged
+  
+  // Legacy names
+  BALANCED: 'lime' as RadixColor,
+  EFFORTFUL: 'grass' as RadixColor,
   
   // Easing Patterns
   EASE_OUT: 'green' as RadixColor,      // Dark green for frontloaded
@@ -54,6 +82,13 @@ export const BADGE_COLORS = {
   EASE: 'blue' as RadixColor,
   LINEAR: 'lime' as RadixColor,         // Lime (very light green) for linear - more distinct from green
   NO_ACTIVITY: 'red' as RadixColor,
+  
+  // Learning Progress
+  PROGRESS_EXCELLENT: 'green' as RadixColor,    // Green for excellent progress (≥75%)
+  PROGRESS_MODERATE: 'orange' as RadixColor,    // Orange for moderate progress (50-74%)
+  PROGRESS_LOW: 'red' as RadixColor,            // Red for low progress (<50%)
+  
+  TOOLS: 'purple' as RadixColor,                // Purple for tools badges
 } as const;
 
 // ============================================================================
@@ -67,27 +102,27 @@ export const BADGE_COLORS = {
 export function getPerformanceSegmentChartColor(segment: string): string {
   const segmentLower = segment.toLowerCase();
   
-  // Green for leaders/high performers (old: Leader efficient/engaged, new: Highly efficient/engaged)
-  if (segmentLower.includes('leader efficient')) return SEGMENT_COLORS.LEADER_GREEN;
-  if (segmentLower.includes('highly efficient')) return SEGMENT_COLORS.LEADER_GREEN;
-  if (segmentLower.includes('leader engaged')) return SEGMENT_COLORS.LEADER_GREEN;
-  if (segmentLower.includes('highly engaged')) return SEGMENT_COLORS.LEADER_GREEN;
+  // Dark green for top performers (Highly efficient/engaged)
+  if (segmentLower.includes('leader efficient')) return SEGMENT_COLORS.LEADER_DARK_GREEN;
+  if (segmentLower.includes('highly efficient')) return SEGMENT_COLORS.LEADER_DARK_GREEN;
+  if (segmentLower.includes('leader engaged')) return SEGMENT_COLORS.LEADER_DARK_GREEN;
+  if (segmentLower.includes('highly engaged')) return SEGMENT_COLORS.LEADER_DARK_GREEN;
   
-  // Blue for moderate engagement (old: Balanced + engaged, new: Moderately engaged)
-  if (segmentLower.includes('balanced + engaged')) return SEGMENT_COLORS.MODERATE_BLUE;
-  if (segmentLower.includes('moderately engaged')) return SEGMENT_COLORS.MODERATE_BLUE;
+  // Medium green for committed (Highly committed)
+  if (segmentLower.includes('hardworking')) return SEGMENT_COLORS.COMMITTED_MEDIUM_GREEN;
+  if (segmentLower.includes('highly effortful')) return SEGMENT_COLORS.COMMITTED_MEDIUM_GREEN;
+  if (segmentLower.includes('highly committed')) return SEGMENT_COLORS.COMMITTED_MEDIUM_GREEN;
   
-  // Light green for balanced/moderate (old: Balanced middle, new: Moderately performing)
-  if (segmentLower.includes('balanced middle')) return SEGMENT_COLORS.BALANCED_LIGHT_GREEN;
-  if (segmentLower.includes('moderately performing')) return SEGMENT_COLORS.BALANCED_LIGHT_GREEN;
+  // Light green for moderate engagement (Moderately engaged)
+  if (segmentLower.includes('balanced + engaged')) return SEGMENT_COLORS.MODERATE_LIGHT_GREEN;
+  if (segmentLower.includes('balanced middle')) return SEGMENT_COLORS.MODERATE_LIGHT_GREEN;
+  if (segmentLower.includes('moderately performing')) return SEGMENT_COLORS.MODERATE_LIGHT_GREEN;
+  if (segmentLower.includes('moderately engaged')) return SEGMENT_COLORS.MODERATE_LIGHT_GREEN;
   
-  // Orange for effortful (old: Hardworking but struggling, new: Highly effortful)
-  if (segmentLower.includes('hardworking')) return SEGMENT_COLORS.EFFORTFUL_ORANGE;
-  if (segmentLower.includes('highly effortful')) return SEGMENT_COLORS.EFFORTFUL_ORANGE;
-  
-  // Red for low engagement (old: Low engagement, new: Low participation)
+  // Red for low engagement (Less engaged)
   if (segmentLower.includes('low engagement')) return SEGMENT_COLORS.LOW_RED;
   if (segmentLower.includes('low participation')) return SEGMENT_COLORS.LOW_RED;
+  if (segmentLower.includes('less engaged')) return SEGMENT_COLORS.LOW_RED;
   
   return SEGMENT_COLORS.DEFAULT_GRAY;
 }
@@ -98,33 +133,33 @@ export function getPerformanceSegmentChartColor(segment: string): string {
 export function getPerformanceSegmentBadgeColor(segment: string): RadixColor {
   const segmentLower = segment.toLowerCase();
   
-  // Green for leaders
+  // Dark green for top performers (Highly efficient/engaged)
   if (segmentLower.includes('leader efficient')) return BADGE_COLORS.LEADER;
   if (segmentLower.includes('highly efficient')) return BADGE_COLORS.LEADER;
   if (segmentLower.includes('leader engaged')) return BADGE_COLORS.LEADER;
   if (segmentLower.includes('highly engaged')) return BADGE_COLORS.LEADER;
   
-  // Blue for moderate engagement
+  // Medium green for committed (Highly committed)
+  if (segmentLower.includes('hardworking')) return BADGE_COLORS.COMMITTED;
+  if (segmentLower.includes('highly effortful')) return BADGE_COLORS.COMMITTED;
+  if (segmentLower.includes('highly committed')) return BADGE_COLORS.COMMITTED;
+  if (segmentLower.includes('committed')) return BADGE_COLORS.COMMITTED;
+  
+  // Light green for moderate engagement (Moderately engaged)
   if (segmentLower.includes('balanced + engaged')) return BADGE_COLORS.MODERATE_ENGAGED;
+  if (segmentLower.includes('balanced middle')) return BADGE_COLORS.MODERATE_ENGAGED;
+  if (segmentLower.includes('moderately performing')) return BADGE_COLORS.MODERATE_ENGAGED;
   if (segmentLower.includes('moderately engaged')) return BADGE_COLORS.MODERATE_ENGAGED;
   
-  // Gray for balanced
-  if (segmentLower.includes('balanced middle')) return BADGE_COLORS.BALANCED;
-  if (segmentLower.includes('moderately performing')) return BADGE_COLORS.BALANCED;
-  
-  // Orange for effortful
-  if (segmentLower.includes('hardworking')) return BADGE_COLORS.EFFORTFUL;
-  if (segmentLower.includes('highly effortful')) return BADGE_COLORS.EFFORTFUL;
-  if (segmentLower.includes('effortful')) return BADGE_COLORS.EFFORTFUL;
-  
-  // Red for low
+  // Red for low engagement (Less engaged)
   if (segmentLower.includes('low engagement')) return BADGE_COLORS.LOW;
   if (segmentLower.includes('low participation')) return BADGE_COLORS.LOW;
+  if (segmentLower.includes('less engaged')) return BADGE_COLORS.LOW;
   
-  // Blue as fallback for "engaged" segments
+  // Light green as fallback for "engaged" segments
   if (segmentLower.includes('engaged')) return BADGE_COLORS.MODERATE_ENGAGED;
   
-  return BADGE_COLORS.BALANCED;
+  return BADGE_COLORS.MODERATE_ENGAGED;
 }
 
 // ============================================================================
@@ -169,6 +204,36 @@ export const MODULE_COLORS = {
   COMPLETED_STEPS: SEGMENT_COLORS.STEPS_BLUE,
   MEETINGS_ATTENDED: SEGMENT_COLORS.MEETINGS_PURPLE,
 } as const;
+
+// ============================================================================
+// LEARNING PROGRESS COLORS
+// ============================================================================
+
+export const LEARNING_PROGRESS_COLORS = {
+  EXCELLENT_GREEN: SEGMENT_COLORS.PROGRESS_EXCELLENT_GREEN,
+  MODERATE_ORANGE: SEGMENT_COLORS.PROGRESS_MODERATE_ORANGE,
+  LOW_RED: SEGMENT_COLORS.PROGRESS_LOW_RED,
+  OUTCOMES_BLUE: SEGMENT_COLORS.OUTCOMES_BLUE,
+  TOOLS_PURPLE: SEGMENT_COLORS.TOOLS_PURPLE,
+} as const;
+
+/**
+ * Get badge color for completion rate
+ */
+export function getCompletionRateBadgeColor(rate: number): RadixColor {
+  if (rate >= 75) return BADGE_COLORS.PROGRESS_EXCELLENT;
+  if (rate >= 50) return BADGE_COLORS.PROGRESS_MODERATE;
+  return BADGE_COLORS.PROGRESS_LOW;
+}
+
+/**
+ * Get chart color for completion rate
+ */
+export function getCompletionRateChartColor(rate: number): string {
+  if (rate >= 75) return LEARNING_PROGRESS_COLORS.EXCELLENT_GREEN;
+  if (rate >= 50) return LEARNING_PROGRESS_COLORS.MODERATE_ORANGE;
+  return LEARNING_PROGRESS_COLORS.LOW_RED;
+}
 
 // ============================================================================
 // CHART BORDER COLORS

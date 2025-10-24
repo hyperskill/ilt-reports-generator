@@ -1,5 +1,676 @@
 # App Creation Log
 
+## 2025-10-24: Updated Student Segment Names to v3 Classification with Green Color Scheme
+
+**Agent:** Updated all segment names to new simplified classification system with unified green color gradient
+
+**Changes**:
+1. **Segment Name Updates**:
+   - "Highly effortful" → "Highly committed" — Puts in strong effort, motivated but still finding consistency
+   - "Low participation" → "Less engaged" — Limited participation or motivation
+   - "Moderately performing" → "Moderately engaged" (consolidated with existing Moderately engaged)
+   - "Highly efficient" — Consistently productive, delivers strong results (description updated)
+   - "Highly engaged" — Actively participates, contributes with enthusiasm (description updated)
+
+2. **Color Scheme Update** (Green gradient from dark to light):
+   - 🟢 **Highly efficient, Highly engaged** — Dark green `rgba(34, 197, 94, 0.8)` (green badge)
+   - 🟢 **Highly committed** — Medium green `rgba(74, 222, 128, 0.8)` (grass badge)
+   - 🟢 **Moderately engaged** — Light green `rgba(134, 239, 172, 0.8)` (lime badge)
+   - 🔴 **Less engaged** — Red `rgba(239, 68, 68, 0.8)` (red badge)
+
+3. **Files Updated**:
+   - `lib/processors/performance-processor.ts` — Updated segment classification logic
+   - `lib/utils/segment-colors.ts` — Updated color scheme with green gradient + badge colors
+   - `app/components/PerformanceResults.tsx` — Updated segment descriptions and legend colors
+   - `app/components/TableLegend.tsx` — Updated segment descriptions and legend colors
+   - `lib/utils/convert-blocks.ts` — Updated helpText for segment charts
+   - `docs/COLOR_SYSTEM.md` — Updated documentation with v3 naming and color scheme
+   - `docs/student-segment.md` — Updated segmentation rules with new names
+
+4. **Database Migrations**:
+   - Created `supabase/final-update-segments.sql` — Updates segment names in `reports.performance_data` using jsonb_set
+   - Created `supabase/update-shared-reports-segments.sql` — Updates segment names and descriptions in `shared_reports.blocks`
+   - Created `supabase/fix-duplicate-moderately.sql` — Removes duplicate "Moderately engaged" entries from helpText
+
+**New Segment Classification**:
+- 🟢 Highly efficient — consistently productive, delivers strong results
+- 🟢 Highly engaged — actively participates, contributes with enthusiasm
+- 🟢 Highly committed — puts in strong effort, motivated but still finding consistency
+- 🟢 Moderately engaged — participates occasionally, shows average involvement
+- 🔴 Less engaged — limited participation or motivation
+
+## 2025-10-24: Enhanced LLM Test Script with Full Statistics Validation
+
+**Agent:** Added comprehensive statistics validation to `check-llm-data.js`
+
+**Update**: Test script now validates ALL report statistics, not just learning outcomes/tools
+
+**New Validations**:
+
+1. **Step 4: Report Statistics** - Validates all core data:
+   - Students count (critical)
+   - Structure rows (critical)
+   - Submissions count (critical)
+   - Meetings count
+   - Dynamic data points
+   - Dynamic series
+   - Learning outcomes count
+   - Module tools count
+   - Shows which fields are empty vs populated
+
+2. **Step 5: Module Coverage** - Validates learning outcomes & tools coverage:
+   - Total modules in structure
+   - Modules with learning outcomes
+   - Modules with tools
+   - Coverage percentage
+   - Warnings if coverage is incomplete
+
+3. **Step 5.5: Student-Specific Stats** - For student reports:
+   - Student submissions count
+   - Student meetings count
+   - Validates student exists in performance data
+
+4. **Step 7: Readiness Score** - Calculates data readiness:
+   - Checks: students > 0, structure > 0, submissions > 0, outcomes > 0, no critical issues
+   - Score: 100% = EXCELLENT, 80-99% = GOOD, 60-79% = FAIR, <60% = POOR
+   - Clear recommendations based on score
+
+**Example Output**:
+```
+📊 Step 4: Validating Report Statistics
+✅  students: 22
+✅  structureRows: 184
+✅  submissions: 2308
+✅  meetings: 22
+✅  dynamicData: 22
+✅  learningOutcomes: 5
+✅  moduleTools: 5
+✅ All critical statistics are present!
+
+🔍 Step 5: Validating Modules with Learning Outcomes
+✅ All modules have learning outcomes! 🎉
+✅ All modules have tools defined! 🎉
+
+🎯 Data Readiness Score:
+✅  80% - GOOD. LLM generation should work well
+```
+
+**API Updates** - Added Bearer token support to all endpoints:
+- `/api/reports/[id]/route.ts` (GET, PATCH)
+- `/api/reports/learning-outcomes/route.ts` (GET)
+- `/api/reports/module-tools/route.ts` (GET)
+
+**Benefits**:
+- ✅ Complete visibility into report data quality
+- ✅ Early detection of missing data before LLM call
+- ✅ Clear readiness score for decision making
+- ✅ Actionable recommendations
+- ✅ Saves tokens by catching issues early
+
+---
+
+## 2025-10-24: Added Automatic Authentication to LLM Testing Scripts
+
+**Agent:** Added automatic Supabase authentication with Bearer tokens to testing scripts
+
+**Update**: Tests now automatically authenticate using admin credentials from `.env.local`
+
+**Changes**:
+1. **Updated `scripts/test-llm-generation.js`**:
+   - Added `authenticateWithSupabase()` function
+   - Automatically signs in with TEST_ADMIN_EMAIL/TEST_ADMIN_PASSWORD
+   - Gets access_token from Supabase
+   - Uses Bearer token in Authorization header
+   - No more manual cookie copying needed!
+
+2. **Updated `scripts/check-llm-data.js`**:
+   - Added same authentication logic
+   - All API calls now use Bearer token authentication
+   - Fixes 401 Unauthorized errors
+
+3. **Updated API routes** (`generate-manager-report/route.ts`, `generate-student-report/route.ts`):
+   - Added support for Authorization header with Bearer token
+   - Checks for `Authorization: Bearer <token>` header first
+   - Falls back to cookie-based auth for browser requests
+   - Uses `createClient` from `@supabase/supabase-js` directly with token
+   - **Dual authentication**: works with both Bearer tokens (scripts) and cookies (browser)
+
+4. **Updated `env.example`**:
+   - Added TEST_ADMIN_EMAIL
+   - Added TEST_ADMIN_PASSWORD
+   - Clear instructions for test credentials
+
+5. **Updated `RUN_TESTS_NOW.md`**:
+   - Simplified setup process
+   - Step 2 now: just add email/password to .env.local
+   - No more manual browser steps!
+
+**How it works**:
+1. Script reads TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD from `.env.local`
+2. Calls Supabase auth API: `POST /auth/v1/token?grant_type=password`
+3. Gets access_token from response
+4. Adds `Authorization: Bearer <token>` header to all API requests
+5. API routes detect Authorization header and create Supabase client with it
+6. Normal browser requests still use cookies (middleware handles them)
+
+**Benefits**:
+- ✅ No manual cookie copying
+- ✅ No browser DevTools needed  
+- ✅ Works in CI/CD pipelines
+- ✅ Same credentials as normal login
+- ✅ Clean Bearer token authentication
+- ✅ Doesn't interfere with normal browser usage
+- ✅ Standard REST API auth pattern
+
+**Test Results**:
+- ✅ Successfully authenticated with Supabase
+- ✅ LLM generation working (tokens consumed)
+- ✅ Generated content mentions learning outcomes and tools
+- ✅ All validations passing
+
+---
+
+## 2025-10-24: Added LLM Testing Scripts
+
+**Agent:** Created comprehensive testing scripts for LLM report generation
+
+**Feature**: Two scripts for validating LLM integration and data quality
+
+**Created Files**:
+
+1. **`scripts/check-llm-data.js`** - Data validation without LLM calls
+   - Checks environment variables (LITELLM_API_KEY, LITELLM_BASE_URL)
+   - Fetches report data via API
+   - Fetches learning outcomes and module tools
+   - Validates no empty/null values in critical data
+   - Checks system prompt structure in route files
+   - Saves prepared data to JSON for inspection
+   - NO TOKEN COST - safe to run multiple times
+   - Usage: `node scripts/check-llm-data.js <reportType> <reportId> [userId]`
+
+2. **`scripts/test-llm-generation.js`** - Full LLM generation test
+   - Makes REAL API call to LLM (COSTS TOKENS!)
+   - Tests connection with API keys
+   - Validates response format
+   - Checks all required fields present
+   - Analyzes content for learning outcomes/tools mentions
+   - Shows sample generated content
+   - Saves full response to JSON
+   - 3-second cancellation window to prevent accidental runs
+   - Usage: `node scripts/test-llm-generation.js <reportType> <reportId> [userId]`
+
+3. **`scripts/TEST_LLM_GUIDE.md`** - Comprehensive testing guide
+   - Step-by-step instructions
+   - Expected results for each test
+   - Troubleshooting common issues
+   - Interpretation of test outputs
+   - Examples for both manager and student reports
+
+4. **Updated `scripts/README.md`**
+   - Added quick start instructions
+   - Links to detailed guide
+   - Clear distinction between token-free and token-consuming tests
+
+**What Tests Validate**:
+- ✅ LLM connection with API keys works
+- ✅ No empty/null data sent to LLM
+- ✅ System prompt includes learning outcomes/tools references
+- ✅ Response has correct JSON structure
+- ✅ All required content fields present and non-empty
+- ✅ Content quality (mentions outcomes/tools when available)
+
+**Usage**:
+```bash
+# Install dotenv (if needed)
+npm install --save-dev dotenv
+
+# Step 1: Data check (no cost)
+node scripts/check-llm-data.js manager b5b4b3e5-79d7-4f80-8f24-7b21681b0f0b
+
+# Step 2: Full test (costs tokens)
+node scripts/test-llm-generation.js manager b5b4b3e5-79d7-4f80-8f24-7b21681b0f0b
+```
+
+**Result**:
+- Easy validation of LLM integration
+- Catch data issues before spending tokens
+- Debug prompts and responses
+- Verify learning outcomes/tools integration
+- Production-ready testing workflow
+
+---
+
+## 2025-10-24: Integrated Learning Outcomes & Tools into LLM Report Generation
+
+**Agent:** Enhanced LLM-generated reports (manager and student) to include learning outcomes and module tools analysis
+
+**Feature**: LLM now analyzes and references specific learning outcomes and tools when generating reports
+
+**Changes for Manager Reports** (`app/api/llm/generate-manager-report/route.ts`):
+
+1. **Data Fetching** (lines 146-174):
+   - Added fetching of learning outcomes and module tools with proper authorization
+   - Data added to `promptData` as `learningOutcomes` and `moduleTools`
+
+2. **System Prompt Updates**:
+   - Added "Learning Outcomes" and "Module Tools" to "Data Available to You" section
+   - **New guideline #4**: "Analyze Learning Outcomes Mastery"
+     * Assess how well team is mastering specific learning outcomes
+     * Identify mastered outcomes vs. those needing support
+     * Connect outcomes to business capabilities
+     * Highlight tools the team can now use
+     * Use completion/success rates to assess mastery level
+   - Updated "Report Structure" section:
+     * **Executive Summary**: Reference important outcomes and tools mastered
+     * **Skills Acquired & Learning Outcomes** (2-5 paragraphs): Use specific outcomes from data, detail what team can do, mention tools they're proficient with
+     * **Team Engagement & Dynamics** (2-4 paragraphs): Reference how engagement relates to mastering outcomes
+     * **Expert Observations** (3-5 paragraphs): Connect projects to specific learning outcomes/tools demonstrated
+     * **Business Recommendations** (2-5 paragraphs): Suggest reinforcement for outcomes with lower mastery, recommend tools to use immediately
+
+**Changes for Student Reports** (`app/api/llm/generate-student-report/route.ts`):
+
+1. **Data Fetching** (lines 198-226):
+   - Added fetching of learning outcomes and module tools with proper authorization
+   - Data added to `promptData` as `learningOutcomes` and `moduleTools`
+
+2. **System Prompt Updates**:
+   - Added "Learning Outcomes" and "Module Tools" to "Data Available to You" section
+   - **New Analysis Guidelines**: "If learningOutcomes and moduleTools are provided"
+     * Reference specific learning outcomes when discussing what student learned
+     * Celebrate mastery of outcomes in high-performing modules (≥75%)
+     * Acknowledge progress in developing areas (50-74%)
+     * Provide compassionate support for challenging areas (<50%)
+     * Highlight specific tools student can now use
+     * Connect outcomes to real-world applications
+     * When discussing projects, reference which outcomes/tools student demonstrated
+   - Updated "Report Structure" section:
+     * **Learning Journey** (2-4 paragraphs): Reference key learning outcomes they've been working toward
+     * **Strengths & Achievements** (2-4 paragraphs): Reference specific outcomes mastered and tools they can use
+     * **Skills Development** (2-5 paragraphs): Use specific outcomes to detail skill progression, mention tools they're proficient with
+     * **Instructor Feedback** (2-4 paragraphs): Connect feedback to specific outcomes/tools demonstrated
+     * **Opportunities for Growth** (2-4 paragraphs): Reference outcomes with lower rates as development areas, suggest tools to practice
+     * **Next Steps** (2-5 paragraphs): Suggest ways to deepen mastery of outcomes, recommend tools to use regularly
+
+**Result**:
+- LLM-generated reports now provide detailed, outcome-oriented analysis
+- Reports reference specific learning outcomes and tools from database
+- Managers see which business capabilities their team gained
+- Students see exactly what skills they've mastered and can use
+- Reports expanded from 2-3 to 2-5 paragraphs per section where needed for comprehensive coverage
+- Structure preserved, only content quality and depth improved
+
+---
+
+## 2025-10-24: Fixed Learning Outcomes Block for Student Shared Reports
+
+**Agent:** Fixed data fetching and display for Learning Outcomes & Tools block in student shared reports
+
+**Problem**: Student shared reports were not showing learning outcomes and tools correctly
+
+**Solution**:
+1. **Updated `convert-blocks.ts`** (student report section, lines 519-612):
+   - Modified to use pre-fetched `learningOutcomes` and `moduleTools` from `reportData` (if available)
+   - Added fallback to fetch if not pre-fetched
+   - Changed map creation to support multiple key types (number, string, original) for compatibility
+   - **Critical fix**: Removed filter that was hiding modules without outcomes/tools
+   - Now shows ALL modules (same behavior as manager reports)
+   - Maps outcomes and tools by module_id with null-safe fallback
+
+2. **Updated `/api/reports/shared/create/route.ts`**:
+   - Added fetching of learning outcomes and module tools (lines 65-78) BEFORE processing report data
+   - Passes pre-fetched data with proper authorization headers
+   - Added `reportId`, `learningOutcomes`, `moduleTools` to `processedData` for BOTH manager and student reports
+   - Ensures data is available when `convertToBlocks` is called
+
+3. **Server-side API `/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts`**:
+   - Already supported student reports correctly (lines 123-144)
+   - Fetches learning outcomes/tools with proper auth
+   - Passes pre-fetched data to avoid 401 errors in convert-blocks
+
+**Result**:
+- Student shared reports now correctly display learning outcomes and tools for all modules
+- Data loads with proper authorization
+- No more 401 errors
+- Consistent behavior between manager and student reports
+
+---
+
+## 2025-10-24: Added Learning Outcomes Block to Shared Report Builder
+
+**Agent:** Added functionality to create Learning Outcomes block in existing shared reports
+
+**Feature**: Manual creation of Learning Outcomes & Tools Progress block for shared reports that were created before this feature was added
+
+**What it does**:
+- Allows admin to add Learning Outcomes block to any existing shared report
+- Automatically fetches learning outcomes, tools, and processes module analytics
+- Works for both manager and student reports
+- Option appears in "Add Block" menu, disappears after block is added
+
+**Implementation**:
+1. **Updated `page.tsx`**:
+   - Passed `sourceReportId`, `reportType`, `userId` to ReportBuilder component
+   - Required for fetching correct data for block creation
+
+2. **Created new API endpoint**: `/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts`
+   - Server-side endpoint that generates learning-outcomes block
+   - **Why server-side?** Module names come from Cogniterra API via `getModuleNamesMapByIdsWithRetry`, which must run on server with proper env vars
+   - Checks permissions (admin or creator only)
+   - Checks if learning outcomes exist
+   - Fetches base report data
+   - For manager: prepares performanceData and calls `convertToBlocks`
+   - For student: prepares student data and calls `convertToBlocks`
+   - Extracts learning-outcomes block and returns it
+   - Returns error if no data or block can't be generated
+
+3. **Updated `ReportBuilder.tsx`**:
+   - Added new props interface fields: `sourceReportId`, `reportType`, `userId`
+   - Created `handleCreateLearningOutcomesBlock` function:
+     * Checks if learning-outcomes block already exists
+     * Calls server API: `POST /api/reports/shared/${id}/generate-learning-outcomes-block`
+     * Receives fully generated block with correct module names
+     * Updates block order and adds to report
+     * Auto-saves to database
+     * Shows alerts for errors or missing data
+   
+4. **UI Updates**:
+   - Added "📚 Create Learning Outcomes & Tools Block" as special option in "Add Block" menu
+   - Appears first in the list when learning outcomes block doesn't exist
+   - Automatically removed from list after block is created
+   - Changed description text when this option is selected
+   - Added learning-outcomes icon (📚) to block type lists
+   - Added purple badge color for learning-outcomes type
+
+5. **Data Flow**:
+   ```
+   User clicks "Add Block"
+   → Opens dialog with available blocks
+   → Selects "Create Learning Outcomes & Tools Block"
+   → Triggers handleCreateLearningOutcomesBlock
+   → Client: POST /api/reports/shared/${id}/generate-learning-outcomes-block
+   → Server: Fetches base report data
+   → Server: Calls convertToBlocks with proper data
+   → Server: getModuleNamesMapByIdsWithRetry fetches real module names from Cogniterra
+   → Server: Returns generated block with correct module names
+   → Client: Adds block to report
+   → Client: Auto-saves
+   ```
+
+6. **Block Properties**:
+   - **ID**: 'learning-outcomes-progress'
+   - **Type**: 'learning-outcomes'
+   - **Title**: Context-aware (manager vs student)
+   - **Config**: viewType ('group' or 'student')
+   - **Help Text**: Progress indicator explanation
+   - **Data**: Array with module names (fetched from Cogniterra), progress, outcomes, tools
+   - **Order**: Added to end of report
+
+**Files Created**:
+- `/app/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts` - Server-side block generator
+
+**Files Modified**:
+- `/app/reports/shared/[id]/edit/page.tsx`
+- `/app/reports/shared/[id]/edit/ReportBuilder.tsx`
+
+---
+
+## 2025-10-24: Added Student Learning Progress Block to Personal Report
+
+**Agent:** Created StudentLearningProgress component for individual student pages
+
+**Feature**: Personal learning outcomes & tools progress tracker for student reports
+
+**What it shows**:
+- Student's personal progress on learning outcomes and tools for each module
+- Individual completion and success rates per module
+- Same collapsible table design as group version
+- ALL learning outcomes displayed (collapsible to ~1.5 by default)
+- Tools as purple badges
+- Summary statistics for the student
+
+**Implementation**:
+1. **New Component**: `StudentLearningProgress.tsx`
+   - Similar to GroupLearningProgress but for single student
+   - Takes userId instead of students array
+   - Uses processModuleAnalytics for single student
+   - Fetches same learning outcomes and tools from database
+   - Displays personalized metrics
+
+2. **Table Structure** (identical to group version):
+   - **Module** column (20%): Name and position
+   - **Progress** column (15%): Completion badge, success rate
+   - **Learning Outcomes** column (40%): All outcomes, collapsible
+   - **Tools** column (25%): Tool badges
+
+3. **Integration**:
+   - Added to student personal page `/student/[userId]`
+   - Positioned after Module Analytics (Module Progress table)
+   - Works with both saved reports and session data
+   - Only shows if reportId exists (not in session-only mode)
+
+4. **Visual Design**:
+   - Same color system as group version
+   - Green/orange/red progress badges
+   - Purple tools badges
+   - Collapsible outcomes (▼ See all / ▲ Show less)
+   - Personalized heading: "{FirstName}'s Learning Outcomes & Tools Progress"
+   - Student-friendly help text
+
+5. **Props**:
+   ```typescript
+   reportId: string        // For fetching outcomes/tools
+   userId: string          // Student ID
+   submissions: any[]      // Submission data
+   structure: any[]        // Course structure
+   courseId: number        // Cogniterra course ID
+   meetings?: any[]        // Optional meetings
+   studentName?: string    // For personalized heading
+   ```
+
+**User Experience**:
+- Students see their personal progress on educational goals
+- Understand which outcomes they're mastering
+- See tools they're practicing with
+- Progress indicators show their performance
+- Collapsible design keeps table compact
+- Help section explains metrics in student-friendly language
+
+**Files Created**:
+- `app/components/StudentLearningProgress.tsx` - New component
+
+**Files Updated**:
+- `app/student/[userId]/page.tsx` - Added StudentLearningProgress after ModuleAnalytics
+- `app-creation-log.md` - Added this entry
+
+**Location**:
+- Visible at: `/student/{userId}?reportId={id}`
+- Positioned between "Module Progress" table and "Going Well/Focus Areas" sections
+
+**Consistency**:
+- Uses centralized color system from lib/utils/segment-colors.ts
+- Same design language as GroupLearningProgress
+- Same collapsible behavior
+- Same help accordion pattern
+
+**Benefits**:
+- ✅ Students understand their learning goals
+- ✅ Connects course objectives to personal progress
+- ✅ Motivates students with clear progress tracking
+- ✅ Shows mastery of specific outcomes
+- ✅ Highlights tools being learned
+- ✅ Encourages self-reflection on progress
+
+---
+
+## 2025-10-24: Integrated Learning Progress Colors into Centralized System
+
+**Agent:** Moved all color management for Learning Progress block to centralized color system
+
+**Enhancement**: All colors in GroupLearningProgress now use centralized color constants
+
+**What changed**:
+1. **Extended `segment-colors.ts`** with learning progress colors:
+   - `PROGRESS_EXCELLENT_GREEN` - Green for ≥75% completion
+   - `PROGRESS_MODERATE_ORANGE` - Orange for 50-74% completion  
+   - `PROGRESS_LOW_RED` - Red for <50% completion
+   - `OUTCOMES_BLUE` - Blue theme for learning outcomes
+   - `TOOLS_PURPLE` - Purple for tools & technologies
+
+2. **Added badge colors**:
+   - `BADGE_COLORS.PROGRESS_EXCELLENT` - 'green'
+   - `BADGE_COLORS.PROGRESS_MODERATE` - 'orange'
+   - `BADGE_COLORS.PROGRESS_LOW` - 'red'
+   - `BADGE_COLORS.TOOLS` - 'purple'
+
+3. **New utility functions**:
+   - `getCompletionRateBadgeColor(rate)` - Returns Radix color based on completion rate
+   - `getCompletionRateChartColor(rate)` - Returns rgba chart color based on completion rate
+
+4. **Updated GroupLearningProgress component**:
+   - Removed inline color logic
+   - Uses `getCompletionRateBadgeColor()` from centralized system
+   - Uses `BADGE_COLORS.TOOLS` for tools badges
+   - All color decisions now in single source of truth
+
+**Benefits**:
+- ✅ Single source of truth for all application colors
+- ✅ Consistent color scheme across components
+- ✅ Easy to update colors globally
+- ✅ Better maintainability and scalability
+- ✅ Color logic documented in one place
+
+**Files Updated**:
+- `lib/utils/segment-colors.ts` - Added learning progress colors and functions
+- `app/components/GroupLearningProgress.tsx` - Integrated with centralized system
+- `app-creation-log.md` - Added this entry
+
+**Color Consistency**:
+- Progress green matches Leader/Efficient segments
+- Progress orange matches Effortful segments
+- Progress red matches Low participation segments
+- Tools purple matches Meetings purple
+- All colors follow existing application palette
+
+---
+
+## 2025-10-24: Added Collapsible Rows to Learning Outcomes Table
+
+**Agent:** Added expand/collapse functionality to learning outcomes column
+
+**Enhancement**: Learning outcomes can now be collapsed to save vertical space
+
+**What changed**:
+- **Default view**: Shows ~1.5 learning outcomes (3em max-height)
+- **Expand button**: "▼ See all" button appears when outcomes > 1
+- **Expanded view**: Shows all outcomes with "▲ Show less" button
+- **Per-row state**: Each module can be independently expanded/collapsed
+- **Smooth interaction**: Click button to toggle, state persists during session
+
+**Implementation**:
+- Added `expandedRows` state (Set<number> with module_id)
+- CSS `max-height: 3em` with `overflow: hidden` for collapsed state
+- Toggle button styled as link (accent color, underlined)
+- Only shows button if outcomes.length > 1
+
+**User Experience**:
+- Table is much more compact by default
+- Users can expand only the modules they're interested in
+- Clear visual indicators (▼ vs ▲ arrows)
+- Button positioned below outcomes list
+
+**Files Updated**:
+- `app/components/GroupLearningProgress.tsx` - Added collapse/expand logic
+- `app-creation-log.md` - Added this entry
+
+**Space Savings**:
+- Default view: Shows ~1.5 outcomes per module
+- Modules with 5+ outcomes: ~70% height reduction when collapsed
+- Overall table: ~50% smaller in default view
+
+---
+
+## 2025-10-24: Added Group Learning Outcomes & Tools Progress Table
+
+**Agent:** Created new compact table visualization to show group progress on learning outcomes and tools
+
+**Feature**: New table on dynamic/easing segmentation page that displays how the group is mastering learning outcomes and tools for each module
+
+**What it shows**:
+- Compact table with all modules that have outcomes or tools defined
+- Group's average completion and success rates per module
+- **ALL learning outcomes** displayed for each module (collapsible)
+- Tools displayed as badge chips
+- Color-coded progress badges (green/orange/red)
+- Summary statistics (total modules, modules with outcomes/tools, avg progress)
+- Link to Settings page to generate outcomes/tools if missing
+
+**Implementation**:
+1. **New Component**: `GroupLearningProgress.tsx`
+   - Fetches module names from Cogniterra API
+   - Fetches learning outcomes from database
+   - Fetches module tools from database
+   - Calculates group statistics per module
+   - **Displays data in table format** (4 columns)
+
+2. **Table Structure**:
+   - **Module** column (20% width): Name and position
+   - **Progress** column (15% width): Completion badge, success rate, student count
+   - **Learning Outcomes** column (40% width): All outcomes as bullet list
+   - **Tools** column (25% width): All tools as purple badges
+
+3. **Visual Design**:
+   - Clean table layout with Radix UI Table component
+   - Color-coded badges for completion rate:
+     - 🟢 Green: ≥75% completion (excellent)
+     - 🟠 Orange: 50-74% completion (moderate)  
+     - 🔴 Red: <50% completion (needs attention)
+   - Learning outcomes with 📚 icon in column header
+   - Tools with 🔧 icon in column header
+   - "Not defined" italic text for empty cells
+
+4. **Compact Design Changes** (from original card-based version):
+   - Removed large card containers
+   - Removed "Excellent Progress" text labels
+   - Shows **ALL** outcomes (not limited to 3)
+   - Table format reduces vertical space significantly
+   - More data visible at once without scrolling
+
+5. **Help Section**:
+   - Updated to explain table columns
+   - Describes color-coded progress badges
+   - Guides interpretation of data
+   - Suggests actions for improvement
+
+**User Experience**:
+- Shows only modules with outcomes or tools defined
+- Empty state with link to Settings if nothing defined yet
+- Summary stats at bottom showing coverage
+- Help accordion for guidance
+- Horizontal scroll if table wider than viewport
+
+**Files Created**:
+- `app/components/GroupLearningProgress.tsx` - New component
+- `docs/group-learning-progress-feature.md` - Feature documentation
+
+**Files Updated**:
+- `app/reports/[id]/preview/dynamic/page.tsx` - Added GroupLearningProgress component below GroupModuleAnalytics
+- `app-creation-log.md` - Added this entry
+
+**Location**: 
+- Visible at: `/reports/{id}/preview/dynamic?tab=preview`
+- Positioned between "Group Performance by Module" and "Dynamic Results"
+
+**Benefits**:
+- ✅ Connects educational goals to student progress
+- ✅ Shows which outcomes students are mastering
+- ✅ Visualizes tool adoption across modules
+- ✅ Helps identify modules needing attention
+- ✅ **Compact table format** - more data in less space
+- ✅ **Shows ALL outcomes** - no slicing or truncation
+- ✅ Encourages defining outcomes/tools if missing
+
+---
+
 ## 2025-10-24: Fixed Table Legend Colors - Light Green for Balanced/Linear
 
 **Agent:** Updated TableLegend component to use correct light green color for "Moderately performing" and "linear" segments

@@ -8,6 +8,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { generateStudentReport } from '@/lib/processors/student-report-processor';
 import { ModuleActivityChart } from '@/app/components/ModuleActivityChart';
 import { ModuleAnalytics } from '@/app/components/ModuleAnalytics';
+import { StudentLearningProgress } from '@/app/components/StudentLearningProgress';
 import { StudentCommentsSection } from './StudentCommentsSection';
 import { StudentCertificateSection } from './StudentCertificateSection';
 import { createClient } from '@/lib/supabase/client';
@@ -390,6 +391,47 @@ export default function StudentDetailPage({ params }: PageProps) {
                   structure={files.structure.data}
                   courseId={Number(courseId)}
                   meetings={files.meetings?.data || []}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {/* Student Learning Outcomes & Tools Progress */}
+        {reportId && savedReportData && savedReportData.structure_data && savedReportData.structure_data.length > 0 && (
+          (() => {
+            const courseId = savedReportData.structure_data[0]?.course_id || savedReportData.structure_data[0]?.courseid;
+            if (courseId) {
+              return (
+                <StudentLearningProgress
+                  reportId={reportId}
+                  userId={params.userId}
+                  submissions={savedReportData.submissions_data || []}
+                  structure={savedReportData.structure_data || []}
+                  courseId={Number(courseId)}
+                  meetings={savedReportData.meetings_data || []}
+                  studentName={report.student.name}
+                />
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {!savedReportData && reportId && files.structure && files.structure.data && files.structure.data.length > 0 && (
+          (() => {
+            const courseId = files.structure.data[0]?.course_id || files.structure.data[0]?.courseid;
+            if (courseId) {
+              return (
+                <StudentLearningProgress
+                  reportId={reportId}
+                  userId={params.userId}
+                  submissions={files.submissions?.data || []}
+                  structure={files.structure.data}
+                  courseId={Number(courseId)}
+                  meetings={files.meetings?.data || []}
+                  studentName={report.student.name}
                 />
               );
             }

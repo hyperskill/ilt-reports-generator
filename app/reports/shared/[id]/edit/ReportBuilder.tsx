@@ -11,6 +11,9 @@ interface ReportBuilderProps {
   reportTitle: string;
   reportDescription?: string;
   onSave: (blocks: ReportBlock[], title: string, description?: string) => Promise<boolean | void>;
+  sourceReportId: string;
+  reportType: 'manager' | 'student';
+  userId?: number;
 }
 
 export default function ReportBuilder({
@@ -18,6 +21,9 @@ export default function ReportBuilder({
   reportTitle,
   reportDescription,
   onSave,
+  sourceReportId,
+  reportType,
+  userId,
 }: ReportBuilderProps) {
   const [blocks, setBlocks] = useState<ReportBlock[]>(
     initialBlocks.sort((a, b) => a.order - b.order)
@@ -65,6 +71,19 @@ export default function ReportBuilder({
     return !blocks.some(block => getOriginalBlockId(block.id) === originalId);
   });
 
+  // Add special "Create Learning Outcomes" option if it doesn't exist yet
+  const hasLearningOutcomesBlock = blocks.some(b => b.type === 'learning-outcomes');
+  const blocksWithSpecialOptions = hasLearningOutcomesBlock ? unusedBlocks : [
+    {
+      id: '__create_learning_outcomes__',
+      type: 'learning-outcomes' as any,
+      title: '📚 Create Learning Outcomes & Tools Block',
+      content: '',
+      order: 0,
+    },
+    ...unusedBlocks
+  ];
+
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
@@ -93,9 +112,23 @@ export default function ReportBuilder({
   };
 
   const handleBlockContentChange = (blockId: string, newContent: string) => {
-    setBlocks(blocks.map(block => 
-      block.id === blockId ? { ...block, content: newContent } : block
-    ));
+    setBlocks(blocks.map(block => {
+      if (block.id === blockId) {
+        // For learning-outcomes blocks, update data instead of content
+        if (block.type === 'learning-outcomes') {
+          try {
+            const parsedData = JSON.parse(newContent);
+            return { ...block, data: parsedData };
+          } catch (e) {
+            console.error('Failed to parse learning outcomes data:', e);
+            return block;
+          }
+        }
+        // For other blocks, update content as usual
+        return { ...block, content: newContent };
+      }
+      return block;
+    }));
     setEditedBlocks(prev => new Set(prev).add(blockId));
   };
 
@@ -160,6 +193,13 @@ export default function ReportBuilder({
   };
 
   const handleAddBlock = async (sourceBlockId: string) => {
+    // Check if this is the special "Create Learning Outcomes" option
+    if (sourceBlockId === '__create_learning_outcomes__') {
+      setIsAddDialogOpen(false);
+      await handleCreateLearningOutcomesBlock();
+      return;
+    }
+
     const sourceBlock = allBlocks.find(b => b.id === sourceBlockId);
     if (!sourceBlock) return;
 
@@ -189,6 +229,56 @@ export default function ReportBuilder({
       }
     } catch (error) {
       console.error('Error auto-saving after block add:', error);
+      setBlocks(blocks);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreateLearningOutcomesBlock = async () => {
+    setIsSaving(true);
+    try {
+      // Check if learning-outcomes block already exists
+      const existingBlock = blocks.find(b => b.type === 'learning-outcomes');
+      if (existingBlock) {
+        alert('Learning Outcomes block already exists in this report');
+        setIsSaving(false);
+        return;
+      }
+
+      // Call server-side API to generate the block (ensures proper module names from Cogniterra API)
+      const { pathname } = new URL(window.location.href);
+      const sharedReportId = pathname.split('/')[3]; // Extract ID from /reports/shared/[id]/edit
+      
+      const response = await fetch(`/api/reports/shared/${sharedReportId}/generate-learning-outcomes-block`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to create Learning Outcomes block');
+        setIsSaving(false);
+        return;
+      }
+
+      // Update order for the new block
+      const learningOutcomesBlock = data.block;
+      learningOutcomesBlock.order = blocks.length;
+
+      // Add block to the end
+      const updatedBlocks = [...blocks, learningOutcomesBlock];
+      setBlocks(updatedBlocks);
+
+      // Auto-save
+      const result = await onSave(updatedBlocks, title, description);
+      if (result === false) {
+        // If save failed, revert
+        setBlocks(blocks);
+      }
+    } catch (error: any) {
+      console.error('Error creating learning outcomes block:', error);
+      alert(`Failed to create Learning Outcomes block: ${error.message}`);
       setBlocks(blocks);
     } finally {
       setIsSaving(false);
@@ -269,8 +359,8 @@ export default function ReportBuilder({
               open={isAddDialogOpen} 
               onOpenChange={(open) => {
                 setIsAddDialogOpen(open);
-                if (open && unusedBlocks.length > 0) {
-                  setSelectedBlockId(unusedBlocks[0].id);
+                if (open && blocksWithSpecialOptions.length > 0) {
+                  setSelectedBlockId(blocksWithSpecialOptions[0].id);
                 }
               }}
             >
@@ -279,7 +369,7 @@ export default function ReportBuilder({
                   size="2"
                   variant="soft"
                   color="green"
-                  disabled={unusedBlocks.length === 0}
+                  disabled={blocksWithSpecialOptions.length === 0}
                 >
                   ➕ Add Block
                 </Button>
@@ -288,23 +378,23 @@ export default function ReportBuilder({
               <Dialog.Content style={{ maxWidth: 500 }}>
                 <Dialog.Title>Add Block</Dialog.Title>
                 <Dialog.Description size="2" mb="4">
-                  {unusedBlocks.length > 0 
+                  {blocksWithSpecialOptions.length > 0 
                     ? 'Choose a block from the available blocks to add to your report.'
                     : 'All available blocks have been added to your report.'
                   }
                 </Dialog.Description>
 
-                {unusedBlocks.length > 0 ? (
+                {blocksWithSpecialOptions.length > 0 ? (
                   <>
                     <Flex direction="column" gap="3">
                       <label>
                         <Text as="div" size="2" mb="1" weight="bold">
-                          Available Blocks ({unusedBlocks.length})
+                          Available Blocks ({blocksWithSpecialOptions.length})
                         </Text>
                         <Select.Root value={selectedBlockId} onValueChange={setSelectedBlockId}>
                           <Select.Trigger style={{ width: '100%' }} />
                           <Select.Content>
-                            {unusedBlocks.map((block) => {
+                            {blocksWithSpecialOptions.map((block) => {
                               const icon = 
                                 block.type === 'section' ? '📝' :
                                 block.type === 'comments' ? '💬' :
@@ -312,7 +402,8 @@ export default function ReportBuilder({
                                 block.type === 'pie-chart' ? '📈' :
                                 block.type === 'line-chart' ? '📉' :
                                 block.type === 'bar-chart' ? '📊' :
-                                block.type === 'student-project-comment' ? '📝' : '📄';
+                                block.type === 'student-project-comment' ? '📝' :
+                                block.type === 'learning-outcomes' ? '📚' : '📄';
                               
                               return (
                                 <Select.Item key={block.id} value={block.id}>
@@ -324,7 +415,10 @@ export default function ReportBuilder({
                         </Select.Root>
                       </label>
                       <Text size="1" color="gray">
-                        The selected block will be added to the end of your report.
+                        {selectedBlockId === '__create_learning_outcomes__' 
+                          ? 'This will create a new Learning Outcomes & Tools block with data from your report.'
+                          : 'The selected block will be added to the end of your report.'
+                        }
                       </Text>
                     </Flex>
 
@@ -377,7 +471,8 @@ export default function ReportBuilder({
                       block.type === 'table' ? 'green' :
                       block.type === 'pie-chart' ? 'purple' :
                       block.type === 'line-chart' ? 'orange' :
-                      block.type === 'student-project-comment' ? 'cyan' : 'gray'
+                      block.type === 'student-project-comment' ? 'cyan' :
+                      block.type === 'learning-outcomes' ? 'purple' : 'gray'
                     }>
                       {block.type}
                     </Badge>

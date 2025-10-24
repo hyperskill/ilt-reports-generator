@@ -96,28 +96,24 @@ export function TableLegend({ mode }: LegendProps) {
                   <Text size="2" weight="bold" mb="2">Student Groups (Segments):</Text>
                   <Box style={{ fontSize: '13px', lineHeight: '1.6' }}>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="green">🏆 Highly engaged</Text><br/>
-                      Leaders active in meetings: Score ≥80% AND meeting attendance ≥70%
+                      <Text weight="bold" style={{ color: 'rgb(10, 59, 28)' }}>⚡ Highly efficient</Text><br/>
+                      Consistently productive, delivers strong results
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="green">⚡ Highly efficient</Text><br/>
-                      Efficient leaders: Score ≥80% AND few retry attempts (≤3) AND regular study
+                      <Text weight="bold" style={{ color: 'rgb(10, 59, 28)' }}>🏆 Highly engaged</Text><br/>
+                      Actively participates, contributes with enthusiasm
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="blue">👥 Moderately engaged</Text><br/>
-                      Average level, active: Score 30-80% AND attend meetings (≥60%) AND consistency ≥0.4
+                      <Text weight="bold" style={{ color: 'rgb(22, 67, 38)' }}>💪 Highly committed</Text><br/>
+                      Puts in strong effort, motivated but still finding consistency
                     </Text>
                     <Text as="p" mb="2">
-                      <Text weight="bold" color="orange">💪 Highly effortful</Text><br/>
-                      Trying hard but with difficulties: High effort AND struggle index ≥0.6
-                    </Text>
-                    <Text as="p" mb="2">
-                      <Text weight="bold" color="red">😴 Low participation</Text><br/>
-                      Low involvement: Few attempts (&lt;20) OR very low activity
+                      <Text weight="bold" style={{ color: 'rgb(40, 72, 52)' }}>👥 Moderately engaged</Text><br/>
+                      Participates occasionally, shows average involvement
                     </Text>
                     <Text as="p" mb="1">
-                      <Text weight="bold" style={{ color: 'rgb(40, 71, 51)' }}>📊 Moderately performing</Text><br/>
-                      Average level: All other students
+                      <Text weight="bold" style={{ color: 'rgb(72, 20, 20)' }}>😴 Less engaged</Text><br/>
+                      Limited participation or motivation
                     </Text>
                   </Box>
                 </Box>

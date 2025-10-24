@@ -135,16 +135,20 @@ export function DynamicResults({ summary, series, reportId, submissions, structu
             <Box mt="4" p="3" style={{ backgroundColor: 'var(--gray-a2)', borderRadius: 'var(--radius-2)' }}>
               <Text size="2" weight="bold" mb="2">Pattern Meanings:</Text>
               <Text size="1" as="p" mb="1">
-                <Text weight="bold" color="green">ease-out:</Text> Early activity (frontloaded)
+                <Badge color="green" size="1">ease-out</Badge>
+                <Text size="1" style={{ marginLeft: '8px' }}>Early activity (frontloaded)</Text>
               </Text>
               <Text size="1" as="p" mb="1">
-                <Text weight="bold" color="orange">ease-in:</Text> Late activity (backloaded)
+                <Badge color="orange" size="1">ease-in</Badge>
+                <Text size="1" style={{ marginLeft: '8px' }}>Late activity (backloaded)</Text>
               </Text>
               <Text size="1" as="p" mb="1">
-                <Text weight="bold" color="gray">linear:</Text> Steady activity throughout
+                <Badge color="lime" size="1">linear</Badge>
+                <Text size="1" style={{ marginLeft: '8px' }}>Steady activity throughout</Text>
               </Text>
               <Text size="1" as="p" mb="1">
-                <Text weight="bold" color="purple">ease-in-out:</Text> S-curve pattern
+                <Badge color="purple" size="1">ease-in-out</Badge>
+                <Text size="1" style={{ marginLeft: '8px' }}>S-curve pattern</Text>
               </Text>
             </Box>
           </Box>

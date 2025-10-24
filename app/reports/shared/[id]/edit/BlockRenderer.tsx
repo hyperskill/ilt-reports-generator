@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { TextArea, Table, Text, Card, Box, Badge } from '@radix-ui/themes';
+import React, { useState, useEffect } from 'react';
+import { TextArea, Table, Text, Card, Box, Badge, TextField, Button, Flex } from '@radix-ui/themes';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ReportBlock } from '@/lib/types';
 import { Pie, Line, Bar } from 'react-chartjs-2';
@@ -149,6 +149,11 @@ export function BlockRenderer({ block, isEditing, onContentChange }: BlockRender
           <BarChartBlock block={block} />
           {block.helpText && <HelpAccordion helpText={block.helpText} />}
         </>
+      );
+
+    case 'learning-outcomes':
+      return (
+        <LearningOutcomesBlock block={block} isEditing={isEditing} onContentChange={onContentChange} />
       );
 
     default:
@@ -590,6 +595,213 @@ function BarChartBlock({ block }: { block: ReportBlock }) {
   }
 
   return <Text color="gray">Bar chart configuration not supported</Text>;
+}
+
+function LearningOutcomesBlock({ 
+  block, 
+  isEditing,
+  onContentChange 
+}: { 
+  block: ReportBlock; 
+  isEditing: boolean; 
+  onContentChange: (content: string) => void;
+}) {
+  // Parse data from block.data or from block.content (JSON string)
+  const initialData = block.data || (block.content ? JSON.parse(block.content) : []);
+  const [modules, setModules] = useState<any[]>(initialData);
+
+  // Update modules when block.data changes (e.g., after save)
+  useEffect(() => {
+    const newData = block.data || (block.content ? JSON.parse(block.content) : []);
+    setModules(newData);
+  }, [block.data, block.content]);
+
+  const handleModuleChange = (index: number, field: string, value: string) => {
+    const updated = [...modules];
+    updated[index] = { ...updated[index], [field]: value };
+    setModules(updated);
+    
+    // Notify parent component of changes
+    onContentChange(JSON.stringify(updated));
+  };
+
+  const parseOutcomes = (text: string): string[] => {
+    return text
+      .split('\n')
+      .filter(line => line.trim().startsWith('-') || line.trim().match(/^\d+\./))
+      .map(line => line.replace(/^[-\d.]\s*/, '').trim())
+      .filter(line => line.length > 0);
+  };
+
+  const parseTools = (text: string): string[] => {
+    return text
+      .split('\n')
+      .filter(line => line.trim().startsWith('-'))
+      .map(line => line.replace(/^-\s*/, '').trim())
+      .filter(line => line.length > 0);
+  };
+
+  const getProgressColor = (rate: number): 'green' | 'orange' | 'red' => {
+    if (rate >= 75) return 'green';
+    if (rate >= 50) return 'orange';
+    return 'red';
+  };
+
+  if (!modules || modules.length === 0) {
+    return <Text color="gray">No learning outcomes data available</Text>;
+  }
+
+  const isGroup = block.config?.viewType === 'group';
+
+  return (
+    <Box>
+      {isEditing && (
+        <Card mb="3" style={{ backgroundColor: 'var(--blue-2)', borderLeft: '4px solid var(--blue-9)' }}>
+          <Text size="2" weight="bold">✏️ Editing Mode</Text>
+          <Text size="1" color="gray" as="div" mt="1">
+            You can edit module names, learning outcomes, and tools for each module. Changes are saved when you click the save button.
+          </Text>
+        </Card>
+      )}
+
+      <Table.Root variant="surface">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeaderCell style={{ width: '20%' }}>Module</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '12%' }}>Progress</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '40%' }}>📚 Learning Outcomes</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '28%' }}>🔧 Tools</Table.ColumnHeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {modules.map((module, index) => {
+            const outcomes = module.learning_outcomes ? parseOutcomes(module.learning_outcomes) : [];
+            const tools = module.tools ? parseTools(module.tools) : [];
+            const progressColor = getProgressColor(module.completion_rate);
+
+            return (
+              <Table.Row key={module.module_id || index}>
+                {/* Module Name */}
+                <Table.Cell>
+                  {isEditing ? (
+                    <TextField.Root
+                      value={module.module_name || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                        handleModuleChange(index, 'module_name', e.target.value)
+                      }
+                      size="2"
+                      placeholder="Module name"
+                    />
+                  ) : (
+                    <>
+                      <Text size="2" weight="bold" as="div" mb="1">
+                        {module.module_name}
+                      </Text>
+                      <Text size="1" color="gray">
+                        Module {module.module_position}
+                      </Text>
+                    </>
+                  )}
+                </Table.Cell>
+
+                {/* Progress Metrics */}
+                <Table.Cell>
+                  <Flex direction="column" gap="1">
+                    <Badge color={progressColor} size="1">
+                      {module.completion_rate?.toFixed(0) || 0}% done
+                    </Badge>
+                    <Text size="1" color="gray">
+                      {module.success_rate?.toFixed(0) || 0}% success
+                    </Text>
+                    {isGroup && module.total_students && (
+                      <Text size="1" color="gray">
+                        {module.total_students} students
+                      </Text>
+                    )}
+                  </Flex>
+                </Table.Cell>
+
+                {/* Learning Outcomes */}
+                <Table.Cell>
+                  {isEditing ? (
+                    <TextArea
+                      value={module.learning_outcomes || ''}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
+                        handleModuleChange(index, 'learning_outcomes', e.target.value)
+                      }
+                      rows={4}
+                      placeholder="- Outcome 1&#10;- Outcome 2&#10;- Outcome 3"
+                      style={{ fontSize: '13px' }}
+                    />
+                  ) : outcomes.length > 0 ? (
+                    <Box>
+                      {outcomes.map((outcome, idx) => (
+                        <Text 
+                          key={idx} 
+                          size="2" 
+                          as="div" 
+                          mb="1"
+                          style={{ 
+                            color: 'var(--gray-12)',
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          • {outcome}
+                        </Text>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Text size="2" color="gray" style={{ fontStyle: 'italic' }}>
+                      Not defined
+                    </Text>
+                  )}
+                </Table.Cell>
+
+                {/* Tools */}
+                <Table.Cell>
+                  {isEditing ? (
+                    <TextArea
+                      value={module.tools || ''}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
+                        handleModuleChange(index, 'tools', e.target.value)
+                      }
+                      rows={3}
+                      placeholder="- Tool 1&#10;- Tool 2"
+                      style={{ fontSize: '13px' }}
+                    />
+                  ) : tools.length > 0 ? (
+                    <Flex gap="1" wrap="wrap">
+                      {tools.map((tool, idx) => (
+                        <Badge key={idx} color="purple" variant="soft" size="1">
+                          {tool}
+                        </Badge>
+                      ))}
+                    </Flex>
+                  ) : (
+                    <Text size="2" color="gray" style={{ fontStyle: 'italic' }}>
+                      Not defined
+                    </Text>
+                  )}
+                </Table.Cell>
+              </Table.Row>
+            );
+          })}
+        </Table.Body>
+      </Table.Root>
+
+      {isEditing && (
+        <Box mt="3" p="3" style={{ backgroundColor: 'var(--yellow-2)', borderRadius: 'var(--radius-2)' }}>
+          <Text size="2" weight="bold" as="div" mb="1">💡 Formatting Tips:</Text>
+          <Text size="2" as="div" mb="1">
+            • <strong>Learning Outcomes:</strong> One per line, start with "-" or number
+          </Text>
+          <Text size="2" as="div">
+            • <strong>Tools:</strong> One per line, start with "-"
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
 }
 
 function HelpAccordion({ helpText }: { helpText: string }) {
