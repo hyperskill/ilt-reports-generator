@@ -540,35 +540,55 @@ export async function convertToBlocks(
             reportData.meetings || []
           );
 
-          // Fetch learning outcomes and tools from database
-          const [outcomesResponse, toolsResponse] = await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportData.reportId}`),
-            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportData.reportId}`),
-          ]);
+          // Use pre-fetched outcomes/tools if available, otherwise fetch
+          let outcomesData, toolsData;
+          
+          if (reportData.learningOutcomes && reportData.moduleTools) {
+            // Use pre-fetched data (passed from API route with proper auth)
+            outcomesData = { learningOutcomes: reportData.learningOutcomes };
+            toolsData = { moduleTools: reportData.moduleTools };
+          } else {
+            // Fallback: fetch (may fail with 401 if called from server without auth)
+            const [outcomesResponse, toolsResponse] = await Promise.all([
+              fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportData.reportId}`),
+              fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportData.reportId}`),
+            ]);
 
-          const outcomesData = outcomesResponse.ok ? await outcomesResponse.json() : { learningOutcomes: [] };
-          const toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
+            outcomesData = outcomesResponse.ok ? await outcomesResponse.json() : { learningOutcomes: [] };
+            toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
+          }
 
-          // Create maps for quick lookup
-          const outcomesMap = new Map(
-            (outcomesData.learningOutcomes || []).map((lo: any) => [lo.module_id, { outcomes: lo.outcomes, title: lo.module_title }])
-          );
-          const toolsMap = new Map(
-            (toolsData.moduleTools || []).map((mt: any) => [mt.module_id, mt.tools])
-          );
+          // Create maps for quick lookup (use both number and string keys for compatibility)
+          const outcomesMap = new Map();
+          (outcomesData.learningOutcomes || []).forEach((lo: any) => {
+            outcomesMap.set(lo.module_id, { outcomes: lo.outcomes, title: lo.module_title });
+            outcomesMap.set(String(lo.module_id), { outcomes: lo.outcomes, title: lo.module_title });
+            outcomesMap.set(Number(lo.module_id), { outcomes: lo.outcomes, title: lo.module_title });
+          });
+          
+          const toolsMap = new Map();
+          (toolsData.moduleTools || []).forEach((mt: any) => {
+            toolsMap.set(mt.module_id, mt.tools);
+            toolsMap.set(String(mt.module_id), mt.tools);
+            toolsMap.set(Number(mt.module_id), mt.tools);
+          });
 
           // Build data array with student's module progress and outcomes/tools
-          const learningProgressData = stats
-            .filter((m: any) => outcomesMap.has(m.module_id) || toolsMap.has(m.module_id))
-            .map((m: any) => ({
+          // Show ALL modules (same as StudentLearningProgress), not just those with outcomes/tools
+          const learningProgressData = stats.map((m: any) => {
+            const outcomes = outcomesMap.get(m.module_id);
+            const tools = toolsMap.get(m.module_id);
+            
+            return {
               module_id: m.module_id,
               module_name: m.module_name,
               module_position: m.module_position,
               completion_rate: m.completion_rate,
               success_rate: m.success_rate,
-              learning_outcomes: outcomesMap.get(m.module_id)?.outcomes || '',
-              tools: toolsMap.get(m.module_id) || '',
-            }));
+              learning_outcomes: outcomes?.outcomes || '',
+              tools: tools || '',
+            };
+          });
 
           if (learningProgressData.length > 0) {
             blocks.push({

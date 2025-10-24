@@ -1,5 +1,39 @@
 # App Creation Log
 
+## 2025-10-24: Fixed Learning Outcomes Block for Student Shared Reports
+
+**Agent:** Fixed data fetching and display for Learning Outcomes & Tools block in student shared reports
+
+**Problem**: Student shared reports were not showing learning outcomes and tools correctly
+
+**Solution**:
+1. **Updated `convert-blocks.ts`** (student report section, lines 519-612):
+   - Modified to use pre-fetched `learningOutcomes` and `moduleTools` from `reportData` (if available)
+   - Added fallback to fetch if not pre-fetched
+   - Changed map creation to support multiple key types (number, string, original) for compatibility
+   - **Critical fix**: Removed filter that was hiding modules without outcomes/tools
+   - Now shows ALL modules (same behavior as manager reports)
+   - Maps outcomes and tools by module_id with null-safe fallback
+
+2. **Updated `/api/reports/shared/create/route.ts`**:
+   - Added fetching of learning outcomes and module tools (lines 65-78) BEFORE processing report data
+   - Passes pre-fetched data with proper authorization headers
+   - Added `reportId`, `learningOutcomes`, `moduleTools` to `processedData` for BOTH manager and student reports
+   - Ensures data is available when `convertToBlocks` is called
+
+3. **Server-side API `/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts`**:
+   - Already supported student reports correctly (lines 123-144)
+   - Fetches learning outcomes/tools with proper auth
+   - Passes pre-fetched data to avoid 401 errors in convert-blocks
+
+**Result**:
+- Student shared reports now correctly display learning outcomes and tools for all modules
+- Data loads with proper authorization
+- No more 401 errors
+- Consistent behavior between manager and student reports
+
+---
+
 ## 2025-10-24: Added Learning Outcomes Block to Shared Report Builder
 
 **Agent:** Added functionality to create Learning Outcomes block in existing shared reports
