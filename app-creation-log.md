@@ -1,5 +1,174 @@
 # App Creation Log
 
+## 2025-10-24: Integrated Learning Progress Colors into Centralized System
+
+**Agent:** Moved all color management for Learning Progress block to centralized color system
+
+**Enhancement**: All colors in GroupLearningProgress now use centralized color constants
+
+**What changed**:
+1. **Extended `segment-colors.ts`** with learning progress colors:
+   - `PROGRESS_EXCELLENT_GREEN` - Green for ≥75% completion
+   - `PROGRESS_MODERATE_ORANGE` - Orange for 50-74% completion  
+   - `PROGRESS_LOW_RED` - Red for <50% completion
+   - `OUTCOMES_BLUE` - Blue theme for learning outcomes
+   - `TOOLS_PURPLE` - Purple for tools & technologies
+
+2. **Added badge colors**:
+   - `BADGE_COLORS.PROGRESS_EXCELLENT` - 'green'
+   - `BADGE_COLORS.PROGRESS_MODERATE` - 'orange'
+   - `BADGE_COLORS.PROGRESS_LOW` - 'red'
+   - `BADGE_COLORS.TOOLS` - 'purple'
+
+3. **New utility functions**:
+   - `getCompletionRateBadgeColor(rate)` - Returns Radix color based on completion rate
+   - `getCompletionRateChartColor(rate)` - Returns rgba chart color based on completion rate
+
+4. **Updated GroupLearningProgress component**:
+   - Removed inline color logic
+   - Uses `getCompletionRateBadgeColor()` from centralized system
+   - Uses `BADGE_COLORS.TOOLS` for tools badges
+   - All color decisions now in single source of truth
+
+**Benefits**:
+- ✅ Single source of truth for all application colors
+- ✅ Consistent color scheme across components
+- ✅ Easy to update colors globally
+- ✅ Better maintainability and scalability
+- ✅ Color logic documented in one place
+
+**Files Updated**:
+- `lib/utils/segment-colors.ts` - Added learning progress colors and functions
+- `app/components/GroupLearningProgress.tsx` - Integrated with centralized system
+- `app-creation-log.md` - Added this entry
+
+**Color Consistency**:
+- Progress green matches Leader/Efficient segments
+- Progress orange matches Effortful segments
+- Progress red matches Low participation segments
+- Tools purple matches Meetings purple
+- All colors follow existing application palette
+
+---
+
+## 2025-10-24: Added Collapsible Rows to Learning Outcomes Table
+
+**Agent:** Added expand/collapse functionality to learning outcomes column
+
+**Enhancement**: Learning outcomes can now be collapsed to save vertical space
+
+**What changed**:
+- **Default view**: Shows ~1.5 learning outcomes (3em max-height)
+- **Expand button**: "▼ See all" button appears when outcomes > 1
+- **Expanded view**: Shows all outcomes with "▲ Show less" button
+- **Per-row state**: Each module can be independently expanded/collapsed
+- **Smooth interaction**: Click button to toggle, state persists during session
+
+**Implementation**:
+- Added `expandedRows` state (Set<number> with module_id)
+- CSS `max-height: 3em` with `overflow: hidden` for collapsed state
+- Toggle button styled as link (accent color, underlined)
+- Only shows button if outcomes.length > 1
+
+**User Experience**:
+- Table is much more compact by default
+- Users can expand only the modules they're interested in
+- Clear visual indicators (▼ vs ▲ arrows)
+- Button positioned below outcomes list
+
+**Files Updated**:
+- `app/components/GroupLearningProgress.tsx` - Added collapse/expand logic
+- `app-creation-log.md` - Added this entry
+
+**Space Savings**:
+- Default view: Shows ~1.5 outcomes per module
+- Modules with 5+ outcomes: ~70% height reduction when collapsed
+- Overall table: ~50% smaller in default view
+
+---
+
+## 2025-10-24: Added Group Learning Outcomes & Tools Progress Table
+
+**Agent:** Created new compact table visualization to show group progress on learning outcomes and tools
+
+**Feature**: New table on dynamic/easing segmentation page that displays how the group is mastering learning outcomes and tools for each module
+
+**What it shows**:
+- Compact table with all modules that have outcomes or tools defined
+- Group's average completion and success rates per module
+- **ALL learning outcomes** displayed for each module (collapsible)
+- Tools displayed as badge chips
+- Color-coded progress badges (green/orange/red)
+- Summary statistics (total modules, modules with outcomes/tools, avg progress)
+- Link to Settings page to generate outcomes/tools if missing
+
+**Implementation**:
+1. **New Component**: `GroupLearningProgress.tsx`
+   - Fetches module names from Cogniterra API
+   - Fetches learning outcomes from database
+   - Fetches module tools from database
+   - Calculates group statistics per module
+   - **Displays data in table format** (4 columns)
+
+2. **Table Structure**:
+   - **Module** column (20% width): Name and position
+   - **Progress** column (15% width): Completion badge, success rate, student count
+   - **Learning Outcomes** column (40% width): All outcomes as bullet list
+   - **Tools** column (25% width): All tools as purple badges
+
+3. **Visual Design**:
+   - Clean table layout with Radix UI Table component
+   - Color-coded badges for completion rate:
+     - 🟢 Green: ≥75% completion (excellent)
+     - 🟠 Orange: 50-74% completion (moderate)  
+     - 🔴 Red: <50% completion (needs attention)
+   - Learning outcomes with 📚 icon in column header
+   - Tools with 🔧 icon in column header
+   - "Not defined" italic text for empty cells
+
+4. **Compact Design Changes** (from original card-based version):
+   - Removed large card containers
+   - Removed "Excellent Progress" text labels
+   - Shows **ALL** outcomes (not limited to 3)
+   - Table format reduces vertical space significantly
+   - More data visible at once without scrolling
+
+5. **Help Section**:
+   - Updated to explain table columns
+   - Describes color-coded progress badges
+   - Guides interpretation of data
+   - Suggests actions for improvement
+
+**User Experience**:
+- Shows only modules with outcomes or tools defined
+- Empty state with link to Settings if nothing defined yet
+- Summary stats at bottom showing coverage
+- Help accordion for guidance
+- Horizontal scroll if table wider than viewport
+
+**Files Created**:
+- `app/components/GroupLearningProgress.tsx` - New component
+- `docs/group-learning-progress-feature.md` - Feature documentation
+
+**Files Updated**:
+- `app/reports/[id]/preview/dynamic/page.tsx` - Added GroupLearningProgress component below GroupModuleAnalytics
+- `app-creation-log.md` - Added this entry
+
+**Location**: 
+- Visible at: `/reports/{id}/preview/dynamic?tab=preview`
+- Positioned between "Group Performance by Module" and "Dynamic Results"
+
+**Benefits**:
+- ✅ Connects educational goals to student progress
+- ✅ Shows which outcomes students are mastering
+- ✅ Visualizes tool adoption across modules
+- ✅ Helps identify modules needing attention
+- ✅ **Compact table format** - more data in less space
+- ✅ **Shows ALL outcomes** - no slicing or truncation
+- ✅ Encourages defining outcomes/tools if missing
+
+---
+
 ## 2025-10-24: Fixed Table Legend Colors - Light Green for Balanced/Linear
 
 **Agent:** Updated TableLegend component to use correct light green color for "Moderately performing" and "linear" segments

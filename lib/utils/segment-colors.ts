@@ -1,6 +1,18 @@
 /**
- * Centralized color management system for segments, patterns, and charts
+ * Centralized color management system for segments, patterns, charts, and UI elements
  * This is the single source of truth for all colors used across the application
+ * 
+ * COLOR CATEGORIES:
+ * - Performance Segments (green/blue/light-green/orange/red)
+ * - Easing Patterns (green/orange/purple/blue/light-green/red)
+ * - Module Activity (blue for steps, purple for meetings)
+ * - Learning Progress (green/orange/red for completion rates, blue/purple for outcomes/tools)
+ * 
+ * USAGE:
+ * - Import color functions: getCompletionRateBadgeColor(), getPerformanceSegmentBadgeColor(), etc.
+ * - Import color constants: BADGE_COLORS, SEGMENT_COLORS, LEARNING_PROGRESS_COLORS
+ * - Use functions for dynamic color selection based on data
+ * - Use constants for fixed UI elements
  */
 
 import React from 'react';
@@ -29,6 +41,14 @@ export const SEGMENT_COLORS = {
   STEPS_BLUE: 'rgba(59, 130, 246, 0.8)',       // Blue for completed steps
   MEETINGS_PURPLE: 'rgba(168, 85, 247, 0.8)',  // Purple for meetings
   
+  // Learning Progress
+  PROGRESS_EXCELLENT_GREEN: 'rgba(34, 197, 94, 0.8)',   // Green for excellent progress (≥75%)
+  PROGRESS_MODERATE_ORANGE: 'rgba(249, 115, 22, 0.8)', // Orange for moderate progress (50-74%)
+  PROGRESS_LOW_RED: 'rgba(239, 68, 68, 0.8)',          // Red for low progress (<50%)
+  
+  OUTCOMES_BLUE: 'rgba(59, 130, 246, 0.8)',    // Blue theme for learning outcomes
+  TOOLS_PURPLE: 'rgba(168, 85, 247, 0.8)',     // Purple for tools & technologies
+  
   // Default
   DEFAULT_GRAY: 'rgba(156, 163, 175, 0.8)',    // Default gray for unknown
 } as const;
@@ -54,6 +74,13 @@ export const BADGE_COLORS = {
   EASE: 'blue' as RadixColor,
   LINEAR: 'lime' as RadixColor,         // Lime (very light green) for linear - more distinct from green
   NO_ACTIVITY: 'red' as RadixColor,
+  
+  // Learning Progress
+  PROGRESS_EXCELLENT: 'green' as RadixColor,    // Green for excellent progress (≥75%)
+  PROGRESS_MODERATE: 'orange' as RadixColor,    // Orange for moderate progress (50-74%)
+  PROGRESS_LOW: 'red' as RadixColor,            // Red for low progress (<50%)
+  
+  TOOLS: 'purple' as RadixColor,                // Purple for tools badges
 } as const;
 
 // ============================================================================
@@ -169,6 +196,36 @@ export const MODULE_COLORS = {
   COMPLETED_STEPS: SEGMENT_COLORS.STEPS_BLUE,
   MEETINGS_ATTENDED: SEGMENT_COLORS.MEETINGS_PURPLE,
 } as const;
+
+// ============================================================================
+// LEARNING PROGRESS COLORS
+// ============================================================================
+
+export const LEARNING_PROGRESS_COLORS = {
+  EXCELLENT_GREEN: SEGMENT_COLORS.PROGRESS_EXCELLENT_GREEN,
+  MODERATE_ORANGE: SEGMENT_COLORS.PROGRESS_MODERATE_ORANGE,
+  LOW_RED: SEGMENT_COLORS.PROGRESS_LOW_RED,
+  OUTCOMES_BLUE: SEGMENT_COLORS.OUTCOMES_BLUE,
+  TOOLS_PURPLE: SEGMENT_COLORS.TOOLS_PURPLE,
+} as const;
+
+/**
+ * Get badge color for completion rate
+ */
+export function getCompletionRateBadgeColor(rate: number): RadixColor {
+  if (rate >= 75) return BADGE_COLORS.PROGRESS_EXCELLENT;
+  if (rate >= 50) return BADGE_COLORS.PROGRESS_MODERATE;
+  return BADGE_COLORS.PROGRESS_LOW;
+}
+
+/**
+ * Get chart color for completion rate
+ */
+export function getCompletionRateChartColor(rate: number): string {
+  if (rate >= 75) return LEARNING_PROGRESS_COLORS.EXCELLENT_GREEN;
+  if (rate >= 50) return LEARNING_PROGRESS_COLORS.MODERATE_ORANGE;
+  return LEARNING_PROGRESS_COLORS.LOW_RED;
+}
 
 // ============================================================================
 // CHART BORDER COLORS
