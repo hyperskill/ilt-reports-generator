@@ -345,9 +345,83 @@ export async function convertToBlocks(
         helpText: '<p>Average performance metrics across all students for each course module.</p><p><strong>What the columns show:</strong></p><ul><li><strong>Module</strong> - Course module name</li><li><strong>Avg Completion</strong> - Average completion percentage</li><li><strong>Avg Success Rate</strong> - Average success rate on exercises</li><li><strong>Avg Attempts/Step</strong> - Average attempts needed per exercise</li><li><strong>Avg Meetings</strong> - Average meetings attended during this module</li><li><strong>Students</strong> - Number of students who worked on this module</li></ul><p><strong>What to look for:</strong></p><ul><li><strong>Low completion rates</strong> - Modules where students struggle to finish</li><li><strong>Low success rates</strong> - Challenging content that needs attention</li><li><strong>High attempts/step</strong> - Difficult exercises requiring multiple tries</li><li><strong>Meeting attendance patterns</strong> - Correlation between live sessions and performance</li></ul>',
         order: order++,
       });
+
+      // 11. Learning Outcomes & Tools Progress (new block)
+      // Use pre-fetched outcomes/tools if available, otherwise fetch
+      try {
+        let outcomesData, toolsData;
+        
+        if (reportData.learningOutcomes && reportData.moduleTools) {
+          // Use pre-fetched data (passed from API route with proper auth)
+          outcomesData = { learningOutcomes: reportData.learningOutcomes };
+          toolsData = { moduleTools: reportData.moduleTools };
+        } else {
+          // Fallback: fetch (may fail with 401 if called from server without auth)
+          
+          const [outcomesResponse, toolsResponse] = await Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportData.reportId}`),
+            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportData.reportId}`),
+          ]);
+
+          outcomesData = outcomesResponse.ok ? await outcomesResponse.json() : { learningOutcomes: [] };
+          toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
+        }
+        
+        // Create maps for quick lookup (use both number and string keys for compatibility)
+        const outcomesMap = new Map();
+        (outcomesData.learningOutcomes || []).forEach((lo: any) => {
+          outcomesMap.set(lo.module_id, { outcomes: lo.outcomes, title: lo.module_title });
+          outcomesMap.set(String(lo.module_id), { outcomes: lo.outcomes, title: lo.module_title });
+          outcomesMap.set(Number(lo.module_id), { outcomes: lo.outcomes, title: lo.module_title });
+        });
+        
+        const toolsMap = new Map();
+        (toolsData.moduleTools || []).forEach((mt: any) => {
+          toolsMap.set(mt.module_id, mt.tools);
+          toolsMap.set(String(mt.module_id), mt.tools);
+          toolsMap.set(Number(mt.module_id), mt.tools);
+        });
+
+        // Build data array with module progress and outcomes/tools
+        // Show ALL modules (same as GroupLearningProgress), not just those with outcomes/tools
+        
+        const learningProgressData = finalStats.map((m: any) => {
+          const outcomes = outcomesMap.get(m.module_id);
+          const tools = toolsMap.get(m.module_id);
+          
+          return {
+            module_id: m.module_id,
+            module_name: m.module_name,
+            module_position: m.module_position,
+            completion_rate: m.avg_completion_rate,
+            success_rate: m.avg_success_rate,
+            total_students: m.total_students,
+            learning_outcomes: outcomes?.outcomes || '',
+            tools: tools || '',
+          };
+        });
+
+        if (learningProgressData.length > 0) {
+          blocks.push({
+            id: 'learning-outcomes-progress',
+            type: 'learning-outcomes',
+            title: 'Learning Outcomes & Tools Progress',
+            content: '', // Not used for this block type
+            data: learningProgressData,
+            config: {
+              viewType: 'group', // Indicates this is for group/manager view
+            },
+            helpText: '<p>Track how the group is mastering learning outcomes and tools across course modules.</p><p><strong>Progress indicators:</strong> Green (≥75% completion) = Excellent, Orange (50-74%) = Moderate, Red (<50%) = Needs Attention</p>',
+            order: order++,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch learning outcomes/tools for manager report:', error);
+        // Continue without the block if fetch fails
+      }
     }
 
-    // 11. Expert Observations & Project Highlights
+    // 12. Expert Observations & Project Highlights
     blocks.push({
       id: 'expert-observations',
       type: 'section',
@@ -441,6 +515,81 @@ export async function convertToBlocks(
 
     // 4. Activity by Module chart and
     // 5. Progress by Module table will be added here if moduleStats exists
+
+    // 5.5. Learning Outcomes & Tools Progress (new block for student)
+    if (reportData.reportId && reportData.structure && reportData.submissions) {
+      try {
+        // Get unique module IDs from structure data
+        const moduleIds: number[] = Array.from(new Set(
+          (reportData.structure || [])
+            .filter((s: any) => s.module_id)
+            .map((s: any) => Number(s.module_id))
+        ));
+
+        // Get module names from Cogniterra API
+        const moduleNamesMap = await getModuleNamesMapByIdsWithRetry(moduleIds, 'student shared report');
+
+        // Process module analytics for this student
+        const userId = reportData.userId || reportData.user_id;
+        if (userId) {
+          const stats = processModuleAnalytics(
+            String(userId),
+            reportData.submissions || [],
+            reportData.structure || [],
+            moduleNamesMap,
+            reportData.meetings || []
+          );
+
+          // Fetch learning outcomes and tools from database
+          const [outcomesResponse, toolsResponse] = await Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/learning-outcomes?reportId=${reportData.reportId}`),
+            fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/module-tools?reportId=${reportData.reportId}`),
+          ]);
+
+          const outcomesData = outcomesResponse.ok ? await outcomesResponse.json() : { learningOutcomes: [] };
+          const toolsData = toolsResponse.ok ? await toolsResponse.json() : { moduleTools: [] };
+
+          // Create maps for quick lookup
+          const outcomesMap = new Map(
+            (outcomesData.learningOutcomes || []).map((lo: any) => [lo.module_id, { outcomes: lo.outcomes, title: lo.module_title }])
+          );
+          const toolsMap = new Map(
+            (toolsData.moduleTools || []).map((mt: any) => [mt.module_id, mt.tools])
+          );
+
+          // Build data array with student's module progress and outcomes/tools
+          const learningProgressData = stats
+            .filter((m: any) => outcomesMap.has(m.module_id) || toolsMap.has(m.module_id))
+            .map((m: any) => ({
+              module_id: m.module_id,
+              module_name: m.module_name,
+              module_position: m.module_position,
+              completion_rate: m.completion_rate,
+              success_rate: m.success_rate,
+              learning_outcomes: outcomesMap.get(m.module_id)?.outcomes || '',
+              tools: toolsMap.get(m.module_id) || '',
+            }));
+
+          if (learningProgressData.length > 0) {
+            blocks.push({
+              id: 'learning-outcomes-progress',
+              type: 'learning-outcomes',
+              title: 'Your Learning Outcomes & Tools Progress',
+              content: '', // Not used for this block type
+              data: learningProgressData,
+              config: {
+                viewType: 'student', // Indicates this is for student view
+              },
+              helpText: '<p>Track how you\'re progressing toward mastering the learning outcomes and tools for each module.</p><p><strong>Progress indicators:</strong> Green (≥75% completion) = Excellent!, Orange (50-74%) = Good progress, Red (<50%) = Keep going!</p>',
+              order: order++,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch learning outcomes/tools for student report:', error);
+        // Continue without the block if fetch fails
+      }
+    }
 
     // 6. Skills Development
     blocks.push({

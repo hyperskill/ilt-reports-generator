@@ -138,6 +138,9 @@ export default function SharedReportEditPage() {
         reportTitle={report.title}
         reportDescription={report.description}
         onSave={handleSave}
+        sourceReportId={report.source_report_id}
+        reportType={report.report_type}
+        userId={report.user_id}
       />
     </Container>
   );

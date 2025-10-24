@@ -161,7 +161,7 @@ export interface AppState {
 }
 
 // Shared Reports Feature
-export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments' | 'student-project-comment' | 'certificate';
+export type BlockType = 'section' | 'table' | 'pie-chart' | 'line-chart' | 'bar-chart' | 'comments' | 'student-project-comment' | 'certificate' | 'learning-outcomes';
 
 export interface ReportBlock {
   id: string;

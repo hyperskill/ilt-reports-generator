@@ -1,5 +1,84 @@
 # App Creation Log
 
+## 2025-10-24: Added Learning Outcomes Block to Shared Report Builder
+
+**Agent:** Added functionality to create Learning Outcomes block in existing shared reports
+
+**Feature**: Manual creation of Learning Outcomes & Tools Progress block for shared reports that were created before this feature was added
+
+**What it does**:
+- Allows admin to add Learning Outcomes block to any existing shared report
+- Automatically fetches learning outcomes, tools, and processes module analytics
+- Works for both manager and student reports
+- Option appears in "Add Block" menu, disappears after block is added
+
+**Implementation**:
+1. **Updated `page.tsx`**:
+   - Passed `sourceReportId`, `reportType`, `userId` to ReportBuilder component
+   - Required for fetching correct data for block creation
+
+2. **Created new API endpoint**: `/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts`
+   - Server-side endpoint that generates learning-outcomes block
+   - **Why server-side?** Module names come from Cogniterra API via `getModuleNamesMapByIdsWithRetry`, which must run on server with proper env vars
+   - Checks permissions (admin or creator only)
+   - Checks if learning outcomes exist
+   - Fetches base report data
+   - For manager: prepares performanceData and calls `convertToBlocks`
+   - For student: prepares student data and calls `convertToBlocks`
+   - Extracts learning-outcomes block and returns it
+   - Returns error if no data or block can't be generated
+
+3. **Updated `ReportBuilder.tsx`**:
+   - Added new props interface fields: `sourceReportId`, `reportType`, `userId`
+   - Created `handleCreateLearningOutcomesBlock` function:
+     * Checks if learning-outcomes block already exists
+     * Calls server API: `POST /api/reports/shared/${id}/generate-learning-outcomes-block`
+     * Receives fully generated block with correct module names
+     * Updates block order and adds to report
+     * Auto-saves to database
+     * Shows alerts for errors or missing data
+   
+4. **UI Updates**:
+   - Added "📚 Create Learning Outcomes & Tools Block" as special option in "Add Block" menu
+   - Appears first in the list when learning outcomes block doesn't exist
+   - Automatically removed from list after block is created
+   - Changed description text when this option is selected
+   - Added learning-outcomes icon (📚) to block type lists
+   - Added purple badge color for learning-outcomes type
+
+5. **Data Flow**:
+   ```
+   User clicks "Add Block"
+   → Opens dialog with available blocks
+   → Selects "Create Learning Outcomes & Tools Block"
+   → Triggers handleCreateLearningOutcomesBlock
+   → Client: POST /api/reports/shared/${id}/generate-learning-outcomes-block
+   → Server: Fetches base report data
+   → Server: Calls convertToBlocks with proper data
+   → Server: getModuleNamesMapByIdsWithRetry fetches real module names from Cogniterra
+   → Server: Returns generated block with correct module names
+   → Client: Adds block to report
+   → Client: Auto-saves
+   ```
+
+6. **Block Properties**:
+   - **ID**: 'learning-outcomes-progress'
+   - **Type**: 'learning-outcomes'
+   - **Title**: Context-aware (manager vs student)
+   - **Config**: viewType ('group' or 'student')
+   - **Help Text**: Progress indicator explanation
+   - **Data**: Array with module names (fetched from Cogniterra), progress, outcomes, tools
+   - **Order**: Added to end of report
+
+**Files Created**:
+- `/app/api/reports/shared/[id]/generate-learning-outcomes-block/route.ts` - Server-side block generator
+
+**Files Modified**:
+- `/app/reports/shared/[id]/edit/page.tsx`
+- `/app/reports/shared/[id]/edit/ReportBuilder.tsx`
+
+---
+
 ## 2025-10-24: Added Student Learning Progress Block to Personal Report
 
 **Agent:** Created StudentLearningProgress component for individual student pages

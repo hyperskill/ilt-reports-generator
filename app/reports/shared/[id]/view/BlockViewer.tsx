@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Table, Text, Card, Box, Badge } from '@radix-ui/themes';
+import React, { useState } from 'react';
+import { Table, Text, Card, Box, Badge, Flex } from '@radix-ui/themes';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ReportBlock } from '@/lib/types';
 import { Pie, Line, Bar } from 'react-chartjs-2';
@@ -155,6 +155,14 @@ export function BlockViewer({ block }: BlockViewerProps) {
             )}
           </Box>
         </Card>
+      );
+
+    case 'learning-outcomes':
+      return (
+        <>
+          <LearningOutcomesBlockViewer block={block} />
+          {block.helpText && <HelpAccordion helpText={block.helpText} />}
+        </>
       );
 
     default:
@@ -627,6 +635,173 @@ function BarChartBlockViewer({ block }: { block: ReportBlock }) {
 
   // Default bar chart (no grouping)
   return <Text color="gray">Bar chart configuration not supported</Text>;
+}
+
+function LearningOutcomesBlockViewer({ block }: { block: ReportBlock }) {
+  // Parse data from block.data or from block.content (JSON string)
+  const modules = block.data || (block.content ? JSON.parse(block.content) : []);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  const toggleRowExpansion = (moduleId: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
+  };
+
+  const parseOutcomes = (text: string): string[] => {
+    return text
+      .split('\n')
+      .filter(line => line.trim().startsWith('-') || line.trim().match(/^\d+\./))
+      .map(line => line.replace(/^[-\d.]\s*/, '').trim())
+      .filter(line => line.length > 0);
+  };
+
+  const parseTools = (text: string): string[] => {
+    return text
+      .split('\n')
+      .filter(line => line.trim().startsWith('-'))
+      .map(line => line.replace(/^-\s*/, '').trim())
+      .filter(line => line.length > 0);
+  };
+
+  const getProgressColor = (rate: number): 'green' | 'orange' | 'red' => {
+    if (rate >= 75) return 'green';
+    if (rate >= 50) return 'orange';
+    return 'red';
+  };
+
+  if (!modules || modules.length === 0) {
+    return <Text color="gray">No learning outcomes data available</Text>;
+  }
+
+  const isGroup = block.config?.viewType === 'group';
+
+  return (
+    <Box style={{ overflowX: 'auto' }}>
+      <Table.Root variant="surface">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeaderCell style={{ width: '20%' }}>Module</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '15%' }}>Progress</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '40%' }}>📚 Learning Outcomes</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell style={{ width: '25%' }}>🔧 Tools</Table.ColumnHeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {modules.map((module: any) => {
+            const outcomes = module.learning_outcomes ? parseOutcomes(module.learning_outcomes) : [];
+            const tools = module.tools ? parseTools(module.tools) : [];
+            const progressColor = getProgressColor(module.completion_rate);
+
+            return (
+              <Table.Row key={module.module_id}>
+                {/* Module Name */}
+                <Table.Cell>
+                  <Text size="2" weight="bold" as="div" mb="1">
+                    {module.module_name}
+                  </Text>
+                  <Text size="1" color="gray">
+                    Module {module.module_position}
+                  </Text>
+                </Table.Cell>
+
+                {/* Progress Metrics */}
+                <Table.Cell>
+                  <Flex direction="column" gap="1">
+                    <Badge color={progressColor} size="1">
+                      {module.completion_rate?.toFixed(0) || 0}% done
+                    </Badge>
+                    <Text size="1" color="gray">
+                      {module.success_rate?.toFixed(0) || 0}% success
+                    </Text>
+                    {isGroup && module.total_students && (
+                      <Text size="1" color="gray">
+                        {module.total_students} students
+                      </Text>
+                    )}
+                  </Flex>
+                </Table.Cell>
+
+                {/* Learning Outcomes */}
+                <Table.Cell>
+                  {outcomes.length > 0 ? (
+                    <Box>
+                      <Box 
+                        style={{ 
+                          maxHeight: expandedRows.has(module.module_id) ? 'none' : '3em',
+                          overflow: 'hidden',
+                          position: 'relative',
+                        }}
+                      >
+                        {outcomes.map((outcome, idx) => (
+                          <Text 
+                            key={idx} 
+                            size="2" 
+                            as="div" 
+                            mb="1"
+                            style={{ 
+                              color: 'var(--gray-12)',
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            • {outcome}
+                          </Text>
+                        ))}
+                      </Box>
+                      {outcomes.length > 1 && (
+                        <button
+                          onClick={() => toggleRowExpansion(module.module_id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--accent-11)',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            padding: '4px 0',
+                            marginTop: '4px',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {expandedRows.has(module.module_id) ? '▲ Show less' : '▼ See all'}
+                        </button>
+                      )}
+                    </Box>
+                  ) : (
+                    <Text size="2" color="gray" style={{ fontStyle: 'italic' }}>
+                      Not defined
+                    </Text>
+                  )}
+                </Table.Cell>
+
+                {/* Tools */}
+                <Table.Cell>
+                  {tools.length > 0 ? (
+                    <Flex gap="1" wrap="wrap">
+                      {tools.map((tool, idx) => (
+                        <Badge key={idx} color="purple" variant="soft" size="1">
+                          {tool}
+                        </Badge>
+                      ))}
+                    </Flex>
+                  ) : (
+                    <Text size="2" color="gray" style={{ fontStyle: 'italic' }}>
+                      Not defined
+                    </Text>
+                  )}
+                </Table.Cell>
+              </Table.Row>
+            );
+          })}
+        </Table.Body>
+      </Table.Root>
+    </Box>
+  );
 }
 
 function HelpAccordion({ helpText }: { helpText: string }) {
